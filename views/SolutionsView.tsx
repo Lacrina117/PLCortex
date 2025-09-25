@@ -19,7 +19,7 @@ const WelcomePlaceholder: React.FC<{ onNewChat: () => void }> = ({ onNewChat }) 
                 onClick={onNewChat}
                 className="mt-6 px-6 py-2 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 transition-colors"
             >
-                {t('chat.startWithContext')}
+                {t('chat.startNewChat')}
             </button>
         </div>
     );
@@ -111,19 +111,21 @@ export const SolutionsView: React.FC = () => {
     const { language } = useLanguage();
 
     const initialContext: ChatContext = {
-        topic: 'VFD',
+        topic: 'PLC',
         language: language,
-        vfdBrand: 'Mitsubishi Electric',
-        vfdModel: 'FR-D700',
-        plcBrand: 'Mitsubishi Electric',
-        plcSoftware: 'GX Works3',
+        vfdBrand: 'General',
+        vfdModel: 'General',
+        plcBrand: 'General',
+        plcSoftware: 'General',
         plcVersion: 'General',
     };
 
     const renderContextDisplay = (context: ChatContext) => {
          if (context.topic === 'VFD') {
+            if (context.vfdBrand === 'General') return 'VFD: General';
             return `VFD: ${context.vfdBrand} / ${context.vfdModel || 'General'}`;
         }
+        if (context.plcBrand === 'General') return 'PLC: General';
         return `PLC: ${context.plcBrand} / ${context.plcSoftware || 'General'} / ${context.plcVersion || 'General'}`;
     };
 

@@ -111,8 +111,8 @@ export const ChatView = <T extends ChatContext>({
     useEffect(() => {
         if (activeConversation) {
             setContext(activeConversation.context);
-            // Open context editor for new chats, close for existing ones
-            setIsContextEditorOpen(activeConversation.messages.length === 0);
+            // Keep context editor closed by default, user can open it if needed.
+            setIsContextEditorOpen(false);
         }
     }, [activeConversation]);
     

@@ -158,11 +158,35 @@ export const generateChatResponse = async (messages: Message[], context: ChatCon
     messages.forEach((m: { role: string; parts: { text: string }[] }) => {
         prompt += `${m.role}: ${m.parts[0].text}\n\n`;
     });
+    
+    const buildContextString = () => {
+        if (context.topic === 'VFD') {
+            if (context.vfdBrand && context.vfdBrand !== 'General') {
+                const modelStr = context.vfdModel && context.vfdModel !== 'General' ? ` ${context.vfdModel}` : '';
+                return `The user is working with a ${context.vfdBrand}${modelStr} VFD.`;
+            }
+        } else { // PLC
+            if (context.plcBrand && context.plcBrand !== 'General') {
+                const softwareStr = context.plcSoftware && context.plcSoftware !== 'General' ? ` with ${context.plcSoftware}` : '';
+                return `The user is working with a ${context.plcBrand} PLC${softwareStr}.`;
+            }
+        }
+        return 'The user has not specified any particular hardware. Provide general advice, and be prepared to give more specific answers if the user provides context later in the conversation.';
+    };
 
-    const systemInstruction = `You are a world-class industrial automation expert specializing in ${context.topic}.
-    The user is working with ${context.topic === 'VFD' ? `${context.vfdBrand || 'a general'} model ${context.vfdModel || 'VFD'}` : `${context.plcBrand || 'a general'} PLC with ${context.plcSoftware || 'general software'}`}.
+    const systemInstruction = `You are a world-class industrial automation expert specializing in ${context.topic}s.
+    ${buildContextString()}
     Provide clear, concise, and technically accurate advice. Use markdown for code blocks, lists, and emphasis.
     When creating wiring diagrams as ASCII art, use box-drawing characters (like │, ─, ┌, └, ┐, ┘, ├, ┤, ┬, ┴, ┼) and ensure perfect alignment within markdown code blocks for clarity.
+    When generating PLC ladder logic diagrams, create ASCII art that closely resembles the Allen-Bradley RSLogix 5000 / Studio 5000 style. Use vertical bars | for power rails on both sides. Use -[ ]- for Normally Open contacts (XIC), -[/]- for Normally Closed contacts (XIO), and -( )- for coils (OTE). Place tag names directly above the instructions. Use vertical lines and '+' characters to create branches. Ensure all elements are perfectly aligned within a markdown code block for a clean, professional appearance.
+Example of a motor seal-in circuit:
+\`\`\`
+      Start        Stop         Motor
+|-----[ ]----------[/]----------( )----|
+|      |                            |
+|      +------[ ]------------------+
+|             Motor                 |
+\`\`\`
     ${langInstruction}`;
 
     return callApiEndpoint('generateChatResponse', { prompt, config: { systemInstruction } });
@@ -184,6 +208,24 @@ export const generatePractice = async (params: PracticeParams): Promise<string> 
     
     ### Solution
     [A step-by-step solution to the problem, including code snippets, parameter settings, or wiring instructions as needed.]
+
+    IMPORTANT STYLE GUIDE FOR LADDER LOGIC:
+    If the solution includes a PLC ladder logic diagram, you MUST create ASCII art that closely resembles the Allen-Bradley RSLogix 5000 / Studio 5000 style.
+    - Use vertical bars | for power rails on both sides of the rung.
+    - Use -[ ]- for Normally Open contacts (XIC).
+    - Use -[/]- for Normally Closed contacts (XIO).
+    - Use -( )- for coils (OTE).
+    - Place tag names directly above the instructions.
+    - Use vertical lines and '+' characters to create branches.
+    - Ensure all elements are perfectly aligned within a markdown code block for a clean, professional appearance.
+    - Example of a motor seal-in circuit:
+    \`\`\`
+          Start        Stop         Motor
+    |-----[ ]----------[/]----------( )----|
+    |      |                            |
+    |      +------[ ]------------------+
+    |             Motor                 |
+    \`\`\`
 
     ${langInstruction}`;
 

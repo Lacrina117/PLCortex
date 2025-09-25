@@ -39,8 +39,8 @@ export const translations = {
     },
     chat: {
       welcomeTitle: 'Welcome to PLCortex Solutions',
-      welcomeMessage: 'Your assistant for industrial automation. Start a new chat with context to get specific help with VFDs and PLCs.',
-      startWithContext: 'Start with Context',
+      welcomeMessage: 'Your assistant for industrial automation. Start a new chat for general help, or specify a VFD or PLC for more targeted solutions.',
+      startNewChat: 'Start New Chat',
       contextTitle: 'Chat Context',
       contextLocked: 'Locked',
       contextEditable: 'Editable',
@@ -284,8 +284,8 @@ export const translations = {
     },
     chat: {
       welcomeTitle: 'Bienvenido a Soluciones PLCortex',
-      welcomeMessage: 'Su asistente para la automatización industrial. Inicie un nuevo chat con contexto para obtener ayuda específica con VFDs y PLCs.',
-      startWithContext: 'Empezar con Contexto',
+      welcomeMessage: 'Su asistente para la automatización industrial. Inicie un nuevo chat para obtener ayuda general, o especifique un VFD o PLC para soluciones más específicas.',
+      startNewChat: 'Iniciar Nuevo Chat',
       contextTitle: 'Contexto del Chat',
       contextLocked: 'Bloqueado',
       contextEditable: 'Editable',
