@@ -76,18 +76,20 @@ export const Header: React.FC<HeaderProps> = ({ currentView, setView }) => {
                             </svg>
                             <span className="ml-3 text-xl font-bold text-gray-800 dark:text-gray-200">PLCortex</span>
                         </button>
-                        <nav className="hidden md:flex items-center ml-10 space-x-4">
-                            {navItems.map(item => (
-                                <button
-                                    key={item.key}
-                                    onClick={() => handleNavClick(item.key)}
-                                    className={`${baseNavClass} ${currentView === item.key ? activeNavClass : inactiveNavClass}`}
-                                    title={item.description}
-                                >
-                                    {item.label}
-                                </button>
-                            ))}
-                        </nav>
+                        {currentView !== 'dashboard' && (
+                            <nav className="hidden md:flex items-center ml-10 space-x-4">
+                                {navItems.map(item => (
+                                    <button
+                                        key={item.key}
+                                        onClick={() => handleNavClick(item.key)}
+                                        className={`${baseNavClass} ${currentView === item.key ? activeNavClass : inactiveNavClass}`}
+                                        title={item.description}
+                                    >
+                                        {item.label}
+                                    </button>
+                                ))}
+                            </nav>
+                        )}
                     </div>
                     <div className="flex items-center space-x-4">
                         <div className="hidden md:flex items-center space-x-4">
