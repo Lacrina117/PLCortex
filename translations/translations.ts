@@ -3,13 +3,16 @@ export const translations = {
   en: {
     header: {
       solutions: 'Solutions',
-      logic: 'Logic Architect',
       simulator: 'Simulator',
       practices: 'Practices',
       tools: 'Tools',
       wiring: 'Wiring',
       commissioning: 'Commissioning',
       reference: 'Reference',
+    },
+    dashboard: {
+        title: 'Welcome to PLCortex',
+        subtitle: 'Select a tool to get started.',
     },
     formDifficulty: 'Difficulty',
     formDifficultyBeginner: 'Beginner',
@@ -55,6 +58,15 @@ export const translations = {
     },
     tooltips: {
       toggleTheme: 'Toggle theme',
+    },
+    header_descriptions: {
+      solutions: 'Get expert answers to specific questions about PLCs and VFDs.',
+      simulator: 'Write, validate, and simulate simple ladder logic in real-time.',
+      practices: 'Generate custom practice problems with solutions for training.',
+      tools: 'Use advanced tools for analysis, optimization, and code verification.',
+      wiring: 'Generate custom wiring guides and parameter lists for VFDs.',
+      commissioning: 'Follow an interactive, step-by-step guide for VFD commissioning.',
+      reference: 'Quickly look up common fault codes and technical data.',
     },
     landing: {
       heroTitle: 'The Assistant for Industrial Automation',
@@ -204,13 +216,6 @@ export const translations = {
       diagramNotAvailableDesc: 'An interactive terminal diagram is not yet available for this VFD model.',
       placeholder: 'Ask for next steps, fault help, or parameters...',
     },
-    logic: {
-      welcomeTitle: 'Welcome to the Logic Architect',
-      welcomeMessage: 'Describe the process you need to automate. I will act as a senior control engineer to design a robust control philosophy and then generate the PLC code.',
-      newChatTitle: 'New Logic Design',
-      historyTitle: 'Logic Designs',
-      placeholder: 'Describe the machine or process to automate...',
-    },
     simulator: {
       title: 'Interactive PLC Simulator',
       description: 'Write, validate, and simulate simple ladder logic in real-time.',
@@ -243,13 +248,16 @@ export const translations = {
   es: {
     header: {
       solutions: 'Soluciones',
-      logic: 'Arquitecto Lógico',
       simulator: 'Simulador',
       practices: 'Prácticas',
       tools: 'Herramientas',
       wiring: 'Cableado',
       commissioning: 'Puesta en Marcha',
       reference: 'Referencia',
+    },
+    dashboard: {
+        title: 'Bienvenido a PLCortex',
+        subtitle: 'Seleccione una herramienta para comenzar.',
     },
     formDifficulty: 'Dificultad',
     formDifficultyBeginner: 'Principiante',
@@ -295,6 +303,15 @@ export const translations = {
     },
     tooltips: {
       toggleTheme: 'Cambiar tema',
+    },
+    header_descriptions: {
+      solutions: 'Obtén respuestas expertas a preguntas específicas sobre PLCs y VFDs.',
+      simulator: 'Escribe, valida y simula lógica de escalera simple en tiempo real.',
+      practices: 'Genera problemas de práctica personalizados con soluciones para entrenamiento.',
+      tools: 'Usa herramientas avanzadas para análisis, optimización y verificación de código.',
+      wiring: 'Genera guías de cableado y listas de parámetros personalizadas para VFDs.',
+      commissioning: 'Sigue una guía interactiva paso a paso para la puesta en marcha de VFDs.',
+      reference: 'Consulta rápidamente códigos de falla comunes y datos técnicos.',
     },
     landing: {
       heroTitle: 'El Asistente para Automatización Industrial',
@@ -443,13 +460,6 @@ export const translations = {
       diagramNotAvailable: 'Diagrama No Disponible',
       diagramNotAvailableDesc: 'Aún no hay disponible un diagrama de terminales interactivo para este modelo de VFD.',
       placeholder: 'Pida los siguientes pasos, ayuda con fallas o parámetros...',
-    },
-    logic: {
-      welcomeTitle: 'Bienvenido al Arquitecto Lógico',
-      welcomeMessage: 'Describa el proceso que necesita automatizar. Actuaré como un ingeniero de control senior para diseñar una filosofía de control robusta y luego generar el código PLC.',
-      newChatTitle: 'Nuevo Diseño Lógico',
-      historyTitle: 'Diseños Lógicos',
-      placeholder: 'Describa la máquina o proceso a automatizar...',
     },
     simulator: {
       title: 'Simulador Interactivo de PLC',

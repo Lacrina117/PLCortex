@@ -25,9 +25,9 @@ export const MarkdownRenderer: React.FC<{ markdownText: string }> = ({ markdownT
                 i++;
             }
             elements.push(
-                <div key={elements.length} className="my-4 rounded-lg shadow-inner bg-gray-100 dark:bg-gray-900/50 relative">
-                    {lang && <span className="absolute top-2 right-3 text-xs text-gray-500">{lang}</span>}
-                    <pre className="p-4 overflow-x-auto text-sm font-mono text-gray-800 dark:text-gray-200">
+                <div key={elements.length} className="my-4 rounded-lg shadow-inner bg-gray-100 dark:bg-gray-900/50 relative overflow-x-auto">
+                    {lang && <span className="absolute top-2 right-3 text-xs text-gray-500 z-10">{lang}</span>}
+                    <pre className="p-4 text-sm font-mono text-gray-800 dark:text-gray-200 whitespace-pre">
                         <code>{codeLines.join('\n')}</code>
                     </pre>
                 </div>

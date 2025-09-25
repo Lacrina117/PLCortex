@@ -35,15 +35,14 @@ export const Header: React.FC<HeaderProps> = ({ currentView, setView }) => {
     const { t } = useTranslation();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-    const navItems: { key: View, label: string }[] = [
-        { key: 'solutions', label: t('header.solutions') },
-        { key: 'logic', label: t('header.logic') },
-        { key: 'simulator', label: t('header.simulator') },
-        { key: 'practices', label: t('header.practices') },
-        { key: 'tools', label: t('header.tools') },
-        { key: 'wiring', label: t('header.wiring') },
-        { key: 'commissioning', label: t('header.commissioning') },
-        { key: 'reference', label: t('header.reference') },
+    const navItems: { key: View, label: string, description: string }[] = [
+        { key: 'solutions', label: t('header.solutions'), description: t('header_descriptions.solutions') },
+        { key: 'simulator', label: t('header.simulator'), description: t('header_descriptions.simulator') },
+        { key: 'practices', label: t('header.practices'), description: t('header_descriptions.practices') },
+        { key: 'tools', label: t('header.tools'), description: t('header_descriptions.tools') },
+        { key: 'wiring', label: t('header.wiring'), description: t('header_descriptions.wiring') },
+        { key: 'commissioning', label: t('header.commissioning'), description: t('header_descriptions.commissioning') },
+        { key: 'reference', label: t('header.reference'), description: t('header_descriptions.reference') },
     ];
 
     const handleNavClick = (view: View) => {
@@ -71,18 +70,19 @@ export const Header: React.FC<HeaderProps> = ({ currentView, setView }) => {
             <div className="container mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex items-center justify-between h-16">
                     <div className="flex items-center">
-                        <div className="flex-shrink-0 flex items-center">
+                        <button onClick={() => setView('dashboard')} className="flex-shrink-0 flex items-center focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-gray-800 focus:ring-indigo-500 rounded-md">
                            <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-indigo-500 dark:text-indigo-400" viewBox="0 0 20 20" fill="currentColor">
                                 <path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd" />
                             </svg>
                             <span className="ml-3 text-xl font-bold text-gray-800 dark:text-gray-200">PLCortex</span>
-                        </div>
+                        </button>
                         <nav className="hidden md:flex items-center ml-10 space-x-4">
                             {navItems.map(item => (
                                 <button
                                     key={item.key}
                                     onClick={() => handleNavClick(item.key)}
                                     className={`${baseNavClass} ${currentView === item.key ? activeNavClass : inactiveNavClass}`}
+                                    title={item.description}
                                 >
                                     {item.label}
                                 </button>
@@ -111,7 +111,7 @@ export const Header: React.FC<HeaderProps> = ({ currentView, setView }) => {
 
             {/* Mobile Menu Overlay */}
             {isMenuOpen && (
-                <div className="md:hidden fixed inset-0 bg-gray-900/80 backdrop-blur-sm z-50">
+                <div className="md:hidden fixed inset-0 bg-gray-900/80 backdrop-blur-sm z-50 flex flex-col">
                     <div className="flex justify-end p-4">
                          <button onClick={() => setIsMenuOpen(false)} className="p-2 rounded-md text-gray-300 hover:bg-gray-700">
                              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -119,21 +119,15 @@ export const Header: React.FC<HeaderProps> = ({ currentView, setView }) => {
                              </svg>
                         </button>
                     </div>
-                    <nav className="flex flex-col items-center justify-center space-y-6 mt-16">
-                        {navItems.map(item => (
-                            <button
-                                key={item.key}
-                                onClick={() => handleNavClick(item.key)}
-                                className={`text-2xl font-bold ${currentView === item.key ? 'text-indigo-400' : 'text-gray-300 hover:text-indigo-400'}`}
-                            >
-                                {item.label}
-                            </button>
-                        ))}
-                         <div className="pt-8 flex flex-col items-center space-y-6">
-                            <LanguageSelector />
-                            <ThemeToggle />
-                        </div>
-                    </nav>
+                    <div className="flex flex-col items-center justify-center flex-grow space-y-8 px-4">
+                        <LanguageSelector />
+                        <ThemeToggle />
+                    </div>
+                    <div className="text-center pb-8">
+                        <p className="text-xs text-gray-500">Ing. Jesús Jiménez</p>
+                        <p className="text-xs text-gray-500">jesusjimenez117@outlook.com</p>
+                        <p className="text-xs text-gray-500">+52 6863542736</p>
+                    </div>
                 </div>
             )}
         </header>

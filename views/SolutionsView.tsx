@@ -27,26 +27,39 @@ const WelcomePlaceholder: React.FC<{ onNewChat: () => void }> = ({ onNewChat }) 
 
 const ContextSelectionComponent: React.FC<{ context: ChatContext; setContext: (context: ChatContext) => void; isLocked: boolean; }> = ({ context, setContext, isLocked }) => {
     const { t } = useTranslation();
-    const [localPlcBrand, setLocalPlcBrand] = useState(context.plcBrand || plcBrands[1]);
-    const [localPlcSoftware, setLocalPlcSoftware] = useState(context.plcSoftware || 'General');
-
-    useEffect(() => {
-        const softwareOptions = plcSoftwareByBrand[localPlcBrand] || [];
-        if (!softwareOptions.includes(localPlcSoftware)) {
-            setLocalPlcSoftware(softwareOptions[0] || 'General');
-        }
-    }, [localPlcBrand]);
-    
-    useEffect(() => {
-        const versionOptions = plcVersionsBySoftware[localPlcSoftware] || [];
-        const currentVersion = context.plcVersion || 'General';
-        if (!versionOptions.includes(currentVersion)) {
-            setContext({ ...context, plcVersion: versionOptions[versionOptions.length - 1] || 'General' });
-        }
-    }, [localPlcSoftware]);
 
     const handleContextChange = (updates: Partial<ChatContext>) => {
         setContext({ ...context, ...updates });
+    };
+
+    const handlePlcBrandChange = (newBrand: string) => {
+        const softwareOptions = plcSoftwareByBrand[newBrand] || [];
+        const newSoftware = softwareOptions[0] || 'General';
+        const versionOptions = plcVersionsBySoftware[newSoftware] || [];
+        const newVersion = versionOptions[versionOptions.length - 1] || 'General';
+        handleContextChange({
+            plcBrand: newBrand,
+            plcSoftware: newSoftware,
+            plcVersion: newVersion
+        });
+    };
+
+    const handlePlcSoftwareChange = (newSoftware: string) => {
+        const versionOptions = plcVersionsBySoftware[newSoftware] || [];
+        const newVersion = versionOptions[versionOptions.length - 1] || 'General';
+        handleContextChange({
+            plcSoftware: newSoftware,
+            plcVersion: newVersion
+        });
+    };
+    
+    const handleVfdBrandChange = (newBrand: string) => {
+        const modelOptions = vfdModelsByBrand[newBrand] || [];
+        const newModel = modelOptions[0] || 'General';
+        handleContextChange({
+            vfdBrand: newBrand,
+            vfdModel: newModel
+        });
     };
 
     const commonSelectClasses = "w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-150 ease-in-out bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-200 text-sm";
@@ -66,19 +79,10 @@ const ContextSelectionComponent: React.FC<{ context: ChatContext; setContext: (c
             </select>
             {context.topic === 'PLC' ? (
                 <>
-                    <select value={context.plcBrand} onChange={e => {
-                        const newBrand = e.target.value;
-                        setLocalPlcBrand(newBrand);
-                        const software = (plcSoftwareByBrand[newBrand] || [])[0] || 'General';
-                        handleContextChange({ plcBrand: newBrand, plcSoftware: software });
-                    }} disabled={isLocked} className={`${commonSelectClasses} ${isLocked && disabledSelectClasses}`}>
+                    <select value={context.plcBrand} onChange={e => handlePlcBrandChange(e.target.value)} disabled={isLocked} className={`${commonSelectClasses} ${isLocked && disabledSelectClasses}`}>
                         {plcBrands.map(b => <option key={b} value={b}>{b}</option>)}
                     </select>
-                     <select value={context.plcSoftware} onChange={e => {
-                         const newSoftware = e.target.value;
-                         setLocalPlcSoftware(newSoftware);
-                         handleContextChange({ plcSoftware: newSoftware });
-                     }} disabled={isLocked || context.plcBrand === 'General'} className={`${commonSelectClasses} ${(isLocked || context.plcBrand === 'General') && disabledSelectClasses}`}>
+                     <select value={context.plcSoftware} onChange={e => handlePlcSoftwareChange(e.target.value)} disabled={isLocked || context.plcBrand === 'General'} className={`${commonSelectClasses} ${(isLocked || context.plcBrand === 'General') && disabledSelectClasses}`}>
                         <option value="General">{t('formGeneralOption')}</option>
                         {(plcSoftwareByBrand[context.plcBrand || ''] || []).map(s => <option key={s} value={s}>{s}</option>)}
                     </select>
@@ -89,7 +93,7 @@ const ContextSelectionComponent: React.FC<{ context: ChatContext; setContext: (c
                 </>
             ) : (
                  <>
-                    <select value={context.vfdBrand} onChange={e => handleContextChange({ vfdBrand: e.target.value, vfdModel: (vfdModelsByBrand[e.target.value] || [])[0] || 'General' })} disabled={isLocked} className={`${commonSelectClasses} ${isLocked && disabledSelectClasses}`}>
+                    <select value={context.vfdBrand} onChange={e => handleVfdBrandChange(e.target.value)} disabled={isLocked} className={`${commonSelectClasses} ${isLocked && disabledSelectClasses}`}>
                         {vfdBrands.map(b => <option key={b} value={b}>{b}</option>)}
                     </select>
                     <select value={context.vfdModel} onChange={e => handleContextChange({ vfdModel: e.target.value })} disabled={isLocked || context.vfdBrand === 'General'} className={`${commonSelectClasses} ${(isLocked || context.vfdBrand === 'General') && disabledSelectClasses}`}>

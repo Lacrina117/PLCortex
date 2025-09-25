@@ -63,10 +63,12 @@ export const ChatView = <T extends ChatContext>({
     const [isLoading, setIsLoading] = useState(false);
     const [isHistoryOpen, setIsHistoryOpen] = useState(true);
     const [context, setContext] = useState<T>(initialContext);
+    const [isContextEditorOpen, setIsContextEditorOpen] = useState(false);
     
     const { language } = useLanguage();
     const { t } = useTranslation();
     const chatEndRef = useRef<HTMLDivElement>(null);
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
 
     useEffect(() => {
         try {
@@ -90,6 +92,14 @@ export const ChatView = <T extends ChatContext>({
         chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [activeConvId, conversations, isLoading]);
 
+    useEffect(() => {
+        const textarea = textareaRef.current;
+        if (textarea) {
+            textarea.style.height = 'auto'; // Reset height to get the new scrollHeight
+            textarea.style.height = `${textarea.scrollHeight}px`;
+        }
+    }, [currentInput]);
+
     const activeConversation = useMemo(() => {
         return conversations.find(c => c.id === activeConvId);
     }, [conversations, activeConvId]);
@@ -101,16 +111,27 @@ export const ChatView = <T extends ChatContext>({
     useEffect(() => {
         if (activeConversation) {
             setContext(activeConversation.context);
+            // Open context editor for new chats, close for existing ones
+            setIsContextEditorOpen(activeConversation.messages.length === 0);
         }
     }, [activeConversation]);
     
+    const handleContextChange = (newContext: T) => {
+        setContext(newContext);
+        if (activeConvId) {
+            setConversations(prev => prev.map(c => 
+                c.id === activeConvId ? { ...c, context: newContext } : c
+            ));
+        }
+    };
+
     const handleNewChat = () => {
         const newId = `conv-${Date.now()}`;
         const newConv: Conversation<T> = {
             id: newId,
             title: t(newChatTitleKey),
             messages: [],
-            context: { ...context, language }, // Capture current context for the new chat
+            context: { ...initialContext, ...context, language }, // Carry over configured context
             createdAt: Date.now(),
         };
         setConversations(prev => [newConv, ...prev.sort((a,b) => b.createdAt - a.createdAt)]);
@@ -128,38 +149,67 @@ export const ChatView = <T extends ChatContext>({
     };
     
     const handleSendMessage = async (customPrompt?: string) => {
-        if (!activeConversation) {
-             handleNewChat();
-             // Since state updates are async, we can't immediately send a message.
-             // The user can re-trigger the send after the new chat is created.
-             // Or we could use a useEffect to trigger send on new chat creation.
-             // For now, let's keep it simple.
-             return;
-        }
-
         const prompt = customPrompt || currentInput;
         if (!prompt.trim()) return;
 
-        const userMessage: Message = { role: 'user', parts: [{ text: prompt }], timestamp: Date.now() };
-        const updatedMessages = [...activeConversation.messages, userMessage];
-        
-        const isFirstMessage = activeConversation.messages.length === 0;
-        const newTitle = isFirstMessage ? prompt.substring(0, 40) + (prompt.length > 40 ? '...' : '') : activeConversation.title;
+        let conversationForThisMessage = activeConversation;
+        let isNewConversation = false;
 
-        setConversations(prev => prev.map(c => c.id === activeConvId ? { ...c, messages: updatedMessages, title: newTitle } : c));
+        if (!conversationForThisMessage) {
+            isNewConversation = true;
+            const newId = `conv-${Date.now()}`;
+            const newConv: Conversation<T> = {
+                id: newId,
+                title: t(newChatTitleKey),
+                messages: [],
+                context: { ...context, language },
+                createdAt: Date.now(),
+            };
+            conversationForThisMessage = newConv;
+        }
+
+        const userMessage: Message = { role: 'user', parts: [{ text: prompt }], timestamp: Date.now() };
+        const updatedMessages = [...conversationForThisMessage.messages, userMessage];
+        const isFirstMessage = conversationForThisMessage.messages.length === 0;
+        const newTitle = isFirstMessage
+            ? prompt.substring(0, 40) + (prompt.length > 40 ? '...' : '')
+            : conversationForThisMessage.title;
+
+        if (isNewConversation) {
+            setConversations(prev => [{ ...conversationForThisMessage!, messages: updatedMessages, title: newTitle }, ...prev]);
+            setActiveConvId(conversationForThisMessage!.id);
+        } else {
+            setConversations(prev => prev.map(c =>
+                c.id === conversationForThisMessage!.id
+                    ? { ...c, messages: updatedMessages, title: newTitle }
+                    : c
+            ));
+        }
+
         if (!customPrompt) setCurrentInput('');
         setIsLoading(true);
 
         try {
-            const responseText = await generateResponse(updatedMessages, activeConversation.context);
+            const responseText = await generateResponse(updatedMessages, conversationForThisMessage.context);
             const modelMessage: Message = { role: 'model', parts: [{ text: responseText }], timestamp: Date.now() };
             setConversations(prev => {
                 const finalMessages = [...updatedMessages, modelMessage];
-                return prev.map(c => c.id === activeConvId ? { ...c, messages: finalMessages } : c);
+                return prev.map(c =>
+                    c.id === conversationForThisMessage!.id
+                        ? { ...c, messages: finalMessages }
+                        : c
+                );
             });
         } catch (err) {
             const errorMessage: Message = { role: 'model', parts: [{ text: `Error: ${err instanceof Error ? err.message : 'Unknown error'}` }], timestamp: Date.now() };
-            setConversations(prev => prev.map(c => c.id === activeConvId ? { ...c, messages: [...updatedMessages, errorMessage] } : c));
+            setConversations(prev => {
+                const finalMessages = [...updatedMessages, errorMessage];
+                return prev.map(c =>
+                    c.id === conversationForThisMessage!.id
+                        ? { ...c, messages: finalMessages }
+                        : c
+                );
+            });
         } finally {
             setIsLoading(false);
         }
@@ -193,30 +243,62 @@ export const ChatView = <T extends ChatContext>({
                     </div>
                 ))}
             </div>
-            <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
-                <ContextSelectionComponent context={context} setContext={setContext} isLocked={isContextLocked} />
-            </div>
         </aside>
 
         {/* Main Chat Area */}
-        <div className="flex-1 flex flex-col bg-white dark:bg-gray-800">
-            <header className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between gap-4 flex-shrink-0">
-                 <div className="flex items-center flex-grow min-w-0">
-                    <button onClick={() => setIsHistoryOpen(!isHistoryOpen)} className="md:hidden mr-4 p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700"><svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg></button>
+        <div className="flex-1 flex flex-col bg-white dark:bg-gray-800 min-w-0">
+            <header className="p-4 border-b border-gray-200 dark:border-gray-700 grid grid-cols-[auto_1fr_auto] items-center gap-4 flex-shrink-0">
+                {/* Left Group (Column 1) */}
+                <div className="flex items-center gap-2">
+                    <button onClick={() => setIsHistoryOpen(!isHistoryOpen)} className="md:hidden p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700"><svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg></button>
+                    {activeConversation && (
+                         <button onClick={() => setActiveConvId(null)} className="text-sm px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                            {t('chat.finishConversation')}
+                        </button>
+                    )}
+                </div>
+                
+                {/* Center Group (Column 2) */}
+                <div className="min-w-0 text-center">
                     <h2 className="text-lg font-bold truncate">{activeConversation ? activeConversation.title : t(headerTitleKey)}</h2>
                 </div>
-                {activeConversation && <button onClick={() => setActiveConvId(null)} className="flex-shrink-0 text-sm text-gray-600 dark:text-gray-300 hover:text-indigo-500 dark:hover:text-indigo-400">{t('chat.finishConversation')}</button>}
+
+                {/* Right Group (Column 3) */}
+                <div className="flex items-center justify-end gap-2">
+                    {activeConversation && (
+                        <button
+                            onClick={() => setIsContextEditorOpen(prev => !prev)}
+                            className="text-sm px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 flex items-center justify-center sm:justify-start gap-2 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors min-w-0"
+                        >
+                            <BrandLogo brand={activeConversation.context.plcBrand || activeConversation.context.vfdBrand} topic={activeConversation.context.topic} className="h-5 w-5" />
+                            <span className="hidden sm:inline truncate font-medium">{renderContextDisplay(activeConversation.context)}</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" className={`ml-auto h-4 w-4 text-gray-500 transition-transform ${isContextEditorOpen ? 'rotate-180' : ''}`} viewBox="0 0 20 20" fill="currentColor">
+                                <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                            </svg>
+                        </button>
+                    )}
+                </div>
             </header>
+            
+            {activeConversation && isContextEditorOpen && (
+                <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
+                    <ContextSelectionComponent context={context} setContext={handleContextChange} isLocked={isContextLocked} />
+                </div>
+            )}
+
             <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
                 {!activeConversation || activeConversation.messages.length === 0 ? (
                    <WelcomePlaceholderComponent onNewChat={handleNewChat} />
                 ) : (
                     <>
                         {activeConversation.messages.map((msg, index) => (
-                            <div key={index} className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                            <div key={index} className={`flex items-start gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                                 {msg.role === 'model' && <AiAvatar />}
-                                <div className={`max-w-3xl p-3 rounded-2xl ${msg.role === 'user' ? 'bg-indigo-600 text-white rounded-br-none' : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-bl-none'}`}>
-                                    <div className="prose prose-sm max-w-none dark:prose-invert"><MarkdownRenderer markdownText={msg.parts[0].text} /></div>
+                                
+                                <div className={`min-w-0 max-w-[90%] md:max-w-3xl p-3 rounded-2xl overflow-x-auto ${msg.role === 'user' ? 'bg-indigo-600 text-white rounded-br-none' : 'bg-gray-100 dark:bg-gray-700 rounded-bl-none'}`}>
+                                    <div className={`prose prose-sm max-w-none break-words ${msg.role === 'user' ? 'prose-invert' : 'dark:prose-invert'}`}>
+                                        <MarkdownRenderer markdownText={msg.parts[0].text} />
+                                    </div>
                                 </div>
                             </div>
                         ))}
@@ -228,10 +310,27 @@ export const ChatView = <T extends ChatContext>({
                 )}
             </div>
 
-            <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 flex-shrink-0">
-                <div className="relative">
-                    <textarea value={currentInput} onChange={(e) => setCurrentInput(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); } }} placeholder={t(placeholderKey)} disabled={isLoading} className="w-full p-3 pr-12 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 transition duration-150 ease-in-out bg-gray-50 dark:bg-gray-700 disabled:opacity-50" rows={3} />
-                    <button onClick={() => handleSendMessage()} disabled={isLoading || !currentInput.trim()} className="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-full bg-indigo-600 text-white hover:bg-indigo-700 disabled:bg-indigo-400 transition-colors"><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.428A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" /></svg></button>
+            <div className="p-2 sm:p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 flex-shrink-0">
+                <div className="flex items-start gap-2">
+                    <textarea
+                        ref={textareaRef}
+                        value={currentInput}
+                        onChange={(e) => setCurrentInput(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); } }}
+                        placeholder={t(placeholderKey)}
+                        disabled={isLoading}
+                        className="flex-grow p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 transition duration-150 ease-in-out bg-gray-50 dark:bg-gray-700 disabled:opacity-50 resize-none max-h-48"
+                        rows={1}
+                    />
+                    <button
+                        onClick={() => handleSendMessage()}
+                        disabled={isLoading || !currentInput.trim()}
+                        className="flex-shrink-0 self-end p-3 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 disabled:bg-indigo-400 transition-colors h-[46px] w-[46px] flex items-center justify-center"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.428A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
+                        </svg>
+                    </button>
                 </div>
             </div>
         </div>

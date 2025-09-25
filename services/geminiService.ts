@@ -162,25 +162,10 @@ export const generateChatResponse = async (messages: Message[], context: ChatCon
     const systemInstruction = `You are a world-class industrial automation expert specializing in ${context.topic}.
     The user is working with ${context.topic === 'VFD' ? `${context.vfdBrand || 'a general'} model ${context.vfdModel || 'VFD'}` : `${context.plcBrand || 'a general'} PLC with ${context.plcSoftware || 'general software'}`}.
     Provide clear, concise, and technically accurate advice. Use markdown for code blocks, lists, and emphasis.
+    When creating wiring diagrams as ASCII art, use box-drawing characters (like │, ─, ┌, └, ┐, ┘, ├, ┤, ┬, ┴, ┼) and ensure perfect alignment within markdown code blocks for clarity.
     ${langInstruction}`;
 
     return callApiEndpoint('generateChatResponse', { prompt, config: { systemInstruction } });
-};
-
-export const generateLogicChatResponse = async (messages: Message[], language: 'en' | 'es'): Promise<string> => {
-    const langInstruction = language === 'es' ? 'Responde en español.' : 'Respond in English.';
-    let prompt = "";
-    messages.forEach((m: { role: string; parts: { text: string }[] }) => {
-        prompt += `${m.role}: ${m.parts[0].text}\n\n`;
-    });
-
-    const systemInstruction = `You are a senior control systems engineer. Your task is to help the user design a control philosophy and generate PLC code.
-    First, discuss the control philosophy, covering sequences, states, interlocks, and fault handling.
-    Once the philosophy is agreed upon, generate the PLC code in a structured and well-commented format.
-    Prioritize safety, robustness, and clarity. Use markdown for all responses.
-    ${langInstruction}`;
-
-    return callApiEndpoint('generateLogicChatResponse', { prompt, config: { systemInstruction } });
 };
 
 export const generatePractice = async (params: PracticeParams): Promise<string> => {
