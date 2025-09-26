@@ -8,10 +8,11 @@ import { WiringView } from './views/WiringView';
 import { CommissioningView } from './views/CommissioningView';
 import { ReferenceView } from './views/ReferenceView';
 import { SimulatorView } from './views/SimulatorView';
+import { CalculatorView } from './views/CalculatorView';
 import { Watermark } from './components/Watermark';
 import { DashboardView } from './views/DashboardView';
 
-export type View = 'dashboard' | 'solutions' | 'practices' | 'tools' | 'wiring' | 'commissioning' | 'reference' | 'simulator';
+export type View = 'dashboard' | 'solutions' | 'practices' | 'tools' | 'wiring' | 'commissioning' | 'reference' | 'simulator' | 'calculator';
 
 const MainApp: React.FC = () => {
   const [currentView, setCurrentView] = useState<View>('dashboard');
@@ -34,6 +35,7 @@ const MainApp: React.FC = () => {
             {currentView === 'tools' && <ToolsView />}
             {currentView === 'wiring' && <WiringView />}
             {currentView === 'reference' && <ReferenceView />}
+            {currentView === 'calculator' && <CalculatorView />}
           </div>
         </main>
       )}

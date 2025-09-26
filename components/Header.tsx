@@ -43,6 +43,7 @@ export const Header: React.FC<HeaderProps> = ({ currentView, setView }) => {
         { key: 'wiring', label: t('header.wiring'), description: t('header_descriptions.wiring') },
         { key: 'commissioning', label: t('header.commissioning'), description: t('header_descriptions.commissioning') },
         { key: 'reference', label: t('header.reference'), description: t('header_descriptions.reference') },
+        { key: 'calculator', label: t('header.calculator'), description: t('header_descriptions.calculator') },
     ];
 
     const handleNavClick = (view: View) => {

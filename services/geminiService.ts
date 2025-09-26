@@ -241,10 +241,12 @@ export const generateWiringGuide = async (params: WiringGuideParams): Promise<st
     Control Method: ${controlMethod}
     Motor: ${motorHp} HP, ${motorVoltage}V, ${motorFla} FLA
     Application: ${application}
+    
+    Base your recommendations on NEC Article 430 for motor circuit protection and follow best practices for grounding and shielding as outlined in industrial standards like the Allen-Bradley Wiring and Grounding Guidelines.
 
     The output must be in markdown and include:
     1.  **Safety Warning:** A clear warning about electrical hazards.
-    2.  **Power Wiring:** Instructions for connecting L1, L2, L3 and U, V, W. Specify wire gauge recommendations.
+    2.  **Power Wiring:** Instructions for connecting L1, L2, L3 and U, V, W. Specify wire gauge recommendations based on NEC standards.
     3.  **Control Wiring:** A detailed table showing terminal connections for the ${controlMethod}. Include terminal numbers/names for the ${vfdModel}.
     4.  **Basic Parameter List:** A table with the most critical parameters to set for this application (e.g., Motor HP, Voltage, FLA, Accel/Decel times, control mode). Provide parameter numbers and recommended values.
     
