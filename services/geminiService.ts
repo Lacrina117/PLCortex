@@ -377,23 +377,6 @@ export const verifyCriticalLogic = async (params: { language: 'en' | 'es'; code:
     return callApiEndpoint('verifyCriticalLogic', { prompt });
 };
 
-export const translatePlcCode = async (params: { language: 'en' | 'es'; code: string; targetLanguage: string }): Promise<string> => {
-    const { language, code, targetLanguage } = params;
-    const langInstruction = language === 'es' ? 'Responde en español.' : 'Respond in English.';
-    const prompt = `Translate the following PLC code to ${targetLanguage}.
-    The source language is not specified, you must infer it from the syntax.
-    
-    Source Code:
-    \`\`\`
-    ${code}
-    \`\`\`
-    
-    Provide only the translated code inside a single markdown code block for ${targetLanguage}. Do not add any extra explanation or text outside the code block.
-    
-    ${langInstruction}`;
-    return callApiEndpoint('translatePlcCode', { prompt });
-};
-
 export const validatePlcLogic = async (params: { language: 'en' | 'es', code: string }): Promise<string> => {
     const { language, code } = params;
     const langInstruction = language === 'es' ? 'Responde en español.' : 'Respond in English.';

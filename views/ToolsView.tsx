@@ -2,12 +2,12 @@ import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react'
 import { useTranslation } from '../hooks/useTranslation';
 import { useLanguage } from '../contexts/LanguageContext';
 import { vfdBrands, vfdModelsByBrand, plcLanguages } from '../constants/automationData';
-import { analyzeFaultCode, analyzeScanTime, generateEnergyEfficiencyPlan, verifyCriticalLogic, translatePlcCode, validatePlcLogic, suggestPlcLogicFix, LogicIssue } from '../services/geminiService';
+import { analyzeFaultCode, analyzeScanTime, generateEnergyEfficiencyPlan, verifyCriticalLogic, validatePlcLogic, suggestPlcLogicFix, LogicIssue } from '../services/geminiService';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { ErrorAlert } from '../components/ErrorAlert';
 import { ResultDisplay } from '../components/ResultDisplay';
 
-type AnalysisType = 'faultDiagnosis' | 'scanTime' | 'energy' | 'codeProver' | 'codeTranslator' | 'componentReference' | 'logicValidator';
+type AnalysisType = 'faultDiagnosis' | 'scanTime' | 'energy' | 'codeProver' | 'componentReference' | 'logicValidator';
 
 // --- START: New Component Data ---
 interface ComponentSpec {
@@ -206,38 +206,6 @@ const CodeProverTool: React.FC = () => {
     );
 };
 
-const CodeTranslatorTool: React.FC = () => {
-    const { t } = useTranslation();
-    const { language } = useLanguage();
-    const { result, isLoading, error, execute } = useApiCall(translatePlcCode);
-    const [code, setCode] = useState('');
-    const [targetLanguage, setTargetLanguage] = useState(plcLanguages[2]); // Default to ST
-
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        execute({ language, code, targetLanguage });
-    };
-
-    return (
-        <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('tools.scanTime.codeLabel')}</label>
-                <textarea value={code} onChange={e => setCode(e.target.value)} placeholder={t('tools.scanTime.codePlaceholder')} className={`${commonInputClasses} font-mono`} rows={8} required />
-            </div>
-            <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('tools.codeTranslator.targetLanguage')}</label>
-                <select value={targetLanguage} onChange={e => setTargetLanguage(e.target.value)} className={commonInputClasses}>
-                    {plcLanguages.map(lang => <option key={lang} value={lang}>{lang}</option>)}
-                </select>
-            </div>
-            <button type="submit" disabled={isLoading} className={commonButtonClasses}>{t('tools.generateButton')}</button>
-            {isLoading && <LoadingSpinner />}
-            {error && <ErrorAlert message={error} />}
-            {result && !isLoading && <ResultDisplay resultText={result} />}
-        </form>
-    );
-};
-
 const LogicValidator: React.FC = () => {
     const { t } = useTranslation();
     const { language } = useLanguage();
@@ -350,7 +318,6 @@ export const ToolsView: React.FC = () => {
         { id: 'scanTime', label: t('tools.scanTime.title') },
         { id: 'energy', label: t('tools.energy.title') },
         { id: 'codeProver', label: t('tools.codeProver.title') },
-        { id: 'codeTranslator', label: t('tools.codeTranslator.title') },
         { id: 'logicValidator', label: t('tools.logicValidator.title') },
         { id: 'componentReference', label: t('tools.componentReference.title') },
     ];
@@ -365,7 +332,6 @@ export const ToolsView: React.FC = () => {
             case 'scanTime': return <ScanTimeTool />;
             case 'energy': return <EnergyTool />;
             case 'codeProver': return <CodeProverTool />;
-            case 'codeTranslator': return <CodeTranslatorTool />;
             case 'logicValidator': return <LogicValidator />;
             case 'componentReference': return <ComponentReference />;
             default: return null;

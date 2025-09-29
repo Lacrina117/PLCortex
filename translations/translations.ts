@@ -184,11 +184,6 @@ export const translations = {
         rulesLabel: 'Immutable Rules',
         rulesPlaceholder: "e.g., 'The main discharge valve V-101 must never be open if pump P-101 is running.'",
       },
-      codeTranslator: {
-        title: 'PLC Code Translator',
-        description: 'Translates PLC code between different languages (e.g., LADDER to ST).',
-        targetLanguage: 'Target Language',
-      },
       logicValidator: {
         title: 'PLC Logic Validator',
         description: 'Analyzes text-based ladder logic for errors and best practice violations.',
@@ -571,11 +566,6 @@ Alternatively, if your PLC supports a Scaling instruction (SCP), use these param
         description: 'Prueba o refuta formalmente reglas de seguridad contra una pieza de código de PLC.',
         rulesLabel: 'Reglas Inmutables',
         rulesPlaceholder: "ej. 'La válvula principal de descarga V-101 nunca debe estar abierta si la bomba P-101 está en marcha.'",
-      },
-      codeTranslator: {
-        title: 'Traductor de Código PLC',
-        description: 'Traduce código de PLC entre diferentes lenguajes (ej. LADDER a ST).',
-        targetLanguage: 'Lenguaje de Destino',
       },
       logicValidator: {
         title: 'Validador de Lógica PLC',
