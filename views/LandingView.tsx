@@ -155,6 +155,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ onEnter }) => {
 
       <footer className="container mx-auto px-6 py-8 text-center text-gray-500">
         <p>{t('footerText')}</p>
+        <p className="mt-2 text-sm">{t('landing.creator')}</p>
       </footer>
     </div>
   );

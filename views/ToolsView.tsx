@@ -7,14 +7,7 @@ import { LoadingSpinner } from '../components/LoadingSpinner';
 import { ErrorAlert } from '../components/ErrorAlert';
 import { ResultDisplay } from '../components/ResultDisplay';
 
-type AnalysisType = 'faultDiagnosis' | 'scanTime' | 'energy' | 'codeProver' | 'codeTranslator' | 'componentReference' | 'diagramGenerator' | 'logicValidator';
-
-interface Tool {
-    id: AnalysisType;
-    title: string;
-    description: string;
-    icon: React.ReactNode;
-}
+type AnalysisType = 'faultDiagnosis' | 'scanTime' | 'energy' | 'codeProver' | 'codeTranslator' | 'componentReference' | 'logicValidator';
 
 // --- START: New Component Data ---
 interface ComponentSpec {
@@ -34,21 +27,214 @@ const componentDatabase: ComponentSpec[] = [
 ];
 // --- END: New Component Data ---
 
-const ToolIcon: React.FC<{ type: AnalysisType }> = ({ type }) => {
-    const icons = {
-        faultDiagnosis: <path strokeLinecap="round" strokeLinejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.63.557-2.552.557s-1.807-.196-2.552-.557c-.24-.116-.467-.263-.67-.442-1.172-1.025-1.172-2.687 0-3.712z" />,
-        scanTime: <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />,
-        energy: <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />,
-        codeProver: <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />,
-        codeTranslator: <path strokeLinecap="round" strokeLinejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />,
-        logicValidator: <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />,
-        componentReference: <path strokeLinecap="round" strokeLinejoin="round" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 0h-4m4 0l-5-5" />,
-        diagramGenerator: <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z M9 10h.01M15 10h.01M12 8V4M8 16h8" />,
+const commonInputClasses = "w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-150 ease-in-out bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200";
+const commonButtonClasses = "w-full flex justify-center items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-indigo-400 disabled:cursor-not-allowed";
+
+const useApiCall = <T,>(apiFunc: (params: T) => Promise<string>) => {
+    const [result, setResult] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const { t } = useTranslation();
+
+    const execute = async (params: T) => {
+        setIsLoading(true);
+        setError(null);
+        setResult('');
+        try {
+            const apiResult = await apiFunc(params);
+            setResult(apiResult);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : t('error.unexpected'));
+        } finally {
+            setIsLoading(false);
+        }
     };
+    
+    return { result, isLoading, error, execute };
+};
+
+const FaultDiagnosisTool: React.FC = () => {
+    const { t } = useTranslation();
+    const { language } = useLanguage();
+    const { result, isLoading, error, execute } = useApiCall(analyzeFaultCode);
+
+    const [vfdBrand, setVfdBrand] = useState(vfdBrands.find(b => b === 'Allen-Bradley') || vfdBrands[1]);
+    const [vfdModel, setVfdModel] = useState(vfdModelsByBrand['Allen-Bradley'][0]);
+    const [faultCode, setFaultCode] = useState('');
+    const [context, setContext] = useState('');
+
+    useEffect(() => {
+        const models = vfdModelsByBrand[vfdBrand] || [];
+        setVfdModel(models[0] || '');
+    }, [vfdBrand]);
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        execute({ language, vfdBrand, vfdModel, faultCode, context });
+    };
+
     return (
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-indigo-500 dark:text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-            {icons[type]}
-        </svg>
+        <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('tools.faultDiagnosis.vfdBrand')}</label>
+                    <select value={vfdBrand} onChange={e => setVfdBrand(e.target.value)} className={commonInputClasses}>
+                        {vfdBrands.filter(b => b !== 'General').map(b => <option key={b} value={b}>{b}</option>)}
+                    </select>
+                </div>
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('tools.faultDiagnosis.vfdModel')}</label>
+                    <select value={vfdModel} onChange={e => setVfdModel(e.target.value)} className={commonInputClasses} disabled={!vfdModelsByBrand[vfdBrand] || vfdModelsByBrand[vfdBrand].length === 0}>
+                        {vfdModelsByBrand[vfdBrand]?.map(m => <option key={m} value={m}>{m}</option>)}
+                    </select>
+                </div>
+            </div>
+            <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('tools.faultDiagnosis.faultCode')}</label>
+                <input type="text" value={faultCode} onChange={e => setFaultCode(e.target.value)} placeholder={t('tools.faultDiagnosis.faultCodePlaceholder')} className={commonInputClasses} required />
+            </div>
+            <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('tools.faultDiagnosis.context')}</label>
+                <textarea value={context} onChange={e => setContext(e.target.value)} placeholder={t('tools.faultDiagnosis.contextPlaceholder')} className={commonInputClasses} rows={3} required />
+            </div>
+            <button type="submit" disabled={isLoading} className={commonButtonClasses}>{t('tools.generateButton')}</button>
+            {isLoading && <LoadingSpinner />}
+            {error && <ErrorAlert message={error} />}
+            {result && !isLoading && <ResultDisplay resultText={result} />}
+        </form>
+    );
+};
+
+const ScanTimeTool: React.FC = () => {
+    const { t } = useTranslation();
+    const { language } = useLanguage();
+    const { result, isLoading, error, execute } = useApiCall(analyzeScanTime);
+    const [code, setCode] = useState('');
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        execute({ language, code });
+    };
+    
+    return (
+        <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('tools.scanTime.codeLabel')}</label>
+                <textarea value={code} onChange={e => setCode(e.target.value)} placeholder={t('tools.scanTime.codePlaceholder')} className={`${commonInputClasses} font-mono`} rows={10} required />
+            </div>
+            <button type="submit" disabled={isLoading} className={commonButtonClasses}>{t('tools.generateButton')}</button>
+            {isLoading && <LoadingSpinner />}
+            {error && <ErrorAlert message={error} />}
+            {result && !isLoading && <ResultDisplay resultText={result} />}
+        </form>
+    );
+};
+
+const EnergyTool: React.FC = () => {
+    const { t } = useTranslation();
+    const { language } = useLanguage();
+    const { result, isLoading, error, execute } = useApiCall(generateEnergyEfficiencyPlan);
+    
+    const applicationTypeOptions = useMemo(() => [
+        { key: 'pump', label: t('tools.energy.appTypes.pump') },
+        { key: 'fan', label: t('tools.energy.appTypes.fan') },
+        { key: 'conveyor', label: t('tools.energy.appTypes.conveyor') },
+        { key: 'compressor', label: t('tools.energy.appTypes.compressor') },
+        { key: 'extruder', label: t('tools.energy.appTypes.extruder') },
+        { key: 'mixer', label: t('tools.energy.appTypes.mixer') },
+    ], [t]);
+
+    const [applicationType, setApplicationType] = useState(applicationTypeOptions[0].label);
+    const [loadProfile, setLoadProfile] = useState('');
+
+    useEffect(() => {
+        setApplicationType(applicationTypeOptions[0].label);
+    }, [applicationTypeOptions]);
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        execute({ language, applicationType, loadProfile });
+    };
+    
+    return (
+        <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('tools.energy.appType')}</label>
+                <select value={applicationType} onChange={e => setApplicationType(e.target.value)} className={commonInputClasses} required>
+                    {applicationTypeOptions.map(opt => <option key={opt.key} value={opt.label}>{opt.label}</option>)}
+                </select>
+            </div>
+            <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('tools.energy.loadProfile')}</label>
+                <textarea value={loadProfile} onChange={e => setLoadProfile(e.target.value)} placeholder={t('tools.energy.loadProfilePlaceholder')} className={commonInputClasses} rows={4} required />
+            </div>
+            <button type="submit" disabled={isLoading} className={commonButtonClasses}>{t('tools.generateButton')}</button>
+            {isLoading && <LoadingSpinner />}
+            {error && <ErrorAlert message={error} />}
+            {result && !isLoading && <ResultDisplay resultText={result} />}
+        </form>
+    );
+};
+
+const CodeProverTool: React.FC = () => {
+    const { t } = useTranslation();
+    const { language } = useLanguage();
+    const { result, isLoading, error, execute } = useApiCall(verifyCriticalLogic);
+    const [code, setCode] = useState('');
+    const [rules, setRules] = useState('');
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        execute({ language, code, rules });
+    };
+    
+    return (
+        <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('tools.scanTime.codeLabel')}</label>
+                <textarea value={code} onChange={e => setCode(e.target.value)} placeholder={t('tools.scanTime.codePlaceholder')} className={`${commonInputClasses} font-mono`} rows={8} required />
+            </div>
+            <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('tools.codeProver.rulesLabel')}</label>
+                <textarea value={rules} onChange={e => setRules(e.target.value)} placeholder={t('tools.codeProver.rulesPlaceholder')} className={commonInputClasses} rows={4} required />
+            </div>
+            <button type="submit" disabled={isLoading} className={commonButtonClasses}>{t('tools.generateButton')}</button>
+            {isLoading && <LoadingSpinner />}
+            {error && <ErrorAlert message={error} />}
+            {result && !isLoading && <ResultDisplay resultText={result} />}
+        </form>
+    );
+};
+
+const CodeTranslatorTool: React.FC = () => {
+    const { t } = useTranslation();
+    const { language } = useLanguage();
+    const { result, isLoading, error, execute } = useApiCall(translatePlcCode);
+    const [code, setCode] = useState('');
+    const [targetLanguage, setTargetLanguage] = useState(plcLanguages[2]); // Default to ST
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        execute({ language, code, targetLanguage });
+    };
+
+    return (
+        <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('tools.scanTime.codeLabel')}</label>
+                <textarea value={code} onChange={e => setCode(e.target.value)} placeholder={t('tools.scanTime.codePlaceholder')} className={`${commonInputClasses} font-mono`} rows={8} required />
+            </div>
+            <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('tools.codeTranslator.targetLanguage')}</label>
+                <select value={targetLanguage} onChange={e => setTargetLanguage(e.target.value)} className={commonInputClasses}>
+                    {plcLanguages.map(lang => <option key={lang} value={lang}>{lang}</option>)}
+                </select>
+            </div>
+            <button type="submit" disabled={isLoading} className={commonButtonClasses}>{t('tools.generateButton')}</button>
+            {isLoading && <LoadingSpinner />}
+            {error && <ErrorAlert message={error} />}
+            {result && !isLoading && <ResultDisplay resultText={result} />}
+        </form>
     );
 };
 
@@ -94,15 +280,13 @@ const LogicValidator: React.FC = () => {
         }
     };
 
-    const commonInputClasses = "w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-150 ease-in-out bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200";
-
     return (
         <div className="space-y-4">
             <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('tools.logicValidator.codeLabel')}</label>
                 <textarea value={code} onChange={e => setCode(e.target.value)} placeholder={t('tools.logicValidator.codePlaceholder')} className={`${commonInputClasses} font-mono`} rows={8} required />
             </div>
-            <button onClick={handleAnalyze} disabled={isAnalyzing || isSuggesting || !code.trim()} className="w-full flex justify-center items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-indigo-400 disabled:cursor-not-allowed">
+            <button type="button" onClick={handleAnalyze} disabled={isAnalyzing || isSuggesting || !code.trim()} className={commonButtonClasses}>
                 {isAnalyzing ? t('tools.logicValidator.analyzing') : t('tools.logicValidator.analyzeButton')}
             </button>
             
@@ -138,7 +322,6 @@ const LogicValidator: React.FC = () => {
 const ComponentReference: React.FC = () => {
     const {t} = useTranslation();
     const [componentSearch, setComponentSearch] = useState('');
-    const commonInputClasses = "w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-150 ease-in-out bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200";
 
     const filteredComponents = useMemo(() => {
         if (!componentSearch) return componentDatabase;
@@ -158,61 +341,36 @@ const ComponentReference: React.FC = () => {
     );
 };
 
-const ControlDiagramGenerator: React.FC = () => {
-    const { t } = useTranslation();
-    const [circuit, setCircuit] = useState('sealIn');
-    const svgRef = useRef<SVGSVGElement>(null);
-    const commonSelectClasses = "w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-150 ease-in-out bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200";
-
-    const diagrams: {[key: string]: React.ReactNode} = {
-        dol: <g stroke="currentColor" strokeWidth="1.5" fill="none"><path d="M20 20V280 M180 20V280" strokeWidth="2"/><circle cx="100" cy="180" r="10"/><path d="M100 190v15"/><path d="M90 205h20 M85 210h30 M80 215h40"/><text x="115" y="185">M</text><path d="M20 60H80 M120 60H180"/><path d="M80 50v20h40V50z"/><path d="m75 75 10-10 M85 75 75 65"/><text x="125" y="65">OL</text></g>,
-        sealIn: <g stroke="currentColor" strokeWidth="1.5" fill="none"><path d="M20 20V280 M180 20V280" strokeWidth="2"/><path d="M20 50H45 M75 50H105 M135 50H180"/><path d="M45 45v10 M75 45v10 M105 45v10 M135 45v10"/><path d="m100 60 10 10 M110 60 100 70"/><text x="30" y="45">STOP</text><text x="80" y="45">START</text><text x="110" y="45">OL</text><circle cx="157.5" cy="50" r="10"/><text x="138" y="70">M</text><path d="M40 90H140"/><path d="M40 95V85 M140 95V85"/><text x="85" y="85">M</text><path d="M60 50v40 M140 90v-40"/></g>,
-        reversing: <g stroke="currentColor" strokeWidth="1.5" fill="none"><path d="M20 20V280 M180 20V280" strokeWidth="2" /><path d="M20 50H45 M75 50H95 M125 50H145 M175 50H180" /><path d="M45 45v10 M75 45v10 M95 45v10 M125 45v10 M145 45v10 M175 45v10" /><path d="m90 60 10 10 M100 60 90 70" /><path d="m140 60 10 10 M150 60 140 70" /><text x="30" y="45">STOP</text><text x="77" y="45">FWD</text><text x="127" y="45">REV</text><text x="98" y="70">R</text><text x="148" y="70">F</text><circle cx="160" cy="50" r="10" /><text x="165" y="55">F</text><path d="M40 90H140" /><path d="M40 95V85 M140 95V85" /><text x="85" y="85">F</text><path d="M60 50v40 M140 90v-40" /><path d="M20 130H115 M145 130H180" /><path d="M115 125v10 M145 125v10" /><text x="118" y="125">F</text><circle cx="162.5" cy="130" r="10" /><text x="168" y="135">R</text><path d="M40 170H140" /><path d="M40 175V165 M140 175V165" /><text x="85" y="165">R</text><path d="M60 130v40 M140 170v-40" /><path d="M20 230H80 M120 230H180"/><path d="M80 220v20h40V220z"/><path d="m75 245 10-10 M85 245 75 235"/><text x="125" y="235">OL</text></g>
-    };
-
-    const downloadSvg = () => {
-        if (!svgRef.current) return;
-        const svgData = new XMLSerializer().serializeToString(svgRef.current);
-        const svgBlob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
-        const url = URL.createObjectURL(svgBlob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `${circuit}_diagram.svg`;
-        a.click();
-        URL.revokeObjectURL(url);
-    };
-
-    return (
-        <div className="space-y-4">
-            <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('tools.diagramGenerator.selectCircuit')}</label>
-                <select value={circuit} onChange={e => setCircuit(e.target.value)} className={commonSelectClasses}>
-                    <option value="sealIn">{t('tools.diagramGenerator.circuitTypes.sealIn')}</option>
-                    <option value="dol">{t('tools.diagramGenerator.circuitTypes.dol')}</option>
-                    <option value="reversing">{t('tools.diagramGenerator.circuitTypes.reversing')}</option>
-                </select>
-            </div>
-            <div className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-900/50">
-                <svg ref={svgRef} viewBox="0 0 200 300" className="w-full h-auto max-h-96 text-gray-800 dark:text-gray-200">{diagrams[circuit]}</svg>
-            </div>
-            <button onClick={downloadSvg} className="w-full flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700">{t('tools.diagramGenerator.downloadSVG')}</button>
-        </div>
-    );
-};
-
 export const ToolsView: React.FC = () => {
     const { t } = useTranslation();
-    const [activeTab, setActiveTab] = useState<'logicValidator' | 'componentReference' | 'diagramGenerator'>('logicValidator');
+    const [activeTab, setActiveTab] = useState<AnalysisType>('faultDiagnosis');
     
-    const tabs = [
+    const tabs: { id: AnalysisType; label: string; }[] = [
+        { id: 'faultDiagnosis', label: t('tools.faultDiagnosis.title') },
+        { id: 'scanTime', label: t('tools.scanTime.title') },
+        { id: 'energy', label: t('tools.energy.title') },
+        { id: 'codeProver', label: t('tools.codeProver.title') },
+        { id: 'codeTranslator', label: t('tools.codeTranslator.title') },
         { id: 'logicValidator', label: t('tools.logicValidator.title') },
         { id: 'componentReference', label: t('tools.componentReference.title') },
-        { id: 'diagramGenerator', label: t('tools.diagramGenerator.title') },
     ];
   
     const baseTabClass = "px-4 py-2 text-sm font-medium rounded-t-lg transition-colors";
     const activeTabClass = "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 border-t border-x -mb-px text-indigo-600 dark:text-indigo-400";
     const inactiveTabClass = "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700/50 border-transparent";
+
+    const renderActiveTool = () => {
+        switch (activeTab) {
+            case 'faultDiagnosis': return <FaultDiagnosisTool />;
+            case 'scanTime': return <ScanTimeTool />;
+            case 'energy': return <EnergyTool />;
+            case 'codeProver': return <CodeProverTool />;
+            case 'codeTranslator': return <CodeTranslatorTool />;
+            case 'logicValidator': return <LogicValidator />;
+            case 'componentReference': return <ComponentReference />;
+            default: return null;
+        }
+    };
 
     return (
         <div className="max-w-4xl mx-auto">
@@ -232,9 +390,7 @@ export const ToolsView: React.FC = () => {
                     </nav>
                 </div>
                 <div className="pt-6">
-                    {activeTab === 'logicValidator' && <LogicValidator />}
-                    {activeTab === 'componentReference' && <ComponentReference />}
-                    {activeTab === 'diagramGenerator' && <ControlDiagramGenerator />}
+                   {renderActiveTool()}
                 </div>
             </div>
         </div>
