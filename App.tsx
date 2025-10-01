@@ -5,7 +5,6 @@ import { SolutionsView } from './views/SolutionsView';
 import { PracticesView } from './views/PracticesView';
 // FIX: Corrected import paths for views that were not modules. These components will now be created and export valid components.
 import { ToolsView } from './views/ToolsView';
-import { WiringView } from './views/WiringView';
 import { CommissioningView } from './views/CommissioningView';
 import { ReferenceView } from './views/ReferenceView';
 import { CalculatorView } from './views/CalculatorView';
@@ -14,7 +13,7 @@ import { Watermark } from './components/Watermark';
 import { DashboardView } from './views/DashboardView';
 import { addRecentActivity } from './services/activityService';
 
-export type View = 'dashboard' | 'solutions' | 'practices' | 'tools' | 'wiring' | 'commissioning' | 'reference' | 'calculator';
+export type View = 'dashboard' | 'solutions' | 'practices' | 'tools' | 'commissioning' | 'reference' | 'calculator';
 
 const MainApp: React.FC = () => {
   const [currentView, setCurrentView] = useState<View>('dashboard');
@@ -39,7 +38,6 @@ const MainApp: React.FC = () => {
             {currentView === 'dashboard' && <DashboardView setView={handleSetView} />}
             {currentView === 'practices' && <PracticesView />}
             {currentView === 'tools' && <ToolsView />}
-            {currentView === 'wiring' && <WiringView />}
             {currentView === 'reference' && <ReferenceView />}
             {currentView === 'calculator' && <CalculatorView />}
           </div>

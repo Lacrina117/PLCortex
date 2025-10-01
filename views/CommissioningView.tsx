@@ -329,7 +329,7 @@ export const CommissioningView: React.FC = () => {
                             </div>
                         </div>
                         {/* Diagram Panel */}
-                        <div className="flex-1 lg:w-1/2 bg-gray-50 dark:bg-gray-900/50 flex flex-col items-center justify-center p-2">
+                        <div className="flex-shrink-0 h-80 lg:flex-1 lg:h-auto lg:w-1/2 bg-gray-50 dark:bg-gray-900/50 flex flex-col items-center justify-center p-2">
                            {diagramData ? <VfdTerminalDiagram diagramData={diagramData} highlightedTerminals={highlightedTerminals} /> : <div className="text-center"><h3 className="font-semibold">{t('commissioning.diagramNotAvailable')}</h3><p className="text-sm text-gray-500">{t('commissioning.diagramNotAvailableDesc')}</p></div>}
                         </div>
                     </div>

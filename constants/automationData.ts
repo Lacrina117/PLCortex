@@ -141,3 +141,93 @@ export const motorControlData: {
         },
     }
 };
+
+export interface PlcScalingPreset {
+    key: string;
+    translationKey: string;
+    unit: string;
+    min: string;
+    max: string;
+}
+
+export const plcScalingPresets: { raw: PlcScalingPreset[]; engineering: PlcScalingPreset[] } = {
+  raw: [
+    { key: 'custom', translationKey: 'custom', unit: 'counts', min: '', max: '' },
+    { key: 'raw_rockwell_4_20ma', translationKey: 'raw_rockwell_4_20ma', unit: 'counts', min: '4000', max: '20000' },
+    { key: 'raw_siemens_4_20ma', translationKey: 'raw_siemens_4_20ma', unit: 'counts', min: '0', max: '27648' },
+    { key: 'raw_unsigned_12', translationKey: 'raw_unsigned_12', unit: 'counts', min: '0', max: '4095' },
+    { key: 'raw_unsigned_14', translationKey: 'raw_unsigned_14', unit: 'counts', min: '0', max: '16383' },
+    { key: 'raw_unsigned_16', translationKey: 'raw_unsigned_16', unit: 'counts', min: '0', max: '65535' },
+    { key: 'raw_signed_15', translationKey: 'raw_signed_15', unit: 'counts', min: '-32768', max: '32767' },
+    { key: 'raw_rockwell_10v', translationKey: 'raw_rockwell_10v', unit: 'counts', min: '-10000', max: '10000' },
+    { key: 'raw_siemens_10v', translationKey: 'raw_siemens_10v', unit: 'counts', min: '-27648', max: '27648' },
+  ],
+  engineering: [
+    { key: 'custom', translationKey: 'custom', unit: 'EU', min: '', max: '' },
+    { key: 'eng_percent', translationKey: 'eng_percent', unit: '%', min: '0', max: '100' },
+    { key: 'eng_freq_60hz', translationKey: 'eng_freq_60hz', unit: 'Hz', min: '0', max: '60' },
+    { key: 'eng_speed_1800rpm', translationKey: 'eng_speed_1800rpm', unit: 'RPM', min: '0', max: '1800' },
+    { key: 'eng_torque_300', translationKey: 'eng_torque_300', unit: '%', min: '0', max: '300' },
+    { key: 'eng_psi_150', translationKey: 'eng_psi_150', unit: 'PSI', min: '0', max: '150' },
+    { key: 'eng_celsius_100', translationKey: 'eng_celsius_100', unit: '°C', min: '0', max: '100' },
+    { key: 'eng_gpm_500', translationKey: 'eng_gpm_500', unit: 'GPM', min: '0', max: '500' },
+  ]
+};
+
+export interface WireGauge {
+  awg: string;
+  cm: number;
+}
+
+export const wireGauges: WireGauge[] = [
+  { awg: '18', cm: 1620 },
+  { awg: '16', cm: 2580 },
+  { awg: '14', cm: 4110 },
+  { awg: '12', cm: 6530 },
+  { awg: '10', cm: 10380 },
+  { awg: '8', cm: 16510 },
+  { awg: '6', cm: 26240 },
+  { awg: '4', cm: 41740 },
+  { awg: '2', cm: 66360 },
+  { awg: '1', cm: 83690 },
+  { awg: '1/0', cm: 105600 },
+  { awg: '2/0', cm: 133100 },
+  { awg: '3/0', cm: 167800 },
+  { awg: '4/0', cm: 211600 },
+];
+
+export const conductorResistivity = {
+    copper: 12.9, // ohms-cmil/ft @ 75°C
+    aluminum: 21.2 // ohms-cmil/ft @ 75°C
+};
+
+export interface DcLoadTemplate {
+  name: string;
+  nominal: number;
+  inrush: number;
+}
+
+export const dcLoadTemplates: DcLoadTemplate[] = [
+  // PLCs
+  { name: 'PLC CPU (CompactLogix)', nominal: 400, inrush: 0 },
+  { name: 'PLC CPU (S7-1200)', nominal: 350, inrush: 0 },
+  { name: 'PLC CPU (S7-1500)', nominal: 700, inrush: 0 },
+  { name: 'PLC CPU (Micro820)', nominal: 150, inrush: 0 },
+  // I/O
+  { name: 'Digital I/O Module (16 pt)', nominal: 120, inrush: 0 },
+  { name: 'Analog I/O Module (8 ch)', nominal: 180, inrush: 0 },
+  { name: 'IO-Link Master Block', nominal: 200, inrush: 0 },
+  // HMIs
+  { name: 'HMI Basic (7")', nominal: 500, inrush: 1500 },
+  { name: 'HMI Comfort Panel (12")', nominal: 1200, inrush: 3000 },
+  // Field Devices & Components
+  { name: 'Interface Relay (24VDC)', nominal: 25, inrush: 50 },
+  { name: 'Safety Relay', nominal: 50, inrush: 100 },
+  { name: 'Managed Network Switch', nominal: 250, inrush: 0 },
+  { name: 'Proximity Sensor', nominal: 15, inrush: 0 },
+  { name: 'Photoelectric Sensor', nominal: 20, inrush: 0 },
+  { name: 'Solenoid Valve', nominal: 100, inrush: 250 },
+  { name: 'Valve Manifold (4-station)', nominal: 400, inrush: 1000 },
+];
+
+export const standardDcPowerSupplySizes: number[] = [1, 2.5, 5, 10, 20, 40];

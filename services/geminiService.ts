@@ -349,10 +349,17 @@ export const generateEnergyEfficiencyPlan = async (params: { language: 'en' | 'e
 
 export const verifyCriticalLogic = async (params: { language: 'en' | 'es'; code: string; rules: string }): Promise<string> => {
     const { language, code, rules } = params;
+    
+    const disclaimer_en = `\n\n---\n**Disclaimer:** This tool is a design aid and does not replace the safety validation required by local and international standards. The final responsibility for the safety system rests with the qualified engineer.`;
+    const disclaimer_es = `\n\n---\n**Descargo de Responsabilidad:** Esta herramienta es una ayuda para el diseño y no reemplaza la validación de seguridad requerida por las normativas locales e internacionales. La responsabilidad final del sistema de seguridad recae en el ingeniero calificado.`;
+    const disclaimer = language === 'es' ? disclaimer_es : disclaimer_en;
+
     const langInstruction = language === 'es' ? 'Responde en español.' : 'Respond in English.';
-    const prompt = `Act as a formal verification system for PLC logic.
+    
+    const prompt = `Act as an expert safety logic auditor. Your role is to analyze PLC code against a set of safety rules to identify potential vulnerabilities or deviations from best practices.
+
     You will be given a piece of PLC code and a set of immutable safety rules.
-    Your task is to determine if the code can EVER violate any of the rules.
+    Your task is to analyze if the code appears to violate any of the rules under plausible conditions.
 
     Code:
     \`\`\`
@@ -363,9 +370,12 @@ export const verifyCriticalLogic = async (params: { language: 'en' | 'es'; code:
     ${rules}
 
     Analyze the logic against the rules.
-    - If the code is proven to be safe and can NEVER violate the rules, your response must start with the single character ✅ followed by a detailed explanation of why the logic is sound.
-    - If the code COULD POSSIBLY violate a rule, your response must start with the single character ❌ followed by a "counterexample" or scenario that demonstrates how the violation can occur.
+    - If the code appears to be sound and does not violate the rules, your response must start with the single character ✅ followed by a detailed explanation of why the logic is robust.
+    - If the code could possibly violate a rule, your response must start with the single character ❌ followed by a "counterexample" or scenario that demonstrates how the violation can occur.
     Your explanation must be rigorous and logical.
+
+    **IMPORTANT:** You MUST append the following disclaimer to the end of your entire response, exactly as written:
+    ${disclaimer}
     
     ${langInstruction}`;
     return callApiEndpoint('verifyCriticalLogic', { prompt });
