@@ -1,4 +1,10 @@
-
+// FIX: Declare process.env to resolve TypeScript errors in a Vite environment
+// where process.env is defined via text replacement, removing the incorrect reference to 'vite/client'.
+declare const process: {
+  env: {
+    API_KEY?: string;
+  };
+};
 
 // Import necessary types and classes from the GenAI SDK for direct API calls in local development.
 // FIX: Corrected import from '@google/genai'. `GenerateContentRequest` is deprecated and was replaced with `GenerateContentParameters` which is the correct type. Since this file intelligently switches between API calls, this type is aliased to `GenerateContentRequest` to maintain consistency with the existing code structure.
@@ -9,13 +15,13 @@ import { GoogleGenAI, GenerateContentParameters as GenerateContentRequest, Type 
 // This service intelligently switches between calling the Gemini API directly
 // for local development and using a secure serverless function for production.
 
-// Determine if we are in a local development environment with a provided API key.
-// `process.env.API_KEY` is injected by Vite during the local development process.
-const isLocalDevWithApiKey = !!process.env.API_KEY;
+// A direct-from-browser API call should only be attempted if a local API key
+// has been provided via environment variables.
+const useDirectClientCall = !!process.env.API_KEY;
 
 let ai: GoogleGenAI | null = null;
 // Initialize the GenAI client only if we are in local development and have a key.
-if (isLocalDevWithApiKey) {
+if (useDirectClientCall) {
     try {
         ai = new GoogleGenAI({ apiKey: process.env.API_KEY! });
     } catch(e) {
@@ -35,7 +41,7 @@ if (isLocalDevWithApiKey) {
  */
 const callApiEndpoint = async (task: string, params: any): Promise<string> => {
     // Use the direct API call if in local dev and the SDK initialized successfully.
-    if (isLocalDevWithApiKey && ai) {
+    if (useDirectClientCall && ai) {
         try {
             const model = 'gemini-2.5-flash';
             let request: GenerateContentRequest = { model };
@@ -59,7 +65,7 @@ const callApiEndpoint = async (task: string, params: any): Promise<string> => {
             throw new Error(`Failed to get a response directly from Gemini. Details: ${originalErrorMessage}`);
         }
     } 
-    // Otherwise, use the serverless function (for production on Vercel or local dev without a key).
+    // Otherwise, use the serverless function. This is the correct path for production and for local dev without a key.
     else {
         try {
             const response = await fetch('/api/generate', {

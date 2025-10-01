@@ -9,12 +9,24 @@ interface HeaderProps {
     setView: (view: View) => void;
 }
 
-const LanguageSelector: React.FC = () => {
+interface LanguageSelectorProps {
+    isMobile?: boolean;
+}
+
+const LanguageSelector: React.FC<LanguageSelectorProps> = ({ isMobile = false }) => {
     const { language, setLanguage } = useLanguage();
     const languageOptions: { key: Language, label: string, flag: string }[] = [
         { key: 'es', label: 'Español', flag: '🇲🇽' },
         { key: 'en', label: 'English', flag: '🇺🇸' }
     ];
+
+    const buttonBaseClasses = 'px-3 py-1.5 rounded-md text-sm transition-colors';
+    const activeClasses = 'bg-indigo-600 text-white font-semibold';
+    
+    const inactiveDesktopClasses = 'bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600';
+    const inactiveMobileClasses = 'bg-slate-700 hover:bg-slate-600 text-gray-300';
+    
+    const inactiveClasses = isMobile ? inactiveMobileClasses : inactiveDesktopClasses;
 
     return (
         <div className="flex space-x-2">
@@ -22,7 +34,7 @@ const LanguageSelector: React.FC = () => {
                 <button
                     key={opt.key}
                     onClick={() => setLanguage(opt.key)}
-                    className={`px-3 py-1.5 rounded-md text-sm transition-colors ${language === opt.key ? 'bg-indigo-600 text-white font-semibold' : 'bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600'}`}
+                    className={`${buttonBaseClasses} ${language === opt.key ? activeClasses : inactiveClasses}`}
                 >
                     {opt.flag}
                 </button>
@@ -51,7 +63,6 @@ export const Header: React.FC<HeaderProps> = ({ currentView, setView }) => {
     };
 
     useEffect(() => {
-        // Prevent body scroll when mobile menu is open
         if (isMenuOpen) {
             document.body.style.overflow = 'hidden';
         } else {
@@ -93,7 +104,7 @@ export const Header: React.FC<HeaderProps> = ({ currentView, setView }) => {
                     </div>
                     <div className="flex items-center space-x-4">
                         <div className="hidden md:flex items-center space-x-4">
-                            <LanguageSelector />
+                            <LanguageSelector isMobile={false} />
                             <ThemeToggle />
                         </div>
                         <div className="md:hidden">
@@ -113,22 +124,44 @@ export const Header: React.FC<HeaderProps> = ({ currentView, setView }) => {
 
             {/* Mobile Menu Overlay */}
             {isMenuOpen && (
-                <div className="md:hidden fixed inset-0 bg-gray-900/80 backdrop-blur-sm z-50 flex flex-col">
-                    <div className="flex justify-end p-4">
-                         <button onClick={() => setIsMenuOpen(false)} className="p-2 rounded-md text-gray-300 hover:bg-gray-700">
-                             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <div className="md:hidden fixed inset-0 bg-gray-900/80 backdrop-blur-sm z-50 flex flex-col p-4">
+                    <div className="flex items-center justify-between pb-4 mb-4 border-b border-gray-700">
+                        <button onClick={() => handleNavClick('dashboard')} className="flex items-center gap-3">
+                             <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-indigo-400" viewBox="0 0 20 20" fill="currentColor">
+                                <path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd" />
+                            </svg>
+                            <span className="text-xl font-bold text-gray-200">PLCortex</span>
+                        </button>
+                        <button onClick={() => setIsMenuOpen(false)} className="p-2 rounded-md text-gray-300 hover:bg-gray-700">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                             </svg>
+                            </svg>
                         </button>
                     </div>
-                    <div className="flex flex-col items-center justify-center flex-grow space-y-8 px-4">
-                        <LanguageSelector />
-                        <ThemeToggle />
-                    </div>
-                    <div className="text-center pb-8">
-                        <p className="text-xs text-gray-500">Ing. Jesús Jiménez</p>
-                        <p className="text-xs text-gray-500">jesusjimenez117@outlook.com</p>
-                        <p className="text-xs text-gray-500">+52 6863542736</p>
+
+                    <nav className="flex flex-col flex-grow justify-center space-y-2 overflow-y-auto">
+                        {navItems.map(item => (
+                            <button
+                                key={item.key}
+                                onClick={() => handleNavClick(item.key)}
+                                className={`p-4 rounded-lg text-left transition-colors ${currentView === item.key ? 'bg-indigo-600/50' : 'hover:bg-gray-700/50'}`}
+                            >
+                                <span className="font-semibold text-lg text-gray-100">{item.label}</span>
+                                <p className="text-sm text-gray-400">{item.description}</p>
+                            </button>
+                        ))}
+                    </nav>
+                    
+                    <div className="pt-4 mt-4 border-t border-gray-700">
+                        <div className="flex justify-center items-center space-x-4 mb-4">
+                            <LanguageSelector isMobile={true} />
+                            <ThemeToggle />
+                        </div>
+                         <div className="text-center">
+                            <p className="text-xs text-gray-500">Ing. Jesús Jiménez</p>
+                            <p className="text-xs text-gray-500">jesusjimenez117@outlook.com</p>
+                            <p className="text-xs text-gray-500">+52 6863542736</p>
+                        </div>
                     </div>
                 </div>
             )}

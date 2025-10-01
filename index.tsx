@@ -1,23 +1,19 @@
+// FIX: Replaced placeholder content with a standard React entry point.
+// This sets up the root of the application, renders the App component,
+// and wraps it with necessary context providers for theme and language management.
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-// FIX: Corrected import path. App.tsx will now export a valid component.
 import App from './App';
-import { ThemeProvider } from './contexts/ThemeContext';
 import { LanguageProvider } from './contexts/LanguageContext';
+import { ThemeProvider } from './contexts/ThemeContext';
 import './styles.css';
 
-const rootElement = document.getElementById('root');
-if (!rootElement) {
-  throw new Error("Could not find root element to mount to");
-}
-
-const root = ReactDOM.createRoot(rootElement);
-root.render(
+ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
     <ThemeProvider>
       <LanguageProvider>
-          <App />
+        <App />
       </LanguageProvider>
     </ThemeProvider>
-  </React.StrictMode>
+  </React.StrictMode>,
 );
