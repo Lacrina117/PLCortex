@@ -93,3 +93,51 @@ export const thermalComponents: { name: string, heat: number }[] = [
   { name: 'Line Reactor (10A)', heat: 20 },
   { name: 'Line Reactor (25A)', heat: 45 },
 ];
+
+export interface MotorControlSpecs {
+    fla: number;
+    sf: number;
+    contactor: string;
+    breaker: number;
+    wire: string; // AWG
+}
+
+// Data based on NEC Table 430.250 (FLA), 430.52 (Breaker), 310.16 (Wire Ampacity) and NEMA starter sizes.
+// This is a simplified lookup for common motor sizes.
+export const motorControlData: {
+    [phase: string]: {
+        [voltage: string]: {
+            [hp: string]: MotorControlSpecs;
+        }
+    }
+} = {
+    threePhase: {
+        '208V': {
+            '0.5': { fla: 2.4, sf: 1.15, contactor: 'NEMA 00', breaker: 15, wire: '14' },
+            '1': { fla: 4.2, sf: 1.15, contactor: 'NEMA 00', breaker: 15, wire: '14' },
+            '2': { fla: 7.5, sf: 1.15, contactor: 'NEMA 0', breaker: 20, wire: '12' },
+            '5': { fla: 16.7, sf: 1.15, contactor: 'NEMA 1', breaker: 45, wire: '10' },
+            '10': { fla: 30.8, sf: 1.15, contactor: 'NEMA 1', breaker: 80, wire: '8' },
+            '20': { fla: 59.4, sf: 1.15, contactor: 'NEMA 2', breaker: 150, wire: '4' },
+            '50': { fla: 143, sf: 1.15, contactor: 'NEMA 4', breaker: 350, wire: '1/0' },
+        },
+        '230V': {
+            '0.5': { fla: 2.2, sf: 1.15, contactor: 'NEMA 00', breaker: 15, wire: '14' },
+            '1': { fla: 3.6, sf: 1.15, contactor: 'NEMA 00', breaker: 15, wire: '14' },
+            '2': { fla: 6.8, sf: 1.15, contactor: 'NEMA 0', breaker: 20, wire: '12' },
+            '5': { fla: 15.2, sf: 1.15, contactor: 'NEMA 1', breaker: 40, wire: '10' },
+            '10': { fla: 28, sf: 1.15, contactor: 'NEMA 1', breaker: 70, wire: '8' },
+            '20': { fla: 54, sf: 1.15, contactor: 'NEMA 2', breaker: 125, wire: '4' },
+            '50': { fla: 130, sf: 1.15, contactor: 'NEMA 4', breaker: 300, wire: '1/0' },
+        },
+        '460V': {
+            '0.5': { fla: 1.1, sf: 1.15, contactor: 'NEMA 00', breaker: 15, wire: '14' },
+            '1': { fla: 1.8, sf: 1.15, contactor: 'NEMA 00', breaker: 15, wire: '14' },
+            '2': { fla: 3.4, sf: 1.15, contactor: 'NEMA 00', breaker: 15, wire: '14' },
+            '5': { fla: 7.6, sf: 1.15, contactor: 'NEMA 0', breaker: 20, wire: '12' },
+            '10': { fla: 14, sf: 1.15, contactor: 'NEMA 1', breaker: 35, wire: '12' },
+            '20': { fla: 27, sf: 1.15, contactor: 'NEMA 1', breaker: 70, wire: '8' },
+            '50': { fla: 65, sf: 1.15, contactor: 'NEMA 3', breaker: 175, wire: '4' },
+        },
+    }
+};

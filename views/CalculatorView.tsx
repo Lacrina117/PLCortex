@@ -1,10 +1,22 @@
-import React from 'react';
-// FIX: Corrected import path for the Calculator component, which was previously not a module. This component will now be created and export a valid component, resolving the module resolution error.
-import { Calculator } from '../components/Calculator';
+import React, { useState } from 'react';
 import { useTranslation } from '../hooks/useTranslation';
+import { ThermalLoadCalculator } from '../components/calculators/ThermalLoadCalculator';
+import { MotorControlCalculator } from '../components/calculators/MotorControlCalculator';
+import { PlcScalingCalculator } from '../components/calculators/PlcScalingCalculator';
+
+type CalculatorType = 'thermal' | 'motor' | 'scaling';
 
 export const CalculatorView: React.FC = () => {
     const { t } = useTranslation();
+    const [activeCalc, setActiveCalc] = useState<CalculatorType>('thermal');
+
+    const calculators = [
+        { key: 'thermal', title: t('calculator.thermal.tabTitle'), Component: ThermalLoadCalculator },
+        { key: 'motor', title: t('calculator.motorControl.tabTitle'), Component: MotorControlCalculator },
+        { key: 'scaling', title: t('calculator.plcScaling.tabTitle'), Component: PlcScalingCalculator },
+    ];
+    
+    const ActiveComponent = calculators.find(c => c.key === activeCalc)!.Component;
 
     return (
         <div className="max-w-5xl mx-auto space-y-8">
@@ -12,7 +24,27 @@ export const CalculatorView: React.FC = () => {
                 <h1 className="text-3xl font-extrabold text-gray-800 dark:text-gray-200 tracking-tight sm:text-4xl">{t('calculator.title')}</h1>
                 <p className="mt-4 text-lg text-gray-600 dark:text-gray-400">{t('calculator.description')}</p>
             </header>
-            <Calculator />
+
+            <div className="flex flex-wrap justify-center border-b border-gray-200 dark:border-gray-700">
+                {calculators.map(calc => (
+                    <button
+                        key={calc.key}
+                        onClick={() => setActiveCalc(calc.key as CalculatorType)}
+                        className={`px-4 py-3 font-semibold text-sm transition-colors focus:outline-none -mb-px ${
+                            activeCalc === calc.key
+                                ? 'border-b-2 border-indigo-500 text-indigo-600 dark:text-indigo-400'
+                                : 'border-b-2 border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
+                        }`}
+                        aria-current={activeCalc === calc.key ? 'page' : undefined}
+                    >
+                        {calc.title}
+                    </button>
+                ))}
+            </div>
+            
+            <div key={activeCalc} className="animate-fade-in-up">
+                <ActiveComponent />
+            </div>
         </div>
     );
 };
