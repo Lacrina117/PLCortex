@@ -1,106 +1,205 @@
-import React, { useState } from 'react';
+// FIX: Implemented the Calculator component for thermal load calculations. This provides the necessary UI and logic for the 'Calculators' view and resolves the 'not a module' error.
+import React, { useState, useMemo } from 'react';
 import { useTranslation } from '../hooks/useTranslation';
+import { thermalComponents } from '../constants/automationData';
 
-type CalculatorTab = 'scaler' | 'motor' | 'thermal';
+interface AddedComponent {
+    id: number;
+    name: string;
+    heat: number;
+    quantity: number;
+}
 
-const TabButton: React.FC<{ label: string; isActive: boolean; onClick: () => void }> = ({ label, isActive, onClick }) => (
-    <button
-        onClick={onClick}
-        className={`px-4 py-2 text-sm font-semibold rounded-t-lg transition-colors ${
-            isActive
-                ? 'bg-white dark:bg-gray-800 border-b-0 border-gray-200 dark:border-gray-700 text-indigo-600 dark:text-indigo-400'
-                : 'bg-gray-100 dark:bg-gray-900/50 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
-        }`}
-        style={{ marginBottom: '-1px' }}
-    >
-        {label}
-    </button>
-);
-
-const ScalerCalculator: React.FC = () => {
-    const { t } = useTranslation();
-    const [rawMin, setRawMin] = useState('0');
-    const [rawMax, setRawMax] = useState('16383');
-    const [engMin, setEngMin] = useState('0');
-    const [engMax, setEngMax] = useState('100');
-    const [engUnit, setEngUnit] = useState('PSI');
-    const [rawValue, setRawValue] = useState('8192');
-    const commonInputClasses = "w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700";
-
-
-    const engValue = React.useMemo(() => {
-        const iRawMin = parseFloat(rawMin);
-        const iRawMax = parseFloat(rawMax);
-        const iEngMin = parseFloat(engMin);
-        const iEngMax = parseFloat(engMax);
-        const iRawValue = parseFloat(rawValue);
-
-        if (isNaN(iRawMin) || isNaN(iRawMax) || isNaN(iEngMin) || isNaN(iEngMax) || isNaN(iRawValue) || (iRawMax - iRawMin === 0)) {
-            return '...';
-        }
-
-        const scaled = (((iRawValue - iRawMin) * (iEngMax - iEngMin)) / (iRawMax - iRawMin)) + iEngMin;
-        return scaled.toFixed(2);
-    }, [rawMin, rawMax, engMin, engMax, rawValue]);
-
-    return (
-        <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Inputs */}
-                <div className="space-y-4">
-                     <div>
-                        <h4 className="font-semibold mb-2">{t('calculator.rawRange')}</h4>
-                        <div className="flex gap-2">
-                             <input type="number" value={rawMin} onChange={e => setRawMin(e.target.value)} placeholder={t('calculator.min')} className={commonInputClasses} />
-                            <input type="number" value={rawMax} onChange={e => setRawMax(e.target.value)} placeholder={t('calculator.max')} className={commonInputClasses} />
-                        </div>
-                    </div>
-                    <div>
-                        <h4 className="font-semibold mb-2">{t('calculator.engRange')}</h4>
-                        <div className="flex gap-2">
-                             <input type="number" value={engMin} onChange={e => setEngMin(e.target.value)} placeholder={t('calculator.min')} className={commonInputClasses} />
-                             <input type="number" value={engMax} onChange={e => setEngMax(e.target.value)} placeholder={t('calculator.max')} className={commonInputClasses} />
-                             <input type="text" value={engUnit} onChange={e => setEngUnit(e.target.value)} placeholder={t('calculator.unit')} className={`${commonInputClasses} w-1/2`} />
-                        </div>
-                    </div>
-                </div>
-
-                 {/* Live Conversion */}
-                <div className="p-4 bg-gray-100 dark:bg-gray-700/50 rounded-lg">
-                    <h4 className="font-semibold mb-2">{t('calculator.liveConversion')}</h4>
-                     <div className="space-y-2">
-                        <div>
-                            <label className="text-sm">{t('calculator.rawValue')}</label>
-                            <input type="number" value={rawValue} onChange={e => setRawValue(e.target.value)} className={commonInputClasses} />
-                        </div>
-                        <div>
-                            <label className="text-sm">{t('calculator.engValue')}</label>
-                            <div className="w-full p-2 bg-white dark:bg-gray-800 rounded-md text-lg font-bold text-indigo-600 dark:text-indigo-400">{engValue} {engUnit}</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
-};
-
+interface CalculationResult {
+    totalHeatWatts: number;
+    panelAreaSqFt: number;
+    deltaF: number;
+    heatDissipatedBtu: number;
+    coolingRequiredBtu: number;
+}
 
 export const Calculator: React.FC = () => {
     const { t } = useTranslation();
-    const [activeTab, setActiveTab] = useState<CalculatorTab>('scaler');
 
+    const [addedComponents, setAddedComponents] = useState<AddedComponent[]>([]);
+    const [componentToAdd, setComponentToAdd] = useState(thermalComponents[0].name);
+    
+    // Panel dimensions in inches
+    const [panelHeight, setPanelHeight] = useState('36');
+    const [panelWidth, setPanelWidth] = useState('24');
+    const [panelDepth, setPanelDepth] = useState('12');
+    
+    // Temperatures in Fahrenheit
+    const [internalTemp, setInternalTemp] = useState('104'); // 40°C
+    const [externalTemp, setExternalTemp] = useState('95'); // 35°C
+
+    const [result, setResult] = useState<CalculationResult | null>(null);
+
+    const totalHeat = useMemo(() => {
+        return addedComponents.reduce((sum, comp) => sum + comp.heat * comp.quantity, 0);
+    }, [addedComponents]);
+
+    const handleAddComponent = () => {
+        const componentData = thermalComponents.find(c => c.name === componentToAdd);
+        if (!componentData) return;
+
+        setAddedComponents(prev => {
+            const existing = prev.find(c => c.name === componentData.name);
+            if (existing) {
+                return prev.map(c => c.name === componentData.name ? { ...c, quantity: c.quantity + 1 } : c);
+            } else {
+                return [...prev, { id: Date.now(), ...componentData, quantity: 1 }];
+            }
+        });
+    };
+    
+    const handleRemoveComponent = (id: number) => {
+        setAddedComponents(prev => prev.filter(c => c.id !== id));
+    };
+
+    const handleQuantityChange = (id: number, quantity: number) => {
+        if (quantity < 1) {
+            handleRemoveComponent(id);
+        } else {
+            setAddedComponents(prev => prev.map(c => c.id === id ? { ...c, quantity } : c));
+        }
+    };
+    
+    const calculate = () => {
+        const H = parseFloat(panelHeight);
+        const W = parseFloat(panelWidth);
+        const D = parseFloat(panelDepth);
+        const Ti = parseFloat(internalTemp);
+        const Te = parseFloat(externalTemp);
+
+        if ([H, W, D, Ti, Te].some(isNaN) || H <= 0 || W <= 0 || D <= 0) {
+            alert('Please enter valid, positive numbers for all dimensions and temperatures.');
+            return;
+        }
+
+        // Calculate effective surface area in square feet (Hoffman-Pentair formula)
+        // Top surface area is included, bottom is not.
+        const areaSqIn = (2 * H * W) + (2 * H * D) + (2 * W * D); // Simplified for standalone
+        const panelAreaSqFt = areaSqIn / 144;
+        
+        const deltaF = Ti - Te;
+        if (deltaF <= 0) {
+             alert('Internal temperature must be higher than external temperature.');
+            return;
+        }
+
+        // Calculate heat dissipated by the enclosure in BTU/hr
+        // Using a common k-factor of 1.25 for unpainted steel
+        const heatDissipatedBtu = 1.25 * panelAreaSqFt * deltaF;
+        
+        // Total internal heat in BTU/hr
+        const totalHeatBtu = totalHeat * 3.41;
+
+        const coolingRequiredBtu = totalHeatBtu - heatDissipatedBtu;
+
+        setResult({
+            totalHeatWatts: totalHeat,
+            panelAreaSqFt,
+            deltaF,
+            heatDissipatedBtu,
+            coolingRequiredBtu,
+        });
+    };
+    
+    const commonInputClasses = "w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-150 ease-in-out bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-200 text-sm";
+    
     return (
         <div className="bg-white dark:bg-gray-800 p-6 sm:p-8 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
-            <div className="flex border-b border-gray-200 dark:border-gray-700 mb-6">
-                <TabButton label={t('calculator.scalerTitle')} isActive={activeTab === 'scaler'} onClick={() => setActiveTab('scaler')} />
-                <TabButton label={t('calculator.motorTitle')} isActive={activeTab === 'motor'} onClick={() => setActiveTab('motor')} />
-                <TabButton label={t('calculator.thermalTitle')} isActive={activeTab === 'thermal'} onClick={() => setActiveTab('thermal')} />
-            </div>
+            <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-200">{t('calculator.thermal.title')}</h2>
+            <p className="mt-2 mb-8 text-gray-500 dark:text-gray-400">{t('calculator.thermal.description')}</p>
             
-            <div>
-                {activeTab === 'scaler' && <ScalerCalculator />}
-                {activeTab === 'motor' && <div className="text-center p-8 text-gray-500">{t('calculator.motorTitle')} - Coming Soon</div>}
-                {activeTab === 'thermal' && <div className="text-center p-8 text-gray-500">{t('calculator.thermalTitle')} - Coming Soon</div>}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* Input Side */}
+                <div className="space-y-6">
+                    {/* Component Selection */}
+                    <fieldset>
+                        <legend className="text-lg font-semibold mb-2">{t('calculator.thermal.components')}</legend>
+                        <div className="flex gap-2">
+                            <select value={componentToAdd} onChange={e => setComponentToAdd(e.target.value)} className={commonInputClasses}>
+                                {thermalComponents.map(c => <option key={c.name} value={c.name}>{c.name} ({c.heat}W)</option>)}
+                            </select>
+                            <button onClick={handleAddComponent} className="px-4 py-2 bg-indigo-600 text-white font-semibold rounded-lg shadow-sm hover:bg-indigo-700 transition-colors whitespace-nowrap">{t('calculator.thermal.addComponent')}</button>
+                        </div>
+                    </fieldset>
+                    
+                     {/* Added Components */}
+                    {addedComponents.length > 0 && (
+                        <div className="space-y-2">
+                            <h3 className="text-md font-semibold">{t('calculator.thermal.addedComponents')}</h3>
+                            <div className="max-h-40 overflow-y-auto space-y-2 pr-2">
+                            {addedComponents.map(c => (
+                                <div key={c.id} className="flex items-center gap-2 bg-gray-50 dark:bg-gray-700/50 p-2 rounded-md">
+                                    <span className="flex-grow text-sm">{c.name} ({c.heat}W)</span>
+                                    <input type="number" value={c.quantity} onChange={e => handleQuantityChange(c.id, parseInt(e.target.value, 10))} className={`${commonInputClasses} w-16 text-center`} min="0" />
+                                    <button onClick={() => handleRemoveComponent(c.id)} className="text-gray-400 hover:text-red-500 p-1">&times;</button>
+                                </div>
+                            ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Dimensions */}
+                    <fieldset>
+                        <legend className="text-lg font-semibold mb-2">{t('calculator.thermal.panelDimensions')}</legend>
+                        <div className="grid grid-cols-3 gap-2">
+                            <div><label className="text-xs text-gray-500">{t('calculator.thermal.height')}</label><input type="text" value={panelHeight} onChange={e => setPanelHeight(e.target.value)} className={commonInputClasses} /></div>
+                            <div><label className="text-xs text-gray-500">{t('calculator.thermal.width')}</label><input type="text" value={panelWidth} onChange={e => setPanelWidth(e.target.value)} className={commonInputClasses} /></div>
+                            <div><label className="text-xs text-gray-500">{t('calculator.thermal.depth')}</label><input type="text" value={panelDepth} onChange={e => setPanelDepth(e.target.value)} className={commonInputClasses} /></div>
+                        </div>
+                    </fieldset>
+
+                     {/* Temperatures */}
+                    <fieldset>
+                        <legend className="text-lg font-semibold mb-2">{t('calculator.thermal.temperatures')}</legend>
+                        <div className="grid grid-cols-2 gap-2">
+                            <div><label className="text-xs text-gray-500">{t('calculator.thermal.internal')}</label><input type="text" value={internalTemp} onChange={e => setInternalTemp(e.target.value)} className={commonInputClasses} /></div>
+                            <div><label className="text-xs text-gray-500">{t('calculator.thermal.external')}</label><input type="text" value={externalTemp} onChange={e => setExternalTemp(e.target.value)} className={commonInputClasses} /></div>
+                        </div>
+                    </fieldset>
+
+                    <button onClick={calculate} className="w-full mt-4 bg-green-600 text-white font-semibold py-3 rounded-lg shadow-md hover:bg-green-700 transition-colors">{t('calculator.thermal.calculateButton')}</button>
+                </div>
+                
+                {/* Result Side */}
+                <div className="bg-gray-50 dark:bg-gray-900/50 p-6 rounded-lg">
+                    <h3 className="text-lg font-bold mb-4 border-b border-gray-300 dark:border-gray-600 pb-2">{t('calculator.thermal.resultsTitle')}</h3>
+                    <div className="space-y-4">
+                        <div className="flex justify-between items-baseline">
+                            <span className="font-semibold text-gray-700 dark:text-gray-300">{t('calculator.thermal.totalHeat')}:</span>
+                            <span className="font-mono text-lg font-bold text-gray-900 dark:text-gray-100">{result?.totalHeatWatts.toFixed(0) ?? '...'} {t('calculator.thermal.watts')}</span>
+                        </div>
+                        <div className="flex justify-between items-baseline">
+                            <span className="font-semibold text-gray-700 dark:text-gray-300">{t('calculator.thermal.panelArea')}:</span>
+                            <span className="font-mono text-lg font-bold text-gray-900 dark:text-gray-100">{result?.panelAreaSqFt.toFixed(2) ?? '...'} {t('calculator.thermal.sqft')}</span>
+                        </div>
+                        <div className="flex justify-between items-baseline">
+                            <span className="font-semibold text-gray-700 dark:text-gray-300">{t('calculator.thermal.tempDifference')}:</span>
+                            <span className="font-mono text-lg font-bold text-gray-900 dark:text-gray-100">{result?.deltaF.toFixed(1) ?? '...'} °F</span>
+                        </div>
+                         <div className="border-t border-gray-300 dark:border-gray-600 my-4"></div>
+                        <div className="flex justify-between items-baseline">
+                            <span className="font-semibold text-gray-700 dark:text-gray-300">{t('calculator.thermal.coolingCapacity')}:</span>
+                            <span className="font-mono text-lg font-bold text-green-600 dark:text-green-400">{result?.heatDissipatedBtu.toFixed(0) ?? '...'} {t('calculator.thermal.btu')}</span>
+                        </div>
+                        <div className="mt-6 p-4 rounded-lg bg-indigo-50 dark:bg-indigo-900/30">
+                             <h4 className="font-bold text-indigo-800 dark:text-indigo-200">{t('calculator.thermal.coolingRequired')}</h4>
+                            {result ? (
+                                result.coolingRequiredBtu > 0 ? (
+                                    <p className="font-mono text-2xl font-extrabold text-red-600 dark:text-red-400 mt-1">{result.coolingRequiredBtu.toFixed(0)} {t('calculator.thermal.btu')}</p>
+                                ) : (
+                                    <p className="font-mono text-2xl font-extrabold text-green-600 dark:text-green-400 mt-1">{t('calculator.thermal.noCooling')}</p>
+                                )
+                            ) : (
+                                <p className="font-mono text-2xl font-extrabold text-gray-500 dark:text-gray-400 mt-1">...</p>
+                            )}
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     );
