@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ResultDisplay } from '../components/ResultDisplay';
-import { LoadingSpinner } from '../components/LoadingSpinner';
+import { ResultSkeleton } from '../components/SkeletonLoader';
 import { ErrorAlert } from '../components/ErrorAlert';
 import { generateWiringGuide } from '../services/geminiService';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -151,7 +151,7 @@ export const WiringView: React.FC = () => {
                 </form>
             </div>
             
-            {isLoading && <LoadingSpinner />}
+            {isLoading && <ResultSkeleton />}
             {error && <ErrorAlert message={error} />}
             {result && !isLoading && <ResultDisplay resultText={result} />}
         </div>

@@ -6,6 +6,7 @@ import { analyzeFaultCode, analyzeScanTime, generateEnergyEfficiencyPlan, verify
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { ErrorAlert } from '../components/ErrorAlert';
 import { ResultDisplay } from '../components/ResultDisplay';
+import { ResultSkeleton } from '../components/SkeletonLoader';
 
 type AnalysisType = 'faultDiagnosis' | 'scanTime' | 'energy' | 'codeProver' | 'componentReference' | 'logicValidator';
 
@@ -98,7 +99,7 @@ const FaultDiagnosisTool: React.FC = () => {
                 <textarea value={context} onChange={e => setContext(e.target.value)} placeholder={t('tools.faultDiagnosis.contextPlaceholder')} className={commonInputClasses} rows={3} required />
             </div>
             <button type="submit" disabled={isLoading} className={commonButtonClasses}>{t('tools.generateButton')}</button>
-            {isLoading && <LoadingSpinner />}
+            {isLoading && <ResultSkeleton />}
             {error && <ErrorAlert message={error} />}
             {result && !isLoading && <ResultDisplay resultText={result} />}
         </form>
@@ -123,7 +124,7 @@ const ScanTimeTool: React.FC = () => {
                 <textarea value={code} onChange={e => setCode(e.target.value)} placeholder={t('tools.scanTime.codePlaceholder')} className={`${commonInputClasses} font-mono`} rows={10} required />
             </div>
             <button type="submit" disabled={isLoading} className={commonButtonClasses}>{t('tools.generateButton')}</button>
-            {isLoading && <LoadingSpinner />}
+            {isLoading && <ResultSkeleton />}
             {error && <ErrorAlert message={error} />}
             {result && !isLoading && <ResultDisplay resultText={result} />}
         </form>
@@ -169,7 +170,7 @@ const EnergyTool: React.FC = () => {
                 <textarea value={loadProfile} onChange={e => setLoadProfile(e.target.value)} placeholder={t('tools.energy.loadProfilePlaceholder')} className={commonInputClasses} rows={4} required />
             </div>
             <button type="submit" disabled={isLoading} className={commonButtonClasses}>{t('tools.generateButton')}</button>
-            {isLoading && <LoadingSpinner />}
+            {isLoading && <ResultSkeleton />}
             {error && <ErrorAlert message={error} />}
             {result && !isLoading && <ResultDisplay resultText={result} />}
         </form>
@@ -199,7 +200,7 @@ const CodeProverTool: React.FC = () => {
                 <textarea value={rules} onChange={e => setRules(e.target.value)} placeholder={t('tools.codeProver.rulesPlaceholder')} className={commonInputClasses} rows={4} required />
             </div>
             <button type="submit" disabled={isLoading} className={commonButtonClasses}>{t('tools.generateButton')}</button>
-            {isLoading && <LoadingSpinner />}
+            {isLoading && <ResultSkeleton />}
             {error && <ErrorAlert message={error} />}
             {result && !isLoading && <ResultDisplay resultText={result} />}
         </form>
@@ -258,7 +259,7 @@ const LogicValidator: React.FC = () => {
                 {isAnalyzing ? t('tools.logicValidator.analyzing') : t('tools.logicValidator.analyzeButton')}
             </button>
             
-            {(isAnalyzing || isSuggesting) && <LoadingSpinner />}
+            {(isAnalyzing || isSuggesting) && <LoadingSpinner message={isAnalyzing ? t('tools.logicValidator.analyzing') : t('tools.logicValidator.suggesting')} />}
             {error && <ErrorAlert message={error} />}
 
             {issues && (

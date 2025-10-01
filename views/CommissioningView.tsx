@@ -306,7 +306,19 @@ export const CommissioningView: React.FC = () => {
                                         </div>
                                     </div>
                                 ))}
-                                {isLoading && <div className="flex gap-3 justify-start"><BrandLogo brand={activeSession.vfdBrand} topic="VFD" className="h-8 w-8" /><div className="max-w-xl p-3 rounded-2xl bg-gray-100 dark:bg-gray-700"><div className="flex items-center space-x-2"><div className="w-2 h-2 bg-indigo-400 rounded-full animate-pulse"></div><div className="w-2 h-2 bg-indigo-400 rounded-full animate-pulse delay-150"></div><div className="w-2 h-2 bg-indigo-400 rounded-full animate-pulse delay-300"></div></div></div></div>}
+                                {isLoading && (
+                                    <div className="flex items-start gap-3 justify-start">
+                                        <BrandLogo brand={activeSession.vfdBrand} topic="VFD" className="h-8 w-8" />
+                                        <div className="max-w-xl p-3 rounded-2xl bg-gray-100 dark:bg-gray-700 flex items-center">
+                                            <div className="flex items-center space-x-2 mr-3">
+                                                <div className="w-2 h-2 bg-indigo-400 rounded-full animate-pulse"></div>
+                                                <div className="w-2 h-2 bg-indigo-400 rounded-full animate-pulse" style={{ animationDelay: '150ms' }}></div>
+                                                <div className="w-2 h-2 bg-indigo-400 rounded-full animate-pulse" style={{ animationDelay: '300ms' }}></div>
+                                            </div>
+                                            <span className="text-sm text-gray-500 dark:text-gray-400 italic">{t('chat.thinking')}</span>
+                                        </div>
+                                    </div>
+                                )}
                                 <div ref={chatEndRef} />
                             </div>
                             <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">

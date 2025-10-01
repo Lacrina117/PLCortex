@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { useTranslation } from '../hooks/useTranslation';
 import { MarkdownRenderer } from './MarkdownRenderer';
+import { thermalComponents } from '../constants/automationData';
 
 type Platform = 'custom' | 'abCompactLogix' | 'abMicroLogix' | 'siemensS7_1200' | 'genericVoltage' | 'genericCurrent';
 
@@ -299,33 +300,59 @@ const SensorHelper: React.FC = () => {
 
 const MotorProtectionCalculator: React.FC = () => {
     const { t } = useTranslation();
-    const [power, setPower] = useState('5');
+    const [power, setPower] = useState('10');
     const [voltage, setVoltage] = useState('460');
+    const [frequency, setFrequency] = useState('60');
+    const [nominalCurrent, setNominalCurrent] = useState('14');
+    const [serviceFactor, setServiceFactor] = useState('1.15');
+    const [serviceFactorCurrent, setServiceFactorCurrent] = useState('');
 
-    const flaTable: { [volt: string]: { [hp: string]: number } } = {
-        '230': { '0.5': 2.2, '1': 3.6, '2': 6.8, '3': 9.6, '5': 15.2, '10': 28, '20': 54, '50': 130 },
-        '460': { '0.5': 1.1, '1': 1.8, '2': 3.4, '3': 4.8, '5': 7.6, '10': 14, '20': 27, '50': 65 },
-        '575': { '0.5': 0.9, '1': 1.4, '2': 2.7, '3': 3.9, '5': 6.1, '10': 11, '20': 22, '50': 52 },
-    };
     const ampacityTable: { awg: string, amp: number }[] = [ {awg: '14', amp: 20}, {awg: '12', amp: 25}, {awg: '10', amp: 35}, {awg: '8', amp: 50}, {awg: '6', amp: 65}, {awg: '4', amp: 85}, {awg: '2', amp: 115}, {awg: '1/0', amp: 150}, {awg: '2/0', amp: 175} ];
     const breakerSizes = [15, 20, 25, 30, 40, 50, 60, 70, 80, 90, 100, 110, 125, 150, 175, 200, 225, 250];
 
+    const getNemaSize = (hp: number, volt: number): string => {
+        if (isNaN(hp) || isNaN(volt)) return 'N/A';
+        if (volt <= 240) {
+            if (hp <= 1.5) return 'NEMA Size 00';
+            if (hp <= 3) return 'NEMA Size 0';
+            if (hp <= 7.5) return 'NEMA Size 1';
+            if (hp <= 15) return 'NEMA Size 2';
+            if (hp <= 30) return 'NEMA Size 3';
+            if (hp <= 50) return 'NEMA Size 4';
+        } else { // 460/575V
+            if (hp <= 2) return 'NEMA Size 00';
+            if (hp <= 5) return 'NEMA Size 0';
+            if (hp <= 10) return 'NEMA Size 1';
+            if (hp <= 25) return 'NEMA Size 2';
+            if (hp <= 50) return 'NEMA Size 3';
+            if (hp <= 100) return 'NEMA Size 4';
+        }
+        return 'Size > NEMA 4';
+    };
+
     const results = useMemo(() => {
-        const p = parseFloat(power);
-        if (isNaN(p) || !flaTable[voltage] || !flaTable[voltage][power]) return null;
+        const In = parseFloat(nominalCurrent);
+        const hp = parseFloat(power);
+        const sf = parseFloat(serviceFactor);
+        const volt = parseInt(voltage);
+        if ([In, hp, sf, volt].some(isNaN)) return null;
 
-        const fla = flaTable[voltage][power];
-        const minConductorAmps = fla * 1.25;
+        // Conductor
+        const minConductorAmps = In * 1.25;
         const conductor = ampacityTable.find(row => row.amp >= minConductorAmps)?.awg || 'N/A';
-        const overloadMin = fla * 1.15;
-        const overloadMax = fla * 1.25;
-        const breakerMax = fla * 2.5;
-        const breaker = breakerSizes.find(size => size >= breakerMax) || breakerSizes[breakerSizes.length - 1];
-        const fuseMax = fla * 1.75;
-        const fuse = breakerSizes.find(size => size >= fuseMax) || breakerSizes[breakerSizes.length-1];
 
-        return { fla, conductor, overloadMin, overloadMax, breaker, fuse };
-    }, [power, voltage]);
+        // Thermal Relay
+        const thermalRelayMax = sf >= 1.15 ? In * 1.25 : In * 1.15;
+
+        // Breaker
+        const breakerMaxAmps = In * 2.5;
+        const breaker = breakerSizes.find(size => size >= breakerMaxAmps) || breakerSizes[breakerSizes.length - 1];
+
+        // Contactor
+        const contactor = getNemaSize(hp, volt);
+
+        return { conductor, thermalRelayMax, breaker, contactor };
+    }, [power, voltage, nominalCurrent, serviceFactor]);
 
     const ResultCard: React.FC<{title:string; value:string; description:string;}> = ({title, value, description}) => (
         <div className="bg-gray-50 dark:bg-gray-900/50 p-3 rounded-lg text-center">
@@ -333,27 +360,37 @@ const MotorProtectionCalculator: React.FC = () => {
             <p className="text-xl font-bold font-mono text-indigo-600 dark:text-indigo-400">{value}</p>
             <p className="text-xs text-gray-400 dark:text-gray-500">{description}</p>
         </div>
-    )
+    );
 
     const commonInputClasses = "w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500";
+    const InputField: React.FC<{label: string, value: string, onChange: (e: React.ChangeEvent<HTMLInputElement>) => void, unit?: string}> = ({label, value, onChange, unit}) => (
+        <div>
+            <label className="block text-sm font-medium mb-1">{label}</label>
+            <div className="relative">
+                <input type="number" step="any" value={value} onChange={onChange} className={`${commonInputClasses} ${unit ? 'pr-10' : ''}`} />
+                {unit && <span className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500">{unit}</span>}
+            </div>
+        </div>
+    );
     
     return (
         <div className="space-y-6">
             <fieldset className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
                 <legend className="px-2 font-semibold">{t('calculator.motor.motorDetails')}</legend>
-                <div className="grid grid-cols-2 gap-4">
-                    <div>
-                        <label className="block text-sm font-medium mb-1">{t('calculator.motor.power')} (HP)</label>
-                        <select value={power} onChange={e => setPower(e.target.value)} className={commonInputClasses}>
-                            {Object.keys(flaTable['460']).map(hp => <option key={hp} value={hp}>{hp} HP</option>)}
-                        </select>
-                    </div>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    <InputField label={t('calculator.motor.power')} value={power} onChange={e => setPower(e.target.value)} unit="HP" />
+                    <InputField label={t('calculator.motor.hz')} value={frequency} onChange={e => setFrequency(e.target.value)} unit="Hz" />
                     <div>
                         <label className="block text-sm font-medium mb-1">{t('calculator.motor.voltage')}</label>
                         <select value={voltage} onChange={e => setVoltage(e.target.value)} className={commonInputClasses}>
-                            {Object.keys(flaTable).map(volt => <option key={volt} value={volt}>{volt}V ({t('calculator.motor.threePhase')})</option>)}
+                            <option value="230">230V ({t('calculator.motor.threePhase')})</option>
+                            <option value="460">460V ({t('calculator.motor.threePhase')})</option>
+                            <option value="575">575V ({t('calculator.motor.threePhase')})</option>
                         </select>
                     </div>
+                    <InputField label={t('calculator.motor.in')} value={nominalCurrent} onChange={e => setNominalCurrent(e.target.value)} unit="A" />
+                    <InputField label={t('calculator.motor.fs')} value={serviceFactor} onChange={e => setServiceFactor(e.target.value)} />
+                    <InputField label={t('calculator.motor.ifs')} value={serviceFactorCurrent} onChange={e => setServiceFactorCurrent(e.target.value)} unit="A" />
                 </div>
             </fieldset>
 
@@ -361,10 +398,10 @@ const MotorProtectionCalculator: React.FC = () => {
                 <fieldset className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
                     <legend className="px-2 font-semibold">{t('calculator.motor.results')}</legend>
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                        <ResultCard title={t('calculator.motor.fla')} value={`${results.fla} A`} description="NEC 430.250" />
-                        <ResultCard title={t('calculator.motor.conductor')} value={`${results.conductor} AWG`} description={t('calculator.motor.conductorDesc')} />
+                        <ResultCard title={t('calculator.motor.thermalRelay')} value={`≤ ${results.thermalRelayMax.toFixed(2)} A`} description={t('calculator.motor.thermalRelayDesc')} />
+                        <ResultCard title={t('calculator.motor.contactor')} value={results.contactor} description={t('calculator.motor.contactorDesc')} />
                         <ResultCard title={t('calculator.motor.breaker')} value={`${results.breaker} A`} description={t('calculator.motor.breakerDesc')} />
-                        <ResultCard title={t('calculator.motor.overload')} value={`${results.overloadMin.toFixed(1)}-${results.overloadMax.toFixed(1)} A`} description={t('calculator.motor.overloadDesc')} />
+                        <ResultCard title={t('calculator.motor.conductor')} value={`${results.conductor} AWG`} description={t('calculator.motor.conductorDesc')} />
                     </div>
                     <p className="text-xs text-center mt-4 text-gray-400 dark:text-gray-500">{t('calculator.motor.basedOnNEC')}</p>
                 </fieldset>
@@ -373,15 +410,40 @@ const MotorProtectionCalculator: React.FC = () => {
     );
 };
 
+interface HeatComponent {
+  id: number;
+  name: string;
+  watts: string;
+}
+
 const CabinetThermalCalculator: React.FC = () => {
     const {t} = useTranslation();
     const commonInputClasses = "w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500";
     
-    const [internalHeat, setInternalHeat] = useState('250');
+    const [components, setComponents] = useState<HeatComponent[]>([
+        { id: Date.now(), name: 'VFD (5 HP, 3.7 kW)', watts: '150' },
+        { id: Date.now() + 1, name: 'Power Supply (10A, 240W)', watts: '30' },
+    ]);
     const [dims, setDims] = useState({h: '600', w: '600', d: '200'}); // mm
     const [temps, setTemps] = useState({ti: '35', te: '30'}); // Celsius
     const [mounting, setMounting] = useState('freestanding');
     const [material, setMaterial] = useState('paintedSteel');
+
+    const handleComponentUpdate = (id: number, updates: Partial<Omit<HeatComponent, 'id'>>) => {
+        setComponents(comps => comps.map(c => c.id === id ? { ...c, ...updates } : c));
+    };
+
+    const addComponent = () => {
+        setComponents(comps => [...comps, { id: Date.now(), name: '', watts: '' }]);
+    };
+
+    const removeComponent = (id: number) => {
+        setComponents(comps => comps.filter(c => c.id !== id));
+    };
+
+    const totalInternalHeat = useMemo(() => 
+        components.reduce((sum, comp) => sum + (parseFloat(comp.watts) || 0), 0),
+    [components]);
 
     const heatTransferCoefficients: {[key:string]: number} = {
         paintedSteel: 5.5,
@@ -396,9 +458,9 @@ const CabinetThermalCalculator: React.FC = () => {
         const d = parseFloat(dims.d) / 1000;
         const ti = parseFloat(temps.ti);
         const te = parseFloat(temps.te);
-        const Pi = parseFloat(internalHeat);
+        const Pi = totalInternalHeat;
 
-        if([h,w,d,ti,te,Pi].some(isNaN) || te >= ti) return null;
+        if([h,w,d,ti,te,Pi].some(isNaN)) return null;
 
         let area = 0; // Effective surface area in m^2
         switch(mounting) {
@@ -411,31 +473,74 @@ const CabinetThermalCalculator: React.FC = () => {
         const k = heatTransferCoefficients[material];
         const deltaT = ti - te;
 
-        const heatLoss = k * area * deltaT; // Watts
-        const coolingRequired = Pi - heatLoss; // Watts
+        const heatTransfer = k * area * deltaT; // Watts. Positive value means heat loss (cooling). Negative value means heat gain (heating).
+        const coolingRequired = Pi - heatTransfer; // Watts
 
         let recommendation = '';
         if (coolingRequired <= 0) {
             recommendation = t('calculator.thermal.noCooling');
         } else {
-            const cfm = (3.16 * coolingRequired) / deltaT; // Using Celsius delta T is fine for this formula's ratio
+            const cfm = deltaT !== 0 ? (3.16 * coolingRequired) / Math.abs(deltaT) : Infinity;
             const btu = coolingRequired * 3.41;
             
             recommendation = `${t('calculator.thermal.fanReq', { cfm: Math.ceil(cfm) })} ${t('calculator.or')} ${t('calculator.thermal.acReq', { btu: Math.ceil(btu / 100) * 100 })}`;
         }
 
-        return { heatGainLoss: heatLoss, coolingRequired, recommendation };
-    }, [dims, temps, internalHeat, mounting, material, t]);
+        return { heatTransfer, coolingRequired, recommendation };
+    }, [dims, temps, totalInternalHeat, mounting, material, t]);
 
     return (
         <div className="space-y-6">
             <fieldset className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
-                <legend className="px-2 font-semibold">{t('calculator.thermal.totalHeat')}</legend>
-                 <div className="flex items-center gap-2">
-                    <input type="number" value={internalHeat} onChange={e => setInternalHeat(e.target.value)} className={commonInputClasses} />
-                     <span className="font-medium">Watts</span>
+                <legend className="px-2 font-semibold">{t('calculator.thermal.components')}</legend>
+                <div className="space-y-2">
+                    {components.map((comp) => (
+                        <div key={comp.id} className="grid grid-cols-[1fr_auto_auto] gap-2 items-center">
+                            <select
+                                value={comp.name}
+                                onChange={(e) => {
+                                    const name = e.target.value;
+                                    const heat = thermalComponents.find(c => c.name === name)?.heat.toString() || '';
+                                    handleComponentUpdate(comp.id, { name, watts: heat });
+                                }}
+                                className={commonInputClasses}
+                                aria-label={t('calculator.thermal.componentName')}
+                            >
+                                <option value="" disabled>{t('calculator.thermal.selectComponent')}</option>
+                                {thermalComponents.map((c, index) => (
+                                    <option key={index} value={c.name}>{c.name}</option>
+                                ))}
+                            </select>
+                            <div className="relative">
+                                <input
+                                    type="number"
+                                    value={comp.watts}
+                                    onChange={(e) => handleComponentUpdate(comp.id, { watts: e.target.value })}
+                                    className={`${commonInputClasses} w-32 pr-10`}
+                                    placeholder="Watts"
+                                    aria-label={t('calculator.thermal.heatOutput')}
+                                />
+                                <span className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 pointer-events-none">W</span>
+                            </div>
+                            <button onClick={() => removeComponent(comp.id)} className="p-2 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/50 rounded-full" aria-label="Remove component">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                                </svg>
+                            </button>
+                        </div>
+                    ))}
+                </div>
+                <div className="mt-4 flex justify-between items-center">
+                    <button onClick={addComponent} className="px-3 py-1.5 text-sm border border-indigo-500 text-indigo-600 dark:text-indigo-400 rounded-md hover:bg-indigo-50 dark:hover:bg-indigo-900/50">
+                        + {t('calculator.thermal.add')}
+                    </button>
+                    <div className="text-right">
+                        <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{t('calculator.thermal.totalHeat')}</p>
+                        <p className="text-lg font-bold">{totalInternalHeat.toFixed(0)} Watts</p>
+                    </div>
                 </div>
             </fieldset>
+
 
             <div className="grid md:grid-cols-2 gap-6">
                  <fieldset className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
@@ -466,7 +571,7 @@ const CabinetThermalCalculator: React.FC = () => {
                     <div className="bg-gray-50 dark:bg-gray-900/50 p-4 rounded-lg text-center space-y-2">
                         <p className="text-lg font-semibold">{results.recommendation}</p>
                         <p className="text-xs text-gray-500 dark:text-gray-400">
-                           {t('calculator.thermal.heatGain')}: {results.heatGainLoss.toFixed(0)}W | {t('calculator.thermal.coolingReq')}: {results.coolingRequired.toFixed(0)}W
+                           {t('calculator.thermal.heatGain')}: {results.heatTransfer.toFixed(0)}W | {t('calculator.thermal.coolingReq')}: {Math.max(0, results.coolingRequired).toFixed(0)}W
                         </p>
                     </div>
                  </fieldset>

@@ -303,7 +303,17 @@ export const ChatView = <T extends ChatContext>({
                             </div>
                         ))}
                         {isLoading && (
-                             <div className="flex gap-3 justify-start"><AiAvatar /><div className="max-w-xl p-3 rounded-2xl bg-gray-100 dark:bg-gray-700"><div className="flex items-center space-x-2"><div className="w-2 h-2 bg-indigo-400 rounded-full animate-pulse"></div><div className="w-2 h-2 bg-indigo-400 rounded-full animate-pulse" style={{ animationDelay: '200ms' }}></div><div className="w-2 h-2 bg-indigo-400 rounded-full animate-pulse" style={{ animationDelay: '400ms' }}></div></div></div></div>
+                             <div className="flex items-start gap-3 justify-start">
+                                <AiAvatar />
+                                <div className="max-w-xl p-3 rounded-2xl bg-gray-100 dark:bg-gray-700 flex items-center">
+                                    <div className="flex items-center space-x-2 mr-3">
+                                        <div className="w-2 h-2 bg-indigo-400 rounded-full animate-pulse"></div>
+                                        <div className="w-2 h-2 bg-indigo-400 rounded-full animate-pulse" style={{ animationDelay: '200ms' }}></div>
+                                        <div className="w-2 h-2 bg-indigo-400 rounded-full animate-pulse" style={{ animationDelay: '400ms' }}></div>
+                                    </div>
+                                    <span className="text-sm text-gray-500 dark:text-gray-400 italic">{t('chat.thinking')}</span>
+                                </div>
+                            </div>
                         )}
                          <div ref={chatEndRef} />
                     </>

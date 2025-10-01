@@ -59,3 +59,37 @@ export const plcLanguages: string[] = [
     'Instruction List (IL)',
     'Sequential Function Chart (SFC)',
 ];
+
+export const thermalComponents: { name: string, heat: number }[] = [
+  // VFDs - Generic
+  { name: 'VFD (1 HP, 0.75 kW)', heat: 50 },
+  { name: 'VFD (3 HP, 2.2 kW)', heat: 110 },
+  { name: 'VFD (5 HP, 3.7 kW)', heat: 150 },
+  { name: 'VFD (10 HP, 7.5 kW)', heat: 250 },
+  { name: 'VFD (20 HP, 15 kW)', heat: 480 },
+  { name: 'VFD (50 HP, 37 kW)', heat: 1100 },
+  // VFDs - Specific
+  { name: 'PowerFlex 525 (Frame A)', heat: 50 },
+  { name: 'PowerFlex 525 (Frame B)', heat: 90 },
+  { name: 'PowerFlex 525 (Frame C)', heat: 145 },
+  { name: 'Sinamics G120 (FSA)', heat: 75 },
+  { name: 'Sinamics G120 (FSB)', heat: 125 },
+  // Power Supplies
+  { name: 'Power Supply (5A, 120W)', heat: 15 },
+  { name: 'Power Supply (10A, 240W)', heat: 30 },
+  { name: 'Power Supply (20A, 480W)', heat: 55 },
+  // PLCs
+  { name: 'PLC CPU (CompactLogix)', heat: 12 },
+  { name: 'PLC CPU (MicroLogix)', heat: 8 },
+  { name: 'PLC I/O Module (Digital, 16pt)', heat: 5 },
+  { name: 'PLC I/O Module (Analog, 8ch)', heat: 7 },
+  { name: 'PLC I/O Module (Relay Output, 8pt)', heat: 8 },
+  // Others
+  { name: 'Industrial PC', heat: 80 },
+  { name: 'Network Switch (8-port, unmanaged)', heat: 10 },
+  { name: 'Safety Relay', heat: 5 },
+  { name: 'Contactor (NEMA Size 0/1)', heat: 10 },
+  { name: 'Contactor (NEMA Size 2/3)', heat: 25 },
+  { name: 'Line Reactor (10A)', heat: 20 },
+  { name: 'Line Reactor (25A)', heat: 45 },
+];

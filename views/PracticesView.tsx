@@ -1,10 +1,8 @@
-
-
 // FIX: Implemented the view for generating practice problems.
 import React, { useState, useEffect } from 'react';
 import { InputForm } from '../components/InputForm';
 import { PracticeDisplay } from '../components/PracticeDisplay';
-import { LoadingSpinner } from '../components/LoadingSpinner';
+import { PracticeSkeleton } from '../components/SkeletonLoader';
 import { ErrorAlert } from '../components/ErrorAlert';
 import { generatePractice } from '../services/geminiService';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -101,7 +99,7 @@ export const PracticesView: React.FC = () => {
                 />
             </div>
 
-            {isLoading && <LoadingSpinner />}
+            {isLoading && <PracticeSkeleton />}
             {error && <ErrorAlert message={error} />}
             {practice && !isLoading && <PracticeDisplay practiceText={practice} />}
         </div>
