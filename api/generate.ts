@@ -1,4 +1,5 @@
-import { GoogleGenAI, GenerateContentRequest } from "@google/genai";
+// FIX: Corrected import from '@google/genai'. `GenerateContentRequest` is deprecated and was replaced with `GenerateContentParameters` which is the correct type. Since this file intelligently switches between API calls, this type is aliased to `GenerateContentRequest` to maintain consistency with the existing code structure.
+import { GoogleGenAI, GenerateContentParameters as GenerateContentRequest } from "@google/genai";
 
 // This function is executed on the server (Vercel Edge Function)
 // The API_KEY is securely accessed from environment variables set in Vercel
@@ -36,14 +37,6 @@ export default async function handler(req: Request) {
 
     if (params.config) {
         request.config = params.config;
-    }
-    
-    // The validatePlcLogic task has a special schema config that is passed from the client.
-    if (task === 'validatePlcLogic' && params.schema) {
-        request.config = {
-            responseMimeType: 'application/json',
-            responseSchema: params.schema
-        };
     }
     
     const response = await ai.models.generateContent(request);

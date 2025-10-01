@@ -1,5 +1,8 @@
+
+
 // Import necessary types and classes from the GenAI SDK for direct API calls in local development.
-import { GoogleGenAI, GenerateContentRequest } from '@google/genai';
+// FIX: Corrected import from '@google/genai'. `GenerateContentRequest` is deprecated and was replaced with `GenerateContentParameters` which is the correct type. Since this file intelligently switches between API calls, this type is aliased to `GenerateContentRequest` to maintain consistency with the existing code structure.
+import { GoogleGenAI, GenerateContentParameters as GenerateContentRequest, Type } from '@google/genai';
 
 // --- START of updated API call logic ---
 
@@ -46,15 +49,6 @@ const callApiEndpoint = async (task: string, params: any): Promise<string> => {
 
             if (params.config) {
                 request.config = params.config;
-            }
-
-            // The validatePlcLogic task has a special schema config that needs to be included.
-            if (task === 'validatePlcLogic' && params.schema) {
-                request.config = {
-                    ...request.config,
-                    responseMimeType: 'application/json',
-                    responseSchema: params.schema,
-                };
             }
             
             const response = await ai.models.generateContent(request);
@@ -144,12 +138,6 @@ interface CommissioningPlanParams {
     motorFreq: string;
     controlType: string;
     application: string;
-}
-
-export interface LogicIssue {
-    line: number;
-    type: 'Error' | 'Warning' | 'Info';
-    message: string;
 }
 
 export const generateChatResponse = async (messages: Message[], context: ChatContext): Promise<string> => {
@@ -377,53 +365,131 @@ export const verifyCriticalLogic = async (params: { language: 'en' | 'es'; code:
     return callApiEndpoint('verifyCriticalLogic', { prompt });
 };
 
-export const validatePlcLogic = async (params: { language: 'en' | 'es', code: string }): Promise<string> => {
+// FIX: Added missing exports for PLC logic validation, fixing, and translation.
+export interface LogicIssue {
+  line: number;
+  type: 'Error' | 'Warning';
+  message: string;
+}
+
+export const validatePlcLogic = async (params: { language: 'en' | 'es'; code: string }): Promise<string> => {
     const { language, code } = params;
     const langInstruction = language === 'es' ? 'Responde en español.' : 'Respond in English.';
-    const prompt = `Analyze the provided PLC logic, which uses a simplified text-based format (XIC, XIO, OTE, etc.).
-    Your task is to identify errors, potential race conditions, and violations of standard ladder logic practices.
-    
+    const prompt = `Act as a PLC logic validator. Analyze the provided text-based ladder logic for common errors, style violations, and potential race conditions.
+    The logic format is simple: Instructions like XIC(tag), XIO(tag), OTE(tag). Branches are denoted by [ ].
+
     Code to analyze:
     \`\`\`
     ${code}
     \`\`\`
+
+    Your response MUST be a valid JSON array of objects. Each object represents an issue and must have these keys:
+    - "line": The 1-based line number where the issue was found.
+    - "type": A string, either "Error" (for definite problems like duplicate outputs) or "Warning" (for style issues or potential problems).
+    - "message": A clear, concise description of the issue.
+
+    If there are no issues, return an empty JSON array: [].
+    Do not add any explanation or text outside of the JSON array.
     
-    If you find issues, provide them in the requested JSON format. If there are no issues, provide an empty array.
+    Example of a response with issues:
+    [
+        {"line": 2, "type": "Error", "message": "OTE for 'Motor' is used on multiple rungs. This can cause unpredictable behavior."},
+        {"line": 3, "type": "Warning", "message": "This rung appears to be dead code and will never execute."}
+    ]
+
     ${langInstruction}`;
-    
-    // The schema is now defined here, without enums, to be sent to the API.
-    const schema = {
-        type: 'ARRAY',
-        items: {
-            type: 'OBJECT',
-            properties: {
-                line: { type: 'INTEGER' },
-                type: { type: 'STRING' },
-                message: { type: 'STRING' },
-            },
-            required: ["line", "type", "message"],
-        },
+
+    const config = {
+        responseMimeType: "application/json",
+        responseSchema: {
+            type: Type.ARRAY,
+            items: {
+                type: Type.OBJECT,
+                properties: {
+                    line: {
+                        type: Type.INTEGER,
+                        description: 'The 1-based line number where the issue was found.',
+                    },
+                    type: {
+                        type: Type.STRING,
+                        description: 'Either "Error" or "Warning".',
+                    },
+                    message: {
+                        type: Type.STRING,
+                        description: 'A clear description of the issue.',
+                    },
+                },
+                required: ['line', 'type', 'message']
+            }
+        }
     };
 
-    return callApiEndpoint('validatePlcLogic', { prompt, schema });
+    return callApiEndpoint('validatePlcLogic', { prompt, config });
 };
 
-export const suggestPlcLogicFix = async (params: { language: 'en' | 'es', code: string, issues: LogicIssue[] }): Promise<string> => {
+export const suggestPlcLogicFix = async (params: { language: 'en' | 'es'; code: string; issues: LogicIssue[] }): Promise<string> => {
     const { language, code, issues } = params;
     const langInstruction = language === 'es' ? 'Responde en español.' : 'Respond in English.';
-    const issuesString = issues.map((i: any) => `- Line ${i.line} (${i.type}): ${i.message}`).join('\n');
-    const prompt = `Given the following PLC code and a list of identified issues, rewrite the code to fix the issues and follow best practices.
+    const prompt = `Act as an expert PLC programmer. You are given a piece of ladder logic (in text format) and a list of issues found in it.
+    Your task is to rewrite the code to fix all the identified issues.
 
     Original Code:
     \`\`\`
     ${code}
     \`\`\`
-    
+
     Identified Issues:
-    ${issuesString}
-    
-    Provide only the corrected code inside a single markdown code block. Do not add any extra explanation or text.
-    
+    ${JSON.stringify(issues, null, 2)}
+
+    Please provide the corrected code.
+    - Only output the corrected code block.
+    - Do not include any explanations, apologies, or introductory sentences.
+    - If you cannot fix an issue, leave it as is but add a comment in the code explaining the problem if possible.
+    - Ensure the corrected code is in the same text-based format.
+
     ${langInstruction}`;
     return callApiEndpoint('suggestPlcLogicFix', { prompt });
+};
+
+export const translateLadderToText = async (params: { language: 'en' | 'es'; code: string }): Promise<string> => {
+    const { language, code } = params;
+    const langInstruction = language === 'es' ? 'Responde en español.' : 'Respond in English.';
+    const prompt = `Act as a PLC code converter. You will be given PLC ladder logic as ASCII art.
+    Your task is to convert it into a simple, line-by-line text format.
+
+    Rules for conversion:
+    - Each rung in the ASCII art becomes one line of text.
+    - Normally Open contacts (-[ ]-) become XIC(tag_name).
+    - Normally Closed contacts (-[/]-) become XIO(tag_name).
+    - Output coils (-( )- or -(OTE)-) become OTE(tag_name).
+    - Tag names are written directly above the ASCII instruction.
+    - Parallel branches are represented by [ ]. For example, a branch containing two instructions would be [XIC(TagA) XIC(TagB)].
+    - A seal-in branch with a single contact would be [XIC(Motor)].
+
+    Example ASCII Art:
+    \`\`\`
+          Start        Stop         Motor
+    |-----[ ]----------[/]----------( )----|
+    |      |                            |
+    |      +------[ ]------------------+
+    |             Motor                 |
+    \`\`\`
+
+    Correct Text Output for the example:
+    XIC(Start) XIO(Stop) [XIC(Motor)] OTE(Motor)
+
+    IMPORTANT:
+    - Only output the converted text code.
+    - Do not include any other text, explanations, or markdown formatting.
+    - If a tag name is unclear or missing, use "UNKNOWN_TAG".
+    - Each rung from the source should be a new line in the output.
+
+    ASCII Art to Convert:
+    \`\`\`
+    ${code}
+    \`\`\`
+
+    ${langInstruction}`;
+
+    return callApiEndpoint('translateLadderToText', { prompt });
 };

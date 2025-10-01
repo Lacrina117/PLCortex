@@ -37,7 +37,6 @@ export const Header: React.FC<HeaderProps> = ({ currentView, setView }) => {
 
     const navItems: { key: View, label: string, description: string }[] = [
         { key: 'solutions', label: t('header.solutions'), description: t('header_descriptions.solutions') },
-        { key: 'simulator', label: t('header.simulator'), description: t('header_descriptions.simulator') },
         { key: 'practices', label: t('header.practices'), description: t('header_descriptions.practices') },
         { key: 'tools', label: t('header.tools'), description: t('header_descriptions.tools') },
         { key: 'wiring', label: t('header.wiring'), description: t('header_descriptions.wiring') },

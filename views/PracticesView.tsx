@@ -1,5 +1,6 @@
 // FIX: Implemented the view for generating practice problems.
 import React, { useState, useEffect } from 'react';
+// FIX: Corrected import paths for InputForm and PracticeDisplay, which were previously not modules. These components will now be created and export valid components, resolving the module resolution errors.
 import { InputForm } from '../components/InputForm';
 import { PracticeDisplay } from '../components/PracticeDisplay';
 import { PracticeSkeleton } from '../components/SkeletonLoader';

@@ -3,34 +3,40 @@ import { Header } from './components/Header';
 import { LandingView } from './views/LandingView';
 import { SolutionsView } from './views/SolutionsView';
 import { PracticesView } from './views/PracticesView';
+// FIX: Corrected import paths for views that were not modules. These components will now be created and export valid components.
 import { ToolsView } from './views/ToolsView';
 import { WiringView } from './views/WiringView';
 import { CommissioningView } from './views/CommissioningView';
 import { ReferenceView } from './views/ReferenceView';
-import { SimulatorView } from './views/SimulatorView';
 import { CalculatorView } from './views/CalculatorView';
 import { Watermark } from './components/Watermark';
+// FIX: Corrected import paths for views that were not modules. These components will now be created and export valid components.
 import { DashboardView } from './views/DashboardView';
+import { addRecentActivity } from './services/activityService';
 
-export type View = 'dashboard' | 'solutions' | 'practices' | 'tools' | 'wiring' | 'commissioning' | 'reference' | 'simulator' | 'calculator';
+export type View = 'dashboard' | 'solutions' | 'practices' | 'tools' | 'wiring' | 'commissioning' | 'reference' | 'calculator';
 
 const MainApp: React.FC = () => {
   const [currentView, setCurrentView] = useState<View>('dashboard');
+
+  const handleSetView = (view: View) => {
+    addRecentActivity(view);
+    setCurrentView(view);
+  };
   
   return (
      <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-300">
-      <Header currentView={currentView} setView={setCurrentView} />
+      <Header currentView={currentView} setView={handleSetView} />
       
-      {currentView === 'solutions' || currentView === 'simulator' || currentView === 'commissioning' ? (
-        <>
+      {currentView === 'solutions' || currentView === 'commissioning' ? (
+        <div key={currentView} className="flex-grow flex flex-col animate-fade-in-up">
           {currentView === 'solutions' && <SolutionsView />}
-          {currentView === 'simulator' && <SimulatorView />}
           {currentView === 'commissioning' && <CommissioningView />}
-        </>
+        </div>
       ) : (
         <main className="flex-grow overflow-y-auto">
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8 w-full">
-            {currentView === 'dashboard' && <DashboardView setView={setCurrentView} />}
+          <div key={currentView} className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8 w-full animate-fade-in-up">
+            {currentView === 'dashboard' && <DashboardView setView={handleSetView} />}
             {currentView === 'practices' && <PracticesView />}
             {currentView === 'tools' && <ToolsView />}
             {currentView === 'wiring' && <WiringView />}

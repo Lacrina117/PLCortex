@@ -3,7 +3,6 @@ export const translations = {
   en: {
     header: {
       solutions: 'Solutions',
-      simulator: 'Simulator',
       practices: 'Practices',
       tools: 'Tools',
       wiring: 'Wiring',
@@ -14,6 +13,7 @@ export const translations = {
     dashboard: {
         title: 'Welcome to PLCortex',
         subtitle: 'Select a tool to get started.',
+        recentActivity: 'Recent Activity',
     },
     formDifficulty: 'Difficulty',
     formDifficultyBeginner: 'Beginner',
@@ -63,7 +63,6 @@ export const translations = {
     },
     header_descriptions: {
       solutions: 'Get expert answers to specific questions about PLCs and VFDs.',
-      simulator: 'Write, validate, and simulate simple ladder logic in real-time.',
       practices: 'Generate custom practice problems with solutions for training.',
       tools: 'Use advanced tools for analysis, optimization, and code verification.',
       wiring: 'Generate custom wiring guides and parameter lists for VFDs.',
@@ -246,35 +245,6 @@ export const translations = {
       diagramNotAvailableDesc: 'An interactive terminal diagram is not yet available for this VFD model.',
       placeholder: 'Ask for next steps, fault help, or parameters...',
     },
-    simulator: {
-      title: 'Interactive PLC Simulator',
-      description: 'Write, validate, and simulate simple ladder logic in real-time.',
-      editorTitle: 'Logic Editor',
-      simulationTitle: 'Simulation Panel',
-      inputs: 'Inputs',
-      outputs: 'Outputs',
-      controls: 'Controls',
-      analyzeButton: 'Analyze & Update I/O',
-      startButton: 'Start',
-      stopButton: 'Stop',
-      resetButton: 'Reset',
-      analysisResults: 'Analysis Results',
-      noIssues: 'No issues found. I/O panel has been updated.',
-      codePlaceholder: 'Enter logic here...\nExample: XIC(START) OTE(MOTOR)\n[XIC(MOTOR), XIO(STOP)] OTE(MOTOR)',
-      suggestSolutionButton: 'Suggest Solution',
-      suggestingSolutionButton: 'Suggesting...',
-      implementSolutionButton: 'Implement',
-      suggestedCodeTitle: 'Suggested Solution',
-      collapse: 'Collapse',
-      expand: 'Expand',
-      cpuStatus: 'CPU Status',
-      run: 'Run',
-      stop: 'Stop',
-      fault: 'Fault',
-      noInputs: 'No inputs defined.',
-      noOutputs: 'No outputs defined.',
-      analyzingLogic: 'Analyzing logic...',
-    },
     calculator: {
       title: 'Industrial Scaling & Converter',
       description: 'Intelligent tools for signal scaling, unit conversion, and sensor calculations.',
@@ -391,11 +361,13 @@ Alternatively, if your PLC supports a Scaling instruction (SCP), use these param
         }
       }
     },
+    export: {
+        pdf: 'Export as PDF',
+    },
   },
   es: {
     header: {
       solutions: 'Soluciones',
-      simulator: 'Simulador',
       practices: 'Prácticas',
       tools: 'Herramientas',
       wiring: 'Cableado',
@@ -406,6 +378,7 @@ Alternatively, if your PLC supports a Scaling instruction (SCP), use these param
     dashboard: {
         title: 'Bienvenido a PLCortex',
         subtitle: 'Seleccione una herramienta para comenzar.',
+        recentActivity: 'Actividad Reciente',
     },
     formDifficulty: 'Dificultad',
     formDifficultyBeginner: 'Principiante',
@@ -455,7 +428,6 @@ Alternatively, if your PLC supports a Scaling instruction (SCP), use these param
     },
     header_descriptions: {
       solutions: 'Obtén respuestas expertas a preguntas específicas sobre PLCs y VFDs.',
-      simulator: 'Escribe, valida y simula lógica de escalera simple en tiempo real.',
       practices: 'Genera problemas de práctica personalizados con soluciones para entrenamiento.',
       tools: 'Usa herramientas avanzadas para análisis, optimización y verificación de código.',
       wiring: 'Genera guías de cableado y listas de parámetros personalizadas para VFDs.',
@@ -638,35 +610,6 @@ Alternatively, if your PLC supports a Scaling instruction (SCP), use these param
       diagramNotAvailableDesc: 'Aún no hay disponible un diagrama de terminales interactivo para este modelo de VFD.',
       placeholder: 'Pida los siguientes pasos, ayuda con fallas o parámetros...',
     },
-    simulator: {
-      title: 'Simulador Interactivo de PLC',
-      description: 'Escriba, valide y simule lógica de escalera simple en tiempo real.',
-      editorTitle: 'Editor de Lógica',
-      simulationTitle: 'Panel de Simulación',
-      inputs: 'Entradas',
-      outputs: 'Salidas',
-      controls: 'Controles',
-      analyzeButton: 'Analizar y Actualizar E/S',
-      startButton: 'Iniciar',
-      stopButton: 'Detener',
-      resetButton: 'Reiniciar',
-      analysisResults: 'Resultados del Análisis',
-      noIssues: 'No se encontraron problemas. El panel de E/S ha sido actualizado.',
-      codePlaceholder: 'Ingrese la lógica aquí...\nEjemplo: XIC(START) OTE(MOTOR)\n[XIC(MOTOR), XIO(STOP)] OTE(MOTOR)',
-      suggestSolutionButton: 'Sugerir Solución',
-      suggestingSolutionButton: 'Sugiriendo...',
-      implementSolutionButton: 'Implementar',
-      suggestedCodeTitle: 'Solución Sugerida',
-      collapse: 'Minimizar',
-      expand: 'Maximizar',
-      cpuStatus: 'Estado del CPU',
-      run: 'Run',
-      stop: 'Stop',
-      fault: 'Falla',
-      noInputs: 'No hay entradas definidas.',
-      noOutputs: 'No hay salidas definidas.',
-      analyzingLogic: 'Analizando lógica...',
-    },
     calculator: {
       title: 'Calculadora de Escalado Industrial y Conversor',
       description: 'Herramientas inteligentes para escalado de señales, conversión de unidades y cálculos de sensores.',
@@ -782,6 +725,9 @@ Alternativamente, si su PLC soporta una instrucción de Escalado (SCP), use esto
           plastic: 'Plástico/Fibra de vidrio',
         }
       }
+    },
+    export: {
+        pdf: 'Exportar como PDF',
     },
   },
 };

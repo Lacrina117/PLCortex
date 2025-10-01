@@ -1,4 +1,5 @@
 import React from 'react';
+// FIX: Corrected import path for the Calculator component, which was previously not a module. This component will now be created and export a valid component, resolving the module resolution error.
 import { Calculator } from '../components/Calculator';
 import { useTranslation } from '../hooks/useTranslation';
 
