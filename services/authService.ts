@@ -28,29 +28,26 @@ export interface AccessCode {
 const ADMIN_PASSWORD = "lacrina117";
 const MOCK_DB_STORAGE_KEY = 'plcortex_access_codes_db';
 
-const generateRandomCode = (): string => {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Avoid ambiguous chars like I, 1, O, 0
-  let result = '';
-  for (let i = 0; i < 16; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length));
-    if ((i + 1) % 4 === 0 && i < 15) {
-      result += '-';
-    }
-  }
-  return result;
-};
+// A fixed, static list of 20 codes to ensure they are always the same.
+const STATIC_ACCESS_CODES: string[] = [
+    'A7B3-9CDE-F1G5-H2J4', 'K6L8-M9N1-P2Q3-R4S5', 'T7V9-W1X2-Y3Z4-A5B6',
+    'C8D9-E1F2-G3H4-J5K6', 'L7M8-N9P1-Q2R3-S4T5', 'V6W7-X8Y9-Z1A2-B3C4',
+    'D5E6-F7G8-H9J1-K2L3', 'M4N5-P6Q7-R8S9-T1V2', 'W3X4-Y5Z6-A7B8-C9D1',
+    'E2F3-G4H5-J6K7-L8M9', 'N1P2-Q3R4-S5T6-V7W8', 'X9Y1-Z2A3-B4C5-D6E7',
+    'F8G9-H1J2-K3L4-M5N6', 'P7Q8-R9S1-T2V3-W4X5', 'Y6Z7-A8B9-C1D2-E3F4',
+    'G5H6-J7K8-L9M1-N2P3', 'Q4R5-S6T7-V8W9-X1Y2', 'Z3A4-B5C6-D7E8-F9G1',
+    'H2J3-K4L5-M6N7-P8Q9', 'R1S2-T3V4-W5X6-Y7Z8'
+];
 
 const createInitialDatabase = (): AccessCode[] => {
-    const codes: AccessCode[] = [];
-    for (let i = 0; i < 20; i++) {
-        codes.push({
-            id: `code_${i + 1}`,
-            accessCode: generateRandomCode(),
-            createdAt: new Date().toISOString(),
-            isActive: true,
-            description: '',
-        });
-    }
+    const codes = STATIC_ACCESS_CODES.map((codeStr, i) => ({
+        id: `code_${i + 1}`,
+        accessCode: codeStr,
+        createdAt: new Date().toISOString(),
+        isActive: true,
+        description: '',
+    }));
+    
     // For demonstration, let's make a few inactive
     codes[18].isActive = false;
     codes[19].isActive = false;
@@ -71,9 +68,15 @@ const loadDatabase = (): AccessCode[] => {
     try {
         const storedData = localStorage.getItem(MOCK_DB_STORAGE_KEY);
         if (storedData) {
-            const parsedData = JSON.parse(storedData);
-            // Check for the old `isUsed` property to force regeneration if format is outdated
-            if (Array.isArray(parsedData) && parsedData.length > 0 && 'accessCode' in parsedData[0] && !('isUsed' in parsedData[0])) {
+            const parsedData = JSON.parse(storedData) as AccessCode[];
+            // Basic validation to ensure data integrity
+            if (Array.isArray(parsedData) && parsedData.length > 0 && 'accessCode' in parsedData[0] && 'isActive' in parsedData[0]) {
+                 // If the stored codes don't match the static list (e.g., from a previous version), reset.
+                if (parsedData.length !== STATIC_ACCESS_CODES.length || parsedData.some((c, i) => c.accessCode !== STATIC_ACCESS_CODES[i])) {
+                     const newDb = createInitialDatabase();
+                     saveDatabase(newDb);
+                     return newDb;
+                }
                 return parsedData;
             }
         }
