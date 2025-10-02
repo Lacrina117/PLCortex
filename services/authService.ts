@@ -18,11 +18,16 @@ export interface AccessCode {
 }
 
 const ADMIN_PASSWORD = "lacrina117";
+const USER_MASTER_PASSWORD = "150995";
 
 // --- Service Functions (Calling API endpoints) ---
 
 export const isMasterPassword = (input: string): boolean => {
     return input === ADMIN_PASSWORD;
+};
+
+export const isUserMasterPassword = (input: string): boolean => {
+    return input === USER_MASTER_PASSWORD;
 };
 
 export const validateCode = async (code: string): Promise<void> => {

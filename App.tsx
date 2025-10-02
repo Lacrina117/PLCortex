@@ -88,10 +88,16 @@ const App: React.FC = () => {
         case 'admin':
             return <AdminView onLogout={handleLogout} />;
         case 'app':
+            const isFullBleedView = ['solutions', 'commissioning'].includes(currentView);
+            
+            const mainClasses = isFullBleedView
+                ? "flex-grow flex flex-col overflow-hidden"
+                : "flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-8";
+
             return (
-                <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-300">
+                <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-300">
                     <Header currentView={currentView} setView={handleSetView} />
-                    <main className="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                    <main className={mainClasses}>
                         {renderCurrentView()}
                     </main>
                 </div>

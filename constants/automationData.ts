@@ -24,6 +24,13 @@ export const vfdModelsByBrand: { [key: string]: string[] } = {
     'General': [],
 };
 
+export const vfdApplications: { key: string; labelKey: string }[] = [
+    { key: 'conveyor', labelKey: 'appConveyor' },
+    { key: 'fan', labelKey: 'appFan' },
+    { key: 'pump_pid', labelKey: 'appPumpPID' },
+    { key: 'general', labelKey: 'appGeneral' },
+];
+
 export const plcBrands: string[] = [
     'General',
     'Siemens',

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useTranslation } from '../hooks/useTranslation';
 import { useLanguage } from '../contexts/LanguageContext';
-import { vfdBrands, vfdModelsByBrand } from '../constants/automationData';
+import { vfdBrands, vfdModelsByBrand, vfdApplications } from '../constants/automationData';
 import { vfdTerminalData, VfdDiagramData, Terminal } from '../constants/vfdTerminalData';
 import { generateCommissioningChatResponse, Message } from '../services/geminiService';
 import { MarkdownRenderer } from '../components/MarkdownRenderer';
@@ -11,6 +11,7 @@ interface CommissioningSession {
     id: string;
     vfdBrand: string;
     vfdModel: string;
+    application: string;
     messages: Message[];
     createdAt: number;
 }
@@ -38,8 +39,8 @@ const VfdTerminalDiagram: React.FC<{
     }, [diagramData]);
 
     return (
-        <div className="relative w-full h-full p-2">
-            <svg viewBox={diagramData.viewBox} className="w-full h-full">
+        <div className="relative w-full p-2">
+            <svg viewBox={diagramData.viewBox} className="w-full">
                 {diagramData.blocks.map(block => (
                     <g key={block.id}>
                         {block.label && <text x={block.x} y={block.y - 8} className="text-xs font-semibold fill-current text-gray-600 dark:text-gray-400">{block.label}</text>}
@@ -87,12 +88,88 @@ const VfdTerminalDiagram: React.FC<{
     );
 };
 
+const FullScreenDiagram: React.FC<{
+    diagramData: VfdDiagramData;
+    highlightedTerminals: string[];
+    onClose: () => void;
+}> = ({ diagramData, highlightedTerminals, onClose }) => {
+    const [transform, setTransform] = useState({ x: 0, y: 0, scale: 1 });
+    const isPanning = useRef(false);
+    const lastMousePos = useRef({ x: 0, y: 0 });
+    const containerRef = useRef<HTMLDivElement>(null);
+
+    const handleWheel = (e: React.WheelEvent) => {
+        e.preventDefault();
+        const scaleAmount = -e.deltaY * 0.001;
+        setTransform(prev => {
+            const newScale = Math.max(0.5, Math.min(prev.scale + scaleAmount, 5));
+            return { ...prev, scale: newScale };
+        });
+    };
+    
+    const handleMouseDown = (e: React.MouseEvent) => {
+        isPanning.current = true;
+        lastMousePos.current = { x: e.clientX, y: e.clientY };
+    };
+
+    const handleMouseUp = () => {
+        isPanning.current = false;
+    };
+    
+    const handleMouseMove = (e: React.MouseEvent) => {
+        if (!isPanning.current) return;
+        const dx = e.clientX - lastMousePos.current.x;
+        const dy = e.clientY - lastMousePos.current.y;
+        lastMousePos.current = { x: e.clientX, y: e.clientY };
+        setTransform(prev => ({ ...prev, x: prev.x + dx, y: prev.y + dy }));
+    };
+
+    const handleReset = () => {
+        setTransform({ x: 0, y: 0, scale: 1 });
+    };
+
+    return (
+        <div 
+            className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center animate-fade-in"
+            onMouseUp={handleMouseUp}
+            onMouseLeave={handleMouseUp}
+            onMouseMove={handleMouseMove}
+        >
+            <div
+                ref={containerRef}
+                className="relative w-full h-full p-8 overflow-hidden"
+                onWheel={handleWheel}
+            >
+                <div
+                    className="w-full h-full flex items-center justify-center cursor-grab active:cursor-grabbing"
+                    onMouseDown={handleMouseDown}
+                >
+                    <div style={{ transform: `translate(${transform.x}px, ${transform.y}px) scale(${transform.scale})`, transition: 'transform 0.1s ease-out' }}>
+                        <VfdTerminalDiagram diagramData={diagramData} highlightedTerminals={highlightedTerminals} />
+                    </div>
+                </div>
+            </div>
+            {/* Controls */}
+            <button onClick={onClose} className="absolute top-4 right-4 p-2 bg-white/20 text-white rounded-full hover:bg-white/30 transition-colors">
+                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+            <div className="absolute bottom-4 right-4 flex items-center gap-2 p-2 bg-black/50 text-white rounded-lg backdrop-blur-sm">
+                 <button onClick={() => setTransform(p => ({...p, scale: Math.min(p.scale + 0.2, 5)}))} className="p-1 hover:bg-white/20 rounded-md"><svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" /></svg></button>
+                 <span className="w-12 text-center text-sm font-semibold">{Math.round(transform.scale * 100)}%</span>
+                 <button onClick={() => setTransform(p => ({...p, scale: Math.max(0.5, p.scale - 0.2)}))} className="p-1 hover:bg-white/20 rounded-md"><svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM13 10H7" /></svg></button>
+                 <div className="w-px h-6 bg-white/20 mx-1"></div>
+                 <button onClick={handleReset} className="p-1 hover:bg-white/20 rounded-md"><svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h5M20 20v-5h-5M20 4h-5v5M4 20h5v-5" /></svg></button>
+            </div>
+        </div>
+    );
+};
+
+
 const VfdSelection: React.FC<{
-    onStart: (brand: string, model: string) => void;
+    onStart: (brand: string, model: string, application: string) => void;
 }> = ({ onStart }) => {
     const { t } = useTranslation();
 
-    // Correctly determine available brands and models based on vfdTerminalData
     const { availableBrands, modelsByBrand: brandModelMap } = useMemo(() => {
         const modelsWithDiagrams = Object.keys(vfdTerminalData);
         const newBrandModelMap: { [key: string]: string[] } = {};
@@ -111,17 +188,17 @@ const VfdSelection: React.FC<{
 
     const [selectedBrand, setSelectedBrand] = useState(availableBrands[0] || '');
     const [selectedModel, setSelectedModel] = useState((brandModelMap[availableBrands[0]]?.[0]) || '');
+    const [selectedApplication, setSelectedApplication] = useState(vfdApplications[0].key);
 
     useEffect(() => {
-        // When brand changes, update the model to the first available for the new brand
         if (brandModelMap[selectedBrand]) {
             setSelectedModel(brandModelMap[selectedBrand][0]);
         }
     }, [selectedBrand, brandModelMap]);
 
     const handleStart = () => {
-        if (selectedBrand && selectedModel) {
-            onStart(selectedBrand, selectedModel);
+        if (selectedBrand && selectedModel && selectedApplication) {
+            onStart(selectedBrand, selectedModel, selectedApplication);
         }
     };
     
@@ -144,10 +221,16 @@ const VfdSelection: React.FC<{
                         {(brandModelMap[selectedBrand] || []).map(m => <option key={m} value={m}>{m}</option>)}
                     </select>
                 </div>
+                <div>
+                    <label className="block text-sm font-medium text-left text-gray-700 dark:text-gray-300 mb-1">{t('commissioning.applicationLabel')}</label>
+                    <select value={selectedApplication} onChange={e => setSelectedApplication(e.target.value)} className={commonSelectClasses} disabled={!selectedModel}>
+                        {vfdApplications.map(app => <option key={app.key} value={app.key}>{t(`commissioning.${app.labelKey}`)}</option>)}
+                    </select>
+                </div>
             </div>
             <button
                 onClick={handleStart}
-                disabled={!selectedBrand || !selectedModel}
+                disabled={!selectedBrand || !selectedModel || !selectedApplication}
                 className="mt-8 px-6 py-3 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 transition-colors disabled:bg-indigo-400 disabled:cursor-not-allowed"
             >
                 {t('commissioning.startButton')}
@@ -165,6 +248,7 @@ export const CommissioningView: React.FC = () => {
     const [currentInput, setCurrentInput] = useState('');
     const [highlightedTerminals, setHighlightedTerminals] = useState<string[]>([]);
     const [isHistoryOpen, setIsHistoryOpen] = useState(true);
+    const [isDiagramFullScreen, setIsDiagramFullScreen] = useState(false);
     const chatEndRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -182,11 +266,19 @@ export const CommissioningView: React.FC = () => {
 
     const activeSession = useMemo(() => sessions.find(s => s.id === activeSessionId), [sessions, activeSessionId]);
 
-    const handleStartSession = (brand: string, model: string) => {
+    const activeSessionDisplayTitle = useMemo(() => {
+        if (!activeSession) return t('commissioning.selectTitle');
+        const appLabelKey = vfdApplications.find(a => a.key === activeSession.application)?.labelKey || 'appGeneral';
+        const appName = t(`commissioning.${appLabelKey}`);
+        return `${activeSession.vfdBrand} ${activeSession.vfdModel} (${appName})`;
+    }, [activeSession, t]);
+
+    const handleStartSession = (brand: string, model: string, application: string) => {
         const newSession: CommissioningSession = {
             id: `session-${Date.now()}`,
             vfdBrand: brand,
             vfdModel: model,
+            application: application,
             messages: [],
             createdAt: Date.now(),
         };
@@ -194,8 +286,8 @@ export const CommissioningView: React.FC = () => {
         setActiveSessionId(newSession.id);
         setIsHistoryOpen(false);
 
-        // Send initial message automatically
-        handleSendMessage(newSession.id, t('commissioning.initialPrompt'));
+        const applicationName = t(`commissioning.${vfdApplications.find(a => a.key === application)?.labelKey || 'appGeneral'}`);
+        handleSendMessage(newSession.id, t('commissioning.initialPrompt', { application: applicationName }));
     };
 
     const parseResponse = useCallback((responseText: string) => {
@@ -227,7 +319,13 @@ export const CommissioningView: React.FC = () => {
         setHighlightedTerminals([]);
 
         try {
-            const responseText = await generateCommissioningChatResponse(updatedMessages, language, currentSession.vfdBrand, currentSession.vfdModel);
+            const responseText = await generateCommissioningChatResponse(
+                updatedMessages, 
+                language, 
+                currentSession.vfdBrand, 
+                currentSession.vfdModel,
+                currentSession.application
+            );
             const { textPart, terminals } = parseResponse(responseText);
             setHighlightedTerminals(terminals);
 
@@ -288,7 +386,7 @@ export const CommissioningView: React.FC = () => {
             <main className="flex-1 flex flex-col bg-white dark:bg-gray-800 overflow-hidden">
                  <header className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center flex-shrink-0">
                     <button onClick={() => setIsHistoryOpen(true)} className="md:hidden mr-4 p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700"><svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg></button>
-                    <h2 className="text-lg font-bold truncate">{activeSession ? `${activeSession.vfdBrand} ${activeSession.vfdModel}` : t('commissioning.selectTitle')}</h2>
+                    <h2 className="text-lg font-bold truncate">{activeSessionDisplayTitle}</h2>
                 </header>
 
                 {!activeSession ? (
@@ -296,7 +394,7 @@ export const CommissioningView: React.FC = () => {
                 ) : (
                     <div className="flex-1 flex flex-col lg:flex-row min-h-0">
                         {/* Chat Panel */}
-                        <div className="flex-1 flex flex-col lg:w-1/2 border-r border-gray-200 dark:border-gray-700">
+                        <div className="flex-1 flex flex-col lg:w-1/2 border-r border-gray-200 dark:border-gray-700 min-h-0">
                              <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
                                 {activeSession.messages.map((msg, index) => (
                                     <div key={index} className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
@@ -329,12 +427,37 @@ export const CommissioningView: React.FC = () => {
                             </div>
                         </div>
                         {/* Diagram Panel */}
-                        <div className="flex-shrink-0 h-80 lg:flex-1 lg:h-auto lg:w-1/2 bg-gray-50 dark:bg-gray-900/50 flex flex-col items-center justify-center p-2">
-                           {diagramData ? <VfdTerminalDiagram diagramData={diagramData} highlightedTerminals={highlightedTerminals} /> : <div className="text-center"><h3 className="font-semibold">{t('commissioning.diagramNotAvailable')}</h3><p className="text-sm text-gray-500">{t('commissioning.diagramNotAvailableDesc')}</p></div>}
+                        <div className="flex-shrink-0 h-80 lg:flex-1 lg:w-1/2 bg-gray-50 dark:bg-gray-900/50 flex flex-col p-2 min-h-0">
+                           <div className="relative flex-1 overflow-y-auto">
+                               {diagramData ? (
+                                   <>
+                                       <VfdTerminalDiagram diagramData={diagramData} highlightedTerminals={highlightedTerminals} />
+                                       <button 
+                                          onClick={() => setIsDiagramFullScreen(true)}
+                                          className="absolute top-2 right-2 p-2 bg-white/50 dark:bg-gray-800/50 rounded-full text-gray-700 dark:text-gray-300 hover:bg-white/80 dark:hover:bg-gray-700/80 backdrop-blur-sm transition"
+                                          title="Full Screen"
+                                       >
+                                           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4h4m12 4V4h-4M4 16v4h4m12-4v4h-4" /></svg>
+                                       </button>
+                                   </>
+                               ) : (
+                                <div className="text-center p-4">
+                                  <h3 className="font-semibold">{t('commissioning.diagramNotAvailable')}</h3>
+                                  <p className="text-sm text-gray-500">{t('commissioning.diagramNotAvailableDesc')}</p>
+                                </div>
+                               )}
+                           </div>
                         </div>
                     </div>
                 )}
             </main>
+            {isDiagramFullScreen && diagramData && (
+                <FullScreenDiagram 
+                    diagramData={diagramData}
+                    highlightedTerminals={highlightedTerminals}
+                    onClose={() => setIsDiagramFullScreen(false)}
+                />
+            )}
         </div>
     );
 };

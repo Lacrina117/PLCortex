@@ -269,16 +269,34 @@ export const generateCommissioningPlan = async (params: CommissioningPlanParams)
     return callApiEndpoint('generateCommissioningPlan', { prompt });
 };
 
-export const generateCommissioningChatResponse = async (messages: Message[], language: 'en' | 'es', vfdBrand?: string, vfdModel?: string): Promise<string> => {
+export const generateCommissioningChatResponse = async (messages: Message[], language: 'en' | 'es', vfdBrand?: string, vfdModel?: string, application?: string): Promise<string> => {
     const langInstruction = language === 'es' ? 'Responde en español.' : 'Respond in English.';
     let prompt = "";
     messages.forEach((m: { role: string; parts: { text: string }[] }) => {
         prompt += `${m.role}: ${m.parts[0].text}\n\n`;
     });
 
-    const systemInstruction = `You are a VFD commissioning expert, acting as an interactive guide.
-    The user is commissioning a ${vfdBrand} ${vfdModel}.
+    const systemInstruction = `You are a VFD commissioning expert, acting as an interactive, safety-conscious guide.
+    The user is commissioning a ${vfdBrand} ${vfdModel} for a specific application: "${application}".
     Your role is to guide them step-by-step. Keep responses concise. Ask questions to confirm steps are complete.
+
+    *** SAFETY FIRST - MOST IMPORTANT RULE ***
+    Your VERY FIRST response in this conversation MUST be a detailed safety checklist. DO NOT provide any other information until the safety check is presented.
+    The safety checklist must include:
+    - Verifying main power is disconnected and Locked-Out/Tagged-Out (LOTO).
+    - Using a multimeter to confirm 0 volts on input terminals (L1, L2, L3).
+    - Wearing appropriate Personal Protective Equipment (PPE).
+    - Ensuring the motor shaft is free to rotate and disconnected from the load for initial tests.
+    After presenting the checklist, ask the user to confirm they have completed these steps before proceeding.
+
+    *** APPLICATION-SPECIFIC PARAMETERS ***
+    After the initial safety and wiring steps are covered, you MUST provide a basic list of essential parameters to configure for the "${application}" application.
+    - For a "conveyor", suggest appropriate Accel/Decel times and motor rotation check.
+    - For a "fan" or "pump", suggest parameters related to V/Hz squared pattern, PID settings (if applicable), and sleep modes.
+    - For "general purpose", provide a standard set of essential motor data parameters.
+    Provide parameter numbers or names specific to the ${vfdModel} where possible.
+
+    *** WIRING AND DIAGRAMS ***
     When discussing wiring, reference specific terminal numbers for the ${vfdModel}.
     **Crucially, if your response involves specific terminals on a wiring diagram, you must append a JSON object to the end of your text response.**
     The JSON object must have a key "diagram_terminals" which is an array of strings, where each string is the ID of a terminal to highlight (e.g., ["STF", "STR", "SD"]).
@@ -399,6 +417,10 @@ export const validatePlcLogic = async (params: { language: 'en' | 'es'; code: st
     ${code}
     \`\`\`
 
+    Specifically look for:
+    - **Errors:** Definite problems like duplicate outputs (OTE), unreachable code (dead code), or invalid instruction sequences.
+    - **Warnings:** Inefficient patterns, overly complex rungs, and opportunities for simplification. For example, if you see several rungs with identical logic patterns but different tags (e.g., Motor1_Start, Motor2_Start), suggest using an array, a subroutine (Add-On Instruction), or a loop to reduce redundancy.
+
     Your response MUST be a valid JSON array of objects. Each object represents an issue and must have these keys:
     - "line": The 1-based line number where the issue was found.
     - "type": A string, either "Error" (for definite problems like duplicate outputs) or "Warning" (for style issues or potential problems).
@@ -410,7 +432,7 @@ export const validatePlcLogic = async (params: { language: 'en' | 'es'; code: st
     Example of a response with issues:
     [
         {"line": 2, "type": "Error", "message": "OTE for 'Motor' is used on multiple rungs. This can cause unpredictable behavior."},
-        {"line": 3, "type": "Warning", "message": "This rung appears to be dead code and will never execute."}
+        {"line": 5, "type": "Warning", "message": "The logic for Motor1_Control, Motor2_Control, and Motor3_Control is identical. Consider using a subroutine or an Add-On Instruction (AOI) to simplify this repeated pattern."}
     ]
 
     ${langInstruction}`;
