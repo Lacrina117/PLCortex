@@ -1,5 +1,13 @@
-import { kv } from '@vercel/kv';
+import { createClient } from '@vercel/kv';
 import { AccessCode } from '../services/authService';
+
+// The user specified that they used a custom prefix 'REDIS' for their Vercel KV store.
+// This means the environment variables are named REDIS_REST_API_URL and REDIS_REST_API_TOKEN.
+// We must create a client manually with these variables instead of using the default import.
+const kv = createClient({
+  url: process.env.REDIS_REST_API_URL!,
+  token: process.env.REDIS_REST_API_TOKEN!,
+});
 
 export const config = {
   runtime: 'edge',
