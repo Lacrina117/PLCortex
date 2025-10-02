@@ -5,7 +5,7 @@
     "module": "ESNext",
     "moduleResolution": "bundler",
     "allowSyntheticDefaultImports": true,
-    "types": ["@vercel/kv"]
+    "types": []
   },
   "include": ["vite.config.ts", "tailwind.config.js", "postcss.config.js", "api/**/*.ts"]
 }

@@ -1,19 +1,11 @@
-import { createClient } from '@vercel/kv';
+import { sql } from '@vercel/postgres';
 import { AccessCode } from '../services/authService';
-
-// The user specified that they used a custom prefix 'REDIS' for their Vercel KV store.
-// This means the environment variables are named REDIS_REST_API_URL and REDIS_REST_API_TOKEN.
-// We must create a client manually with these variables instead of using the default import.
-const kv = createClient({
-  url: process.env.REDIS_REST_API_URL!,
-  token: process.env.REDIS_REST_API_TOKEN!,
-});
 
 export const config = {
   runtime: 'edge',
 };
 
-// --- Mock Database and Constants for Initialization ---
+// Static codes for initial population
 const STATIC_ACCESS_CODES: string[] = [
     'A7B3-9CDE-F1G5-H2J4', 'K6L8-M9N1-P2Q3-R4S5', 'T7V9-W1X2-Y3Z4-A5B6',
     'C8D9-E1F2-G3H4-J5K6', 'L7M8-N9P1-Q2R3-S4T5', 'V6W7-X8Y9-Z1A2-B3C4',
@@ -24,37 +16,58 @@ const STATIC_ACCESS_CODES: string[] = [
     'H2J3-K4L5-M6N7-P8Q9', 'R1S2-T3V4-W5X6-Y7Z8'
 ];
 
-const createInitialDatabase = (): AccessCode[] => {
-    const codes = STATIC_ACCESS_CODES.map((codeStr, i) => ({
-        id: `code_${i + 1}`,
-        accessCode: codeStr,
-        createdAt: new Date().toISOString(),
-        isActive: true,
-        description: '',
-    }));
-    codes[18].isActive = false;
-    codes[19].isActive = false;
-    codes[19].description = 'Example Disabled';
-    return codes;
-};
+/**
+ * Ensures the database table exists and is populated with initial data if empty.
+ * This function is idempotent and safe to call on every request.
+ */
+async function initializeDatabase() {
+    // Create the table if it doesn't exist
+    await sql`
+        CREATE TABLE IF NOT EXISTS access_codes (
+            id TEXT PRIMARY KEY,
+            access_code TEXT UNIQUE NOT NULL,
+            created_at TIMESTAMPTZ DEFAULT NOW(),
+            is_active BOOLEAN DEFAULT TRUE,
+            description TEXT
+        );
+    `;
 
-// Function to get codes, initializing if necessary.
-async function getCodesFromDB(): Promise<AccessCode[]> {
-    let codes: AccessCode[] | null = await kv.get('access_codes');
-    if (!codes || codes.length === 0) {
-        console.log("Initializing database with static codes...");
-        const initialCodes = createInitialDatabase();
-        await kv.set('access_codes', initialCodes);
-        return initialCodes;
+    // Check if the table is empty
+    const { rows: countResult } = await sql`SELECT COUNT(*) FROM access_codes;`;
+    const count = parseInt(countResult[0].count, 10);
+
+    // If empty, populate with static codes
+    if (count === 0) {
+        console.log("Initializing 'access_codes' table with static codes...");
+        const initialCodes = STATIC_ACCESS_CODES.map((codeStr, i) => ({
+            id: `code_${i + 1}`,
+            accessCode: codeStr,
+            createdAt: new Date().toISOString(),
+            isActive: i < 18, // Disable the last two codes by default
+            description: i === 19 ? 'Example Disabled' : '',
+        }));
+
+        // Insert each code
+        for (const code of initialCodes) {
+            await sql`
+                INSERT INTO access_codes (id, access_code, created_at, is_active, description)
+                VALUES (${code.id}, ${code.accessCode}, ${code.createdAt}, ${code.isActive}, ${code.description});
+            `;
+        }
+        console.log("Database initialization complete.");
     }
-    return codes;
 }
 
-// Handler for all /api/admin requests.
+// Main handler for all /api/admin requests.
 export default async function handler(req: Request) {
-    // NOTE: In a real app, you'd verify a JWT here to protect the admin endpoint.
-    // For this app, we trust the client-side check is sufficient for demo purposes.
+    try {
+        await initializeDatabase();
+    } catch (error) {
+        console.error('Database initialization failed:', error);
+        return new Response(JSON.stringify({ error: 'Database connection or setup error.' }), { status: 500, headers: { 'Content-Type': 'application/json' } });
+    }
 
+    // In a real app, you'd verify a JWT here to protect the admin endpoint.
     if (req.method === 'GET') {
         return handleGet(req);
     }
@@ -67,8 +80,18 @@ export default async function handler(req: Request) {
 // Handles GET /api/admin
 async function handleGet(req: Request) {
     try {
-        const codes = await getCodesFromDB();
-        return new Response(JSON.stringify(codes), {
+        // Fetch and return all codes, aliasing column names to match the frontend's camelCase expectation.
+        const { rows } = await sql<AccessCode>`
+            SELECT 
+                id, 
+                access_code as "accessCode", 
+                created_at as "createdAt", 
+                is_active as "isActive", 
+                description 
+            FROM access_codes 
+            ORDER BY created_at DESC;
+        `;
+        return new Response(JSON.stringify(rows), {
             status: 200,
             headers: { 'Content-Type': 'application/json' },
         });
@@ -87,21 +110,30 @@ async function handlePut(req: Request) {
             return new Response(JSON.stringify({ error: 'Invalid request body' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
         }
 
-        const codes = await getCodesFromDB();
-        const codeIndex = codes.findIndex(c => c.id === id);
-
-        if (codeIndex === -1) {
+        // Fetch the current state of the code to handle partial updates
+        const { rows: currentRows } = await sql`SELECT is_active, description FROM access_codes WHERE id = ${id};`;
+        if (currentRows.length === 0) {
             return new Response(JSON.stringify({ error: 'Code not found' }), { status: 404, headers: { 'Content-Type': 'application/json' } });
         }
-
-        // Apply updates
-        const updatedCode = { ...codes[codeIndex], ...updates };
-        codes[codeIndex] = updatedCode;
+        const currentCode = currentRows[0];
         
-        // Save the entire updated list back to KV
-        await kv.set('access_codes', codes);
+        // Merge updates with current state
+        const newIsActive = updates.isActive !== undefined ? updates.isActive : currentCode.is_active;
+        const newDescription = updates.description !== undefined ? updates.description : currentCode.description;
 
-        return new Response(JSON.stringify(updatedCode), {
+        // Perform the update and return the updated row
+        const { rows: updatedRows } = await sql`
+            UPDATE access_codes
+            SET is_active = ${newIsActive}, description = ${newDescription}
+            WHERE id = ${id}
+            RETURNING id, access_code as "accessCode", created_at as "createdAt", is_active as "isActive", description;
+        `;
+        
+        if (updatedRows.length === 0) {
+            throw new Error('Update failed, RETURNING clause returned no rows.');
+        }
+
+        return new Response(JSON.stringify(updatedRows[0]), {
             status: 200,
             headers: { 'Content-Type': 'application/json' },
         });

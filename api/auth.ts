@@ -1,13 +1,5 @@
-import { createClient } from '@vercel/kv';
+import { sql } from '@vercel/postgres';
 import { AccessCode } from '../services/authService';
-
-// The user specified that they used a custom prefix 'REDIS' for their Vercel KV store.
-// This means the environment variables are named REDIS_REST_API_URL and REDIS_REST_API_TOKEN.
-// We must create a client manually with these variables instead of using the default import.
-const kv = createClient({
-  url: process.env.REDIS_REST_API_URL!,
-  token: process.env.REDIS_REST_API_TOKEN!,
-});
 
 export const config = {
   runtime: 'edge',
@@ -26,19 +18,13 @@ export default async function handler(req: Request) {
       return new Response(JSON.stringify({ error: 'Access code is required' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
     }
 
-    // Fetch all codes from the database
-    const codes: AccessCode[] | null = await kv.get('access_codes');
-    
-    // If no codes are in the database, it's a server-side issue or first run
-    if (!codes) {
-        console.error("Database is not initialized with access codes.");
-        return new Response(JSON.stringify({ error: 'Server configuration error' }), { status: 500, headers: { 'Content-Type': 'application/json' } });
-    }
+    // Fetch the specific code from the database
+    const { rows } = await sql`
+        SELECT is_active FROM access_codes WHERE access_code = ${accessCode};
+    `;
 
-    // Find the code and check if it's active
-    const foundCode = codes.find(c => c.accessCode === accessCode);
-
-    if (foundCode && foundCode.isActive) {
+    // Check if a row was found and if it's active
+    if (rows.length > 0 && rows[0].is_active) {
       return new Response(JSON.stringify({ message: 'Code validated successfully' }), { status: 200, headers: { 'Content-Type': 'application/json' } });
     } else {
       return new Response(JSON.stringify({ error: 'Invalid or inactive code' }), { status: 401, headers: { 'Content-Type': 'application/json' } });
@@ -46,6 +32,10 @@ export default async function handler(req: Request) {
 
   } catch (error) {
     console.error('Error in /api/auth:', error);
+    // This will catch issues like the table not existing yet.
+    if (error instanceof Error && error.message.includes('relation "access_codes" does not exist')) {
+        return new Response(JSON.stringify({ error: 'Server not ready. Please try again in a moment.' }), { status: 503, headers: { 'Content-Type': 'application/json' } });
+    }
     return new Response(JSON.stringify({ error: 'Server error' }), { status: 500, headers: { 'Content-Type': 'application/json' } });
   }
 }
