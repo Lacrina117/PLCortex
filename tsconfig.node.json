@@ -4,7 +4,8 @@
     "skipLibCheck": true,
     "module": "ESNext",
     "moduleResolution": "bundler",
-    "allowSyntheticDefaultImports": true
+    "allowSyntheticDefaultImports": true,
+    "types": ["@vercel/kv"]
   },
   "include": ["vite.config.ts", "tailwind.config.js", "postcss.config.js", "api/**/*.ts"]
 }
