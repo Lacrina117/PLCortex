@@ -39,6 +39,35 @@ export const translations = {
         },
         footerText: 'PLCortex © 2024. All rights reserved. This is a portfolio project and not a commercial product.',
         
+        // Login & Admin
+        login: {
+            title: 'Welcome to PLCortex',
+            subtitle: 'Please enter your single-use access code.',
+            placeholder: 'Access Code',
+            button: 'Enter',
+            error: 'Invalid or already used code.',
+            loading: 'Verifying...',
+        },
+        admin: {
+            title: 'Admin Panel - Access Codes',
+            logout: 'Logout',
+            generateButton: 'Generate New Code',
+            table: {
+                code: 'Access Code',
+                status: 'Status',
+                created: 'Date Created',
+                copy: 'Copy',
+                copied: 'Copied!',
+                actions: 'Actions',
+                delete: 'Delete',
+            },
+            status: {
+                used: 'Used',
+                notUsed: 'Not Used',
+            },
+            deleteConfirm: 'Are you sure you want to permanently delete this code? This action cannot be undone.',
+        },
+
         // Dashboard
         dashboard: {
             title: 'Welcome to PLCortex',
@@ -496,6 +525,35 @@ export const translations = {
             creator: 'Creado por Ing. Jesús Jiménez',
         },
         footerText: 'PLCortex © 2024. Todos los derechos reservados. Este es un proyecto de portafolio y no un producto comercial.',
+        
+        // Login & Admin
+        login: {
+            title: 'Bienvenido a PLCortex',
+            subtitle: 'Por favor, introduce tu código de acceso de un solo uso.',
+            placeholder: 'Código de Acceso',
+            button: 'Entrar',
+            error: 'Código inválido o ya utilizado.',
+            loading: 'Verificando...',
+        },
+        admin: {
+            title: 'Panel de Admin - Códigos de Acceso',
+            logout: 'Cerrar Sesión',
+            generateButton: 'Generar Nuevo Código',
+            table: {
+                code: 'Código de Acceso',
+                status: 'Estado',
+                created: 'Fecha de Creación',
+                copy: 'Copiar',
+                copied: '¡Copiado!',
+                actions: 'Acciones',
+                delete: 'Eliminar',
+            },
+            status: {
+                used: 'Usado',
+                notUsed: 'No Usado',
+            },
+            deleteConfirm: '¿Estás seguro de que quieres eliminar este código permanentemente? Esta acción no se puede deshacer.',
+        },
 
         // Dashboard
         dashboard: {

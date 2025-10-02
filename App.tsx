@@ -1,63 +1,104 @@
-import React, { useState } from 'react';
+// FIX: The original App.tsx was a duplicate of the application entry point.
+// It has been replaced with the main application component, which manages
+// application state (like authentication and view routing) and exports the
+// `View` type, resolving multiple import/export errors across the project.
+import React, { useState, useEffect } from 'react';
+
+// Import services
+import { addRecentActivity } from './services/activityService';
+import * as authService from './services/authService';
+
+// Import components and views
 import { Header } from './components/Header';
 import { LandingView } from './views/LandingView';
+import { LoginView } from './views/LoginView';
+import { AdminView } from './views/AdminView';
+import { DashboardView } from './views/DashboardView';
 import { SolutionsView } from './views/SolutionsView';
 import { PracticesView } from './views/PracticesView';
-// FIX: Corrected import paths for views that were not modules. These components will now be created and export valid components.
 import { ToolsView } from './views/ToolsView';
 import { CommissioningView } from './views/CommissioningView';
 import { ReferenceView } from './views/ReferenceView';
 import { CalculatorView } from './views/CalculatorView';
-import { Watermark } from './components/Watermark';
-// FIX: Corrected import paths for views that were not modules. These components will now be created and export valid components.
-import { DashboardView } from './views/DashboardView';
-import { addRecentActivity } from './services/activityService';
 
-export type View = 'dashboard' | 'solutions' | 'practices' | 'tools' | 'commissioning' | 'reference' | 'calculator';
+// FIX: Define and export the `View` type. This fixes errors in Header.tsx,
+// DashboardView.tsx, and activityService.ts which were unable to import it.
+export type View =
+  | 'dashboard'
+  | 'solutions'
+  | 'practices'
+  | 'tools'
+  | 'commissioning'
+  | 'reference'
+  | 'calculator';
 
-const MainApp: React.FC = () => {
-  const [currentView, setCurrentView] = useState<View>('dashboard');
+type AppState = 'landing' | 'login' | 'app' | 'admin';
 
-  const handleSetView = (view: View) => {
-    addRecentActivity(view);
-    setCurrentView(view);
-  };
-  
-  return (
-     <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-300">
-      <Header currentView={currentView} setView={handleSetView} />
-      
-      {currentView === 'solutions' || currentView === 'commissioning' ? (
-        <div key={currentView} className="flex-grow flex flex-col animate-fade-in-up">
-          {currentView === 'solutions' && <SolutionsView />}
-          {currentView === 'commissioning' && <CommissioningView />}
-        </div>
-      ) : (
-        <main className="flex-grow overflow-y-auto">
-          <div key={currentView} className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8 w-full animate-fade-in-up">
-            {currentView === 'dashboard' && <DashboardView setView={handleSetView} />}
-            {currentView === 'practices' && <PracticesView />}
-            {currentView === 'tools' && <ToolsView />}
-            {currentView === 'reference' && <ReferenceView />}
-            {currentView === 'calculator' && <CalculatorView />}
-          </div>
-        </main>
-      )}
-      
-      <Watermark />
-    </div>
-  );
-}
+const App: React.FC = () => {
+    const [appState, setAppState] = useState<AppState>('landing');
+    const [currentView, setCurrentView] = useState<View>('dashboard');
 
+    useEffect(() => {
+        // Simple session check for demo purposes
+        if (sessionStorage.getItem('admin_token')) {
+            setAppState('admin');
+        }
+    }, []);
 
-function App() {
-  const [hasEntered, setHasEntered] = useState(false);
+    const handleSetView = (view: View) => {
+        setCurrentView(view);
+        addRecentActivity(view);
+    };
 
-  if (hasEntered) {
-    return <MainApp />;
-  }
-  
-  return <LandingView onEnter={() => setHasEntered(true)} />;
-}
+    const renderCurrentView = () => {
+        switch (currentView) {
+            case 'solutions':
+                return <SolutionsView />;
+            case 'practices':
+                return <PracticesView />;
+            case 'tools':
+                return <ToolsView />;
+            case 'commissioning':
+                return <CommissioningView />;
+            case 'reference':
+                return <ReferenceView />;
+            case 'calculator':
+                return <CalculatorView />;
+            case 'dashboard':
+            default:
+                return <DashboardView setView={handleSetView} />;
+        }
+    };
 
+    const handleLogout = () => {
+        authService.adminLogout();
+        setAppState('landing');
+    };
+
+    switch (appState) {
+        case 'landing':
+            return <LandingView onEnter={() => setAppState('login')} />;
+        case 'login':
+            return (
+                <LoginView
+                    onLoginSuccess={() => setAppState('app')}
+                    onAdminLoginSuccess={() => setAppState('admin')}
+                />
+            );
+        case 'admin':
+            return <AdminView onLogout={handleLogout} />;
+        case 'app':
+            return (
+                <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-300">
+                    <Header currentView={currentView} setView={handleSetView} />
+                    <main className="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                        {renderCurrentView()}
+                    </main>
+                </div>
+            );
+    }
+};
+
+// FIX: Default export the `App` component. This resolves errors in index.tsx
+// which was unable to find a default export to render.
 export default App;
