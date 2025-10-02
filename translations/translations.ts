@@ -42,10 +42,10 @@ export const translations = {
         // Login & Admin
         login: {
             title: 'Welcome to PLCortex',
-            subtitle: 'Please enter your single-use access code.',
+            subtitle: 'Please enter your access code.',
             placeholder: 'Access Code',
             button: 'Enter',
-            error: 'Invalid, used, or inactive code.',
+            error: 'Invalid or inactive code.',
             loading: 'Verifying...',
         },
         admin: {
@@ -55,15 +55,10 @@ export const translations = {
             table: {
                 code: 'Access Code',
                 description: 'Description',
-                status: 'Status',
                 active: 'Active',
                 created: 'Date Created',
                 copy: 'Copy',
                 copied: 'Copied!',
-            },
-            status: {
-                used: 'Used',
-                notUsed: 'Not Used',
             },
         },
 
@@ -528,10 +523,10 @@ export const translations = {
         // Login & Admin
         login: {
             title: 'Bienvenido a PLCortex',
-            subtitle: 'Por favor, introduce tu código de acceso de un solo uso.',
+            subtitle: 'Por favor, introduce tu código de acceso.',
             placeholder: 'Código de Acceso',
             button: 'Entrar',
-            error: 'Código inválido, usado o inactivo.',
+            error: 'Código inválido o inactivo.',
             loading: 'Verificando...',
         },
         admin: {
@@ -541,15 +536,10 @@ export const translations = {
             table: {
                 code: 'Código de Acceso',
                 description: 'Descripción',
-                status: 'Estado',
                 active: 'Activo',
                 created: 'Fecha de Creación',
                 copy: 'Copiar',
                 copied: '¡Copiado!',
-            },
-            status: {
-                used: 'Usado',
-                notUsed: 'No Usado',
             },
         },
 

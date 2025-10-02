@@ -19,7 +19,6 @@ export interface AccessCode {
   id: string;
   accessCode: string;
   createdAt: string;
-  isUsed: boolean;
   isActive: boolean;
   description: string;
 }
@@ -27,6 +26,7 @@ export interface AccessCode {
 // --- Mock Database and Constants ---
 
 const ADMIN_PASSWORD = "lacrina117";
+const MOCK_DB_STORAGE_KEY = 'plcortex_access_codes_db';
 
 const generateRandomCode = (): string => {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Avoid ambiguous chars like I, 1, O, 0
@@ -40,28 +40,54 @@ const generateRandomCode = (): string => {
   return result;
 };
 
-const initializeMockDatabase = (): AccessCode[] => {
+const createInitialDatabase = (): AccessCode[] => {
     const codes: AccessCode[] = [];
     for (let i = 0; i < 20; i++) {
         codes.push({
             id: `code_${i + 1}`,
             accessCode: generateRandomCode(),
             createdAt: new Date().toISOString(),
-            isUsed: false,
             isActive: true,
             description: '',
         });
     }
-    // For demonstration, let's make a few inactive or used
+    // For demonstration, let's make a few inactive
     codes[18].isActive = false;
-    codes[19].isUsed = true;
     codes[19].isActive = false;
-    codes[19].description = 'Expired Demo';
+    codes[19].description = 'Example Disabled';
     return codes;
 };
 
+// --- Persistence Logic ---
+const saveDatabase = (db: AccessCode[]) => {
+    try {
+        localStorage.setItem(MOCK_DB_STORAGE_KEY, JSON.stringify(db));
+    } catch (e) {
+        console.error("Failed to save mock database to localStorage", e);
+    }
+};
 
-let mockCodeDatabase: AccessCode[] = initializeMockDatabase();
+const loadDatabase = (): AccessCode[] => {
+    try {
+        const storedData = localStorage.getItem(MOCK_DB_STORAGE_KEY);
+        if (storedData) {
+            const parsedData = JSON.parse(storedData);
+            // Check for the old `isUsed` property to force regeneration if format is outdated
+            if (Array.isArray(parsedData) && parsedData.length > 0 && 'accessCode' in parsedData[0] && !('isUsed' in parsedData[0])) {
+                return parsedData;
+            }
+        }
+    } catch (e) {
+        console.error("Failed to load mock database from localStorage", e);
+    }
+    // If nothing is stored, or data is invalid/old format, create and store a new one.
+    const newDb = createInitialDatabase();
+    saveDatabase(newDb);
+    return newDb;
+};
+
+
+let mockCodeDatabase: AccessCode[] = loadDatabase();
 
 // --- Service Functions (Simulating API calls) ---
 
@@ -73,11 +99,12 @@ export const validateCode = (code: string): Promise<void> => {
   return new Promise((resolve, reject) => {
     setTimeout(() => {
       const foundCode = mockCodeDatabase.find(c => c.accessCode === code);
-      if (foundCode && !foundCode.isUsed && foundCode.isActive) {
-        foundCode.isUsed = true;
+      if (foundCode && foundCode.isActive) {
+        // Code is valid and active. Don't mark as used.
         resolve();
       } else {
-        reject(new Error('Invalid, used, or inactive code.'));
+        // Reject if not found or not active
+        reject(new Error('Invalid or inactive code.'));
       }
     }, 500); // Simulate network delay
   });
@@ -125,6 +152,7 @@ export const updateCode = (id: string, updates: Partial<Pick<AccessCode, 'isActi
             if (codeIndex > -1) {
                 const updatedCode = { ...mockCodeDatabase[codeIndex], ...updates };
                 mockCodeDatabase[codeIndex] = updatedCode;
+                saveDatabase(mockCodeDatabase); // Persist change
                 resolve(updatedCode);
             } else {
                 reject(new Error('Code not found.'));

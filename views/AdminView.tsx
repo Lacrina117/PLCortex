@@ -25,20 +25,6 @@ const CopyButton: React.FC<{ textToCopy: string }> = ({ textToCopy }) => {
     );
 };
 
-const StatusIndicator: React.FC<{ used: boolean }> = ({ used }) => {
-    const { t } = useTranslation();
-    const baseClasses = "px-2 py-0.5 text-xs font-semibold rounded-full inline-flex items-center gap-1.5";
-    const usedClasses = "bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300";
-    const notUsedClasses = "bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300";
-    
-    return (
-        <span className={`${baseClasses} ${used ? usedClasses : notUsedClasses}`}>
-            <span className={`h-1.5 w-1.5 rounded-full ${used ? 'bg-red-500' : 'bg-green-500'}`}></span>
-            {used ? t('admin.status.used') : t('admin.status.notUsed')}
-        </span>
-    );
-};
-
 const ToggleSwitch: React.FC<{ checked: boolean; onChange: (checked: boolean) => void }> = ({ checked, onChange }) => {
     return (
         <button
@@ -123,7 +109,6 @@ export const AdminView: React.FC<AdminViewProps> = ({ onLogout }) => {
                                     <tr>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('admin.table.code')}</th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('admin.table.description')}</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('admin.table.status')}</th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('admin.table.active')}</th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('admin.table.created')}</th>
                                     </tr>
@@ -146,9 +131,6 @@ export const AdminView: React.FC<AdminViewProps> = ({ onLogout }) => {
                                                     placeholder={t('admin.descriptionPlaceholder')}
                                                     className="w-full min-w-[150px] p-1.5 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-700 focus:ring-1 focus:ring-indigo-500"
                                                 />
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <StatusIndicator used={code.isUsed} />
                                             </td>
                                              <td className="px-6 py-4 whitespace-nowrap">
                                                 <ToggleSwitch checked={code.isActive} onChange={(isChecked) => handleUpdateCode(code.id, { isActive: isChecked })} />
