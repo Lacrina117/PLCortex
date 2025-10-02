@@ -20,28 +20,13 @@ export interface AccessCode {
   accessCode: string;
   createdAt: string;
   isUsed: boolean;
+  isActive: boolean;
+  description: string;
 }
 
 // --- Mock Database and Constants ---
 
 const ADMIN_PASSWORD = "lacrina117";
-
-let mockCodeDatabase: AccessCode[] = [
-    {
-        id: '1',
-        accessCode: 'ABCD-1234-WXYZ-9876',
-        createdAt: new Date(Date.now() - 86400000).toISOString(), // 1 day ago
-        isUsed: false,
-    },
-    {
-        id: '2',
-        accessCode: 'QWER-5678-ASDF-5432',
-        createdAt: new Date(Date.now() - 172800000).toISOString(), // 2 days ago
-        isUsed: true,
-    },
-];
-
-// --- Helper Functions ---
 
 const generateRandomCode = (): string => {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Avoid ambiguous chars like I, 1, O, 0
@@ -55,6 +40,28 @@ const generateRandomCode = (): string => {
   return result;
 };
 
+const initializeMockDatabase = (): AccessCode[] => {
+    const codes: AccessCode[] = [];
+    for (let i = 0; i < 20; i++) {
+        codes.push({
+            id: `code_${i + 1}`,
+            accessCode: generateRandomCode(),
+            createdAt: new Date().toISOString(),
+            isUsed: false,
+            isActive: true,
+            description: '',
+        });
+    }
+    // For demonstration, let's make a few inactive or used
+    codes[18].isActive = false;
+    codes[19].isUsed = true;
+    codes[19].isActive = false;
+    codes[19].description = 'Expired Demo';
+    return codes;
+};
+
+
+let mockCodeDatabase: AccessCode[] = initializeMockDatabase();
 
 // --- Service Functions (Simulating API calls) ---
 
@@ -66,12 +73,11 @@ export const validateCode = (code: string): Promise<void> => {
   return new Promise((resolve, reject) => {
     setTimeout(() => {
       const foundCode = mockCodeDatabase.find(c => c.accessCode === code);
-      if (foundCode && !foundCode.isUsed) {
-        // Mark the code as used instead of deleting it
+      if (foundCode && !foundCode.isUsed && foundCode.isActive) {
         foundCode.isUsed = true;
         resolve();
       } else {
-        reject(new Error('Invalid or already used code.'));
+        reject(new Error('Invalid, used, or inactive code.'));
       }
     }, 500); // Simulate network delay
   });
@@ -81,8 +87,6 @@ export const adminLogin = (password: string): Promise<{ token: string }> => {
   return new Promise((resolve, reject) => {
     setTimeout(() => {
       if (password === ADMIN_PASSWORD) {
-        // In a real app, you'd get a JWT from the server.
-        // We also store it to simulate a protected session.
         sessionStorage.setItem('admin_token', 'mock-admin-token');
         resolve({ token: 'mock-admin-token' });
       } else {
@@ -111,25 +115,7 @@ export const getCodes = (): Promise<AccessCode[]> => {
     });
 };
 
-export const generateCode = (): Promise<AccessCode> => {
-    return new Promise((resolve, reject) => {
-        setTimeout(() => {
-             if (!checkAdminAuth()) {
-                return reject(new Error('Unauthorized'));
-            }
-            const newCode: AccessCode = {
-                id: String(Date.now()),
-                accessCode: generateRandomCode(),
-                createdAt: new Date().toISOString(),
-                isUsed: false,
-            };
-            mockCodeDatabase.push(newCode);
-            resolve(newCode);
-        }, 300);
-    });
-};
-
-export const deleteCode = (id: string): Promise<void> => {
+export const updateCode = (id: string, updates: Partial<Pick<AccessCode, 'isActive' | 'description'>>): Promise<AccessCode> => {
     return new Promise((resolve, reject) => {
         setTimeout(() => {
             if (!checkAdminAuth()) {
@@ -137,11 +123,12 @@ export const deleteCode = (id: string): Promise<void> => {
             }
             const codeIndex = mockCodeDatabase.findIndex(c => c.id === id);
             if (codeIndex > -1) {
-                mockCodeDatabase.splice(codeIndex, 1);
-                resolve();
+                const updatedCode = { ...mockCodeDatabase[codeIndex], ...updates };
+                mockCodeDatabase[codeIndex] = updatedCode;
+                resolve(updatedCode);
             } else {
                 reject(new Error('Code not found.'));
             }
-        }, 200);
+        }, 100);
     });
 };

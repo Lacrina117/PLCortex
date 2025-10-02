@@ -45,27 +45,26 @@ export const translations = {
             subtitle: 'Please enter your single-use access code.',
             placeholder: 'Access Code',
             button: 'Enter',
-            error: 'Invalid or already used code.',
+            error: 'Invalid, used, or inactive code.',
             loading: 'Verifying...',
         },
         admin: {
             title: 'Admin Panel - Access Codes',
             logout: 'Logout',
-            generateButton: 'Generate New Code',
+            descriptionPlaceholder: 'Assign to a user...',
             table: {
                 code: 'Access Code',
+                description: 'Description',
                 status: 'Status',
+                active: 'Active',
                 created: 'Date Created',
                 copy: 'Copy',
                 copied: 'Copied!',
-                actions: 'Actions',
-                delete: 'Delete',
             },
             status: {
                 used: 'Used',
                 notUsed: 'Not Used',
             },
-            deleteConfirm: 'Are you sure you want to permanently delete this code? This action cannot be undone.',
         },
 
         // Dashboard
@@ -532,27 +531,26 @@ export const translations = {
             subtitle: 'Por favor, introduce tu código de acceso de un solo uso.',
             placeholder: 'Código de Acceso',
             button: 'Entrar',
-            error: 'Código inválido o ya utilizado.',
+            error: 'Código inválido, usado o inactivo.',
             loading: 'Verificando...',
         },
         admin: {
             title: 'Panel de Admin - Códigos de Acceso',
             logout: 'Cerrar Sesión',
-            generateButton: 'Generar Nuevo Código',
+            descriptionPlaceholder: 'Asignar a un usuario...',
             table: {
                 code: 'Código de Acceso',
+                description: 'Descripción',
                 status: 'Estado',
+                active: 'Activo',
                 created: 'Fecha de Creación',
                 copy: 'Copiar',
                 copied: '¡Copiado!',
-                actions: 'Acciones',
-                delete: 'Eliminar',
             },
             status: {
                 used: 'Usado',
                 notUsed: 'No Usado',
             },
-            deleteConfirm: '¿Estás seguro de que quieres eliminar este código permanentemente? Esta acción no se puede deshacer.',
         },
 
         // Dashboard
