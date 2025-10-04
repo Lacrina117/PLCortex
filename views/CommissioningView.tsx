@@ -21,7 +21,8 @@ const STORAGE_KEY = 'plcortex_commissioning_sessions';
 const VfdTerminalDiagram: React.FC<{
     diagramData: VfdDiagramData;
     highlightedTerminals: string[];
-}> = ({ diagramData, highlightedTerminals }) => {
+    onTerminalClick?: (terminal: Terminal) => void;
+}> = ({ diagramData, highlightedTerminals, onTerminalClick }) => {
     const [hoveredTerminal, setHoveredTerminal] = useState<Terminal | null>(null);
 
     const terminalPositions = useMemo(() => {
@@ -52,7 +53,7 @@ const VfdTerminalDiagram: React.FC<{
                             const isHighlighted = highlightedTerminals.includes(terminal.id);
                             
                             return (
-                                <g key={terminal.id} onMouseEnter={() => setHoveredTerminal(terminal)} onMouseLeave={() => setHoveredTerminal(null)} className="cursor-pointer">
+                                <g key={terminal.id} onMouseEnter={() => setHoveredTerminal(terminal)} onMouseLeave={() => setHoveredTerminal(null)} onClick={() => onTerminalClick?.(terminal)} className="cursor-pointer">
                                     <rect
                                         x={x} y={y}
                                         width={block.terminalWidth} height={block.terminalHeight}
@@ -91,8 +92,9 @@ const VfdTerminalDiagram: React.FC<{
 const FullScreenDiagram: React.FC<{
     diagramData: VfdDiagramData;
     highlightedTerminals: string[];
+    onTerminalClick?: (terminal: Terminal) => void;
     onClose: () => void;
-}> = ({ diagramData, highlightedTerminals, onClose }) => {
+}> = ({ diagramData, highlightedTerminals, onTerminalClick, onClose }) => {
     const [transform, setTransform] = useState({ x: 0, y: 0, scale: 1 });
     const isPanning = useRef(false);
     const lastMousePos = useRef({ x: 0, y: 0 });
@@ -145,7 +147,7 @@ const FullScreenDiagram: React.FC<{
                     onMouseDown={handleMouseDown}
                 >
                     <div style={{ transform: `translate(${transform.x}px, ${transform.y}px) scale(${transform.scale})`, transition: 'transform 0.1s ease-out' }}>
-                        <VfdTerminalDiagram diagramData={diagramData} highlightedTerminals={highlightedTerminals} />
+                        <VfdTerminalDiagram diagramData={diagramData} highlightedTerminals={highlightedTerminals} onTerminalClick={onTerminalClick} />
                     </div>
                 </div>
             </div>
@@ -250,6 +252,7 @@ export const CommissioningView: React.FC = () => {
     const [isHistoryOpen, setIsHistoryOpen] = useState(true);
     const [isDiagramFullScreen, setIsDiagramFullScreen] = useState(false);
     const chatEndRef = useRef<HTMLDivElement>(null);
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
 
     useEffect(() => {
         try {
@@ -288,6 +291,17 @@ export const CommissioningView: React.FC = () => {
 
         const applicationName = t(`commissioning.${vfdApplications.find(a => a.key === application)?.labelKey || 'appGeneral'}`);
         handleSendMessage(newSession.id, t('commissioning.initialPrompt', { application: applicationName }));
+    };
+
+    const handleTerminalClick = (terminal: Terminal) => {
+        if (!activeSessionId) return;
+        const prompt = t('commissioning.terminalQuery', {
+            label: terminal.label,
+            func: terminal.function || 'N/A'
+        });
+        // Focus the textarea and send the message
+        textareaRef.current?.focus();
+        handleSendMessage(activeSessionId, prompt);
     };
 
     const parseResponse = useCallback((responseText: string) => {
@@ -421,7 +435,7 @@ export const CommissioningView: React.FC = () => {
                             </div>
                             <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
                                 <div className="relative">
-                                    <textarea value={currentInput} onChange={e => setCurrentInput(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(activeSessionId); } }} placeholder={t('commissioning.placeholder')} disabled={isLoading} className="w-full p-3 pr-12 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 bg-gray-50 dark:bg-gray-700 disabled:opacity-50" rows={2} />
+                                    <textarea ref={textareaRef} value={currentInput} onChange={e => setCurrentInput(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(activeSessionId); } }} placeholder={t('commissioning.placeholder')} disabled={isLoading} className="w-full p-3 pr-12 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 bg-gray-50 dark:bg-gray-700 disabled:opacity-50" rows={2} />
                                     <button onClick={() => handleSendMessage(activeSessionId)} disabled={isLoading || !currentInput.trim()} className="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-full bg-indigo-600 text-white hover:bg-indigo-700 disabled:bg-indigo-400"><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.428A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" /></svg></button>
                                 </div>
                             </div>
@@ -431,7 +445,7 @@ export const CommissioningView: React.FC = () => {
                            <div className="relative flex-1 overflow-y-auto">
                                {diagramData ? (
                                    <>
-                                       <VfdTerminalDiagram diagramData={diagramData} highlightedTerminals={highlightedTerminals} />
+                                       <VfdTerminalDiagram diagramData={diagramData} highlightedTerminals={highlightedTerminals} onTerminalClick={handleTerminalClick} />
                                        <button 
                                           onClick={() => setIsDiagramFullScreen(true)}
                                           className="absolute top-2 right-2 p-2 bg-white/50 dark:bg-gray-800/50 rounded-full text-gray-700 dark:text-gray-300 hover:bg-white/80 dark:hover:bg-gray-700/80 backdrop-blur-sm transition"
@@ -455,6 +469,7 @@ export const CommissioningView: React.FC = () => {
                 <FullScreenDiagram 
                     diagramData={diagramData}
                     highlightedTerminals={highlightedTerminals}
+                    onTerminalClick={handleTerminalClick}
                     onClose={() => setIsDiagramFullScreen(false)}
                 />
             )}

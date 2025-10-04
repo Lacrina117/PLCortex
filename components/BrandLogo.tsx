@@ -53,6 +53,12 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({ brand = 'General', topic, 
             <svg viewBox="0 0 68 11" fill="currentColor"><path d="M12.9 5.5c0-2.3-1.8-4.2-4-4.2H0V11h8.8c2.2 0 4.1-1.9 4.1-4.2V5.5zm-3.8.1c0 .8-.6 1.4-1.4 1.4H4.2V4h3.5c.8 0 1.4.6 1.4 1.4v.2zM15.4 1.3v9.7h10.2v-3H21v-1.1h4.6v-3H21V2.8h4.6v-1.5H15.4zM34.7 9.9L30.3 1.3h4.4l2 4.1 2-4.1h4.4l-4.5 8.6h-3.4zM45.5 1.3v9.7h4.2V1.3h-4.2zm7.4 0v9.7h4.2V1.3h-4.2zm11 0l-3.3 5.4V1.3H56.4v9.7h3.3l3.3-5.4v5.4h4.2V1.3h-3.1z"></path></svg>
           </div>
         );
+      case 'Eaton':
+        return (
+          <div className={`${baseClasses} bg-[#005EB8] text-white p-1.5`}>
+            <svg viewBox="0 0 220 40" fill="currentColor"><path d="M0 0h44v40H0zM22 2c11 0 20 9 20 20s-9 20-20 20S2 33 2 22 11 2 22 2zM56 0h16v40H56zM84 0h60v12H84zM84 28h60v12H84zM84 14h48v12H84zM156 0h12l24 20-24 20h-12l24-20z"></path></svg>
+          </div>
+        );
       default:
         return (
           <div className={`${baseClasses} bg-gray-500 dark:bg-gray-600 text-white`}>

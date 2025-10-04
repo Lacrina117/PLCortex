@@ -41,13 +41,21 @@ export const ReferenceView: React.FC = () => {
     const siemensFaults: Fault[] = t('reference.faults.siemens') as any;
     const abFaults: Fault[] = t('reference.faults.allenBradley') as any;
     const abbFaults: Fault[] = t('reference.faults.abb') as any;
+    const schneiderFaults: Fault[] = t('reference.faults.schneider') as any;
+    const danfossFaults: Fault[] = t('reference.faults.danfoss') as any;
     const yaskawaFaults: Fault[] = t('reference.faults.yaskawa') as any;
+    const mitsubishiFaults: Fault[] = t('reference.faults.mitsubishi') as any;
+    const eatonFaults: Fault[] = t('reference.faults.eaton') as any;
 
     const vfdBrands = [
         { name: t('reference.brands.siemens'), logoName: 'Siemens', faults: siemensFaults },
         { name: t('reference.brands.allenBradley'), logoName: 'Allen-Bradley', faults: abFaults },
         { name: t('reference.brands.abb'), logoName: 'ABB', faults: abbFaults },
+        { name: t('reference.brands.schneider'), logoName: 'Schneider Electric', faults: schneiderFaults },
+        { name: t('reference.brands.danfoss'), logoName: 'Danfoss', faults: danfossFaults },
         { name: t('reference.brands.yaskawa'), logoName: 'Yaskawa', faults: yaskawaFaults },
+        { name: t('reference.brands.mitsubishi'), logoName: 'Mitsubishi Electric', faults: mitsubishiFaults },
+        { name: t('reference.brands.eaton'), logoName: 'Eaton', faults: eatonFaults },
     ];
 
     return (

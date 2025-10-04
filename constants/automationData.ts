@@ -13,11 +13,11 @@ export const vfdBrands: string[] = [
 ];
 
 export const vfdModelsByBrand: { [key: string]: string[] } = {
-    'Siemens': ['Sinamics G120', 'Sinamics V20', 'Micromaster 440'],
-    'Allen-Bradley': ['PowerFlex 523', 'PowerFlex 525', 'PowerFlex 755', 'PowerFlex 4M'],
+    'Siemens': ['Sinamics G120C', 'Sinamics G120', 'Sinamics V20', 'Micromaster 440'],
+    'Allen-Bradley': ['PowerFlex 523', 'PowerFlex 525', 'PowerFlex 753', 'PowerFlex 755', 'PowerFlex 4M'],
     'ABB': ['ACS355', 'ACS580', 'ACS880'],
     'Yaskawa': ['V1000', 'A1000', 'GA500'],
-    'Danfoss': ['VLT FC 302', 'VLT Micro Drive FC 51'],
+    'Danfoss': ['VLT Midi Drive FC 280', 'VLT FC 302'],
     'Schneider Electric': ['Altivar Machine ATV320', 'Altivar Process ATV630', 'Altivar Process ATV650'],
     'Mitsubishi Electric': ['FR-E800', 'FR-D700'],
     'Eaton': ['PowerXL DG1'],

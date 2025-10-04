@@ -154,10 +154,31 @@ export const generateChatResponse = async (messages: Message[], context: ChatCon
     });
     
     const buildContextString = () => {
+        let expertKnowledge = '';
+        if (context.vfdBrand === 'ABB' && context.vfdModel === 'ACS580') {
+            expertKnowledge = "You have expert-level knowledge of the ABB ACS580 drive, based on its standard control program firmware manual. When discussing this model, refer to its specific parameter groups (e.g., Group 99: Start/stop/direction) and fault codes.";
+        } else if (context.vfdBrand === 'ABB' && context.vfdModel === 'ACS355') {
+            expertKnowledge = "You have expert-level knowledge of the ABB ACS355 machinery drive. When discussing this model, refer to its specific parameter groups (e.g., Group 10: Start/Stop/Direction, Group 11: Reference Select, Group 20: Limits, Group 30: Fault Functions, Group 99: Motor Data) and its macro-based setup.";
+        } else if (context.vfdBrand === 'Schneider Electric' && context.vfdModel === 'Altivar Machine ATV320') {
+            expertKnowledge = "You have expert-level knowledge of the Schneider Electric Altivar 320 (ATV320) machinery drive. When discussing this model, refer to its specific parameter menus, such as [drC-] (Drive menu), [CtL-] (Command menu), [FUn-] (Functions menu), and [FLt-] (Fault management menu). Be precise with parameter mnemonics (e.g., [bFr] - Standard motor frequency, [ACC] - Acceleration, [dEC] - Deceleration).";
+        } else if (context.vfdBrand === 'Schneider Electric' && (context.vfdModel === 'Altivar Process ATV630' || context.vfdModel === 'Altivar Process ATV650')) {
+            expertKnowledge = "You have expert-level knowledge of the Schneider Electric Altivar Process 600 series (ATV630/650). When discussing these models, refer to their main menu structure on the graphic display, such as [Main menu] -> [5 Complete settings] -> [5.4 Command and Reference]. Be familiar with their emphasis on process applications (pumps, fans) and PID control. Refer to specific terminals like STOA/STOB for safety.";
+        } else if (context.vfdBrand === 'Danfoss' && context.vfdModel === 'VLT Midi Drive FC 280') {
+            expertKnowledge = "You have expert-level knowledge of the Danfoss VLT Midi Drive FC 280. When discussing this model, refer to its specific parameter groups (e.g., Group 0: Operation/Display, Group 1: Load/Motor, Group 3: Reference/Ramps, Group 5: Digital I/O, Group 6: Analog I/O, Group 14: Special Functions/Alarms). Be familiar with its LCP (Local Control Panel) menu structure and the use of the Quick Menu for basic setup.";
+        } else if (context.vfdBrand === 'Danfoss' && context.vfdModel === 'VLT FC 302') {
+            expertKnowledge = "You have expert-level knowledge of the Danfoss VLT AutomationDrive FC 302. When discussing this model, refer to its matrix-style parameter groups (e.g., 1-** Load/Motor, 3-** Reference/Ramps, 5-** Digital I/O, 14-** Special Functions). Be familiar with its graphical LCP (Local Control Panel) menu structure, including the Main Menu and Quick Menu. Terminal 37 is the Safe Torque Off (STO) input.";
+        } else if (context.vfdBrand === 'Mitsubishi Electric' && context.vfdModel === 'FR-E800') {
+            expertKnowledge = "You have expert-level knowledge of the Mitsubishi Electric FR-E800 inverter. When discussing this model, refer to its specific parameter numbers (e.g., Pr.1 for Maximum frequency, Pr.7 for Acceleration time, Pr.8 for Deceleration time, Pr.9 for Motor capacity, Pr.79 for Operation mode selection). Be familiar with its standard terminal functions like STF (Forward start) and STR (Reverse start).";
+        } else if (context.vfdBrand === 'Mitsubishi Electric' && context.vfdModel === 'FR-D700') {
+            expertKnowledge = "You have expert-level knowledge of the Mitsubishi Electric FR-D700 inverter. When discussing this model, refer to its specific parameter numbers (e.g., Pr.1 for Maximum frequency, Pr.7 for Acceleration time, Pr.8 for Deceleration time, Pr.9 for Electronic thermal O/L relay). Be familiar with its standard terminal functions like STF (Forward start), STR (Reverse start), and the use of SD (sink common) and PC (source common) terminals.";
+        } else if (context.vfdBrand === 'Eaton' && context.vfdModel === 'PowerXL DG1') {
+            expertKnowledge = "You have expert-level knowledge of the Eaton PowerXL DG1 drive. When discussing this model, refer to its specific parameter groups (P1 for Basic, P2 for Advanced Motor, P3 for I/O, P6 for Protection) and fault codes (E-xx format). Be familiar with its standard terminal functions like DIN1 (Run Fwd) and DIN2 (Run Rev).";
+        }
+        
         if (context.topic === 'VFD') {
             if (context.vfdBrand && context.vfdBrand !== 'General') {
                 const modelStr = context.vfdModel && context.vfdModel !== 'General' ? ` ${context.vfdModel}` : '';
-                return `The user is working with a ${context.vfdBrand}${modelStr} VFD.`;
+                return `The user is working with a ${context.vfdBrand}${modelStr} VFD. ${expertKnowledge}`;
             }
         } else { // PLC
             if (context.plcBrand && context.plcBrand !== 'General') {
@@ -275,10 +296,34 @@ export const generateCommissioningChatResponse = async (messages: Message[], lan
     messages.forEach((m: { role: string; parts: { text: string }[] }) => {
         prompt += `${m.role}: ${m.parts[0].text}\n\n`;
     });
+    
+    let expertKnowledge = '';
+    if (vfdBrand === 'ABB' && vfdModel === 'ACS580') {
+        expertKnowledge = `For the ABB ACS580, you MUST guide the user through the primary settings (Group 99), motor data (Group 99), and then application-specific macros (Group 97). Refer to parameter numbers directly (e.g., "set parameter 99.04 Motor nominal current to the value from the motor's nameplate").`;
+    } else if (vfdBrand === 'ABB' && vfdModel === 'ACS355') {
+        expertKnowledge = `For the ABB ACS355, which is a machinery drive, you MUST first ask the user which 'Macro' they want to use (e.g., ABB Standard, 3-wire, Potentiometer). After they choose, guide them through the essential parameters for that macro, followed by the motor data in Group 99. For example: "For the ABB Standard macro, DI1 is Start/Stop and AI1 is the speed reference. Now let's set motor data in Group 99. What is the motor's nominal voltage (parameter 99.05)?"`;
+    } else if (vfdBrand === 'Schneider Electric' && vfdModel === 'Altivar Machine ATV320') {
+        expertKnowledge = `For the Schneider Electric ATV320, you MUST first guide the user to the [drC-] menu to enter basic motor data. Start with the motor's standard frequency [bFr], then proceed to the nominal motor power [nPr], voltage [UnS], current [nCr], frequency [FrS], and speed [nSP]. After motor data is entered, ask about their control method (e.g., 2-wire, 3-wire) to configure the [CtL-] menu, specifically the [CHCF] (Control mode) and [Cd1] (Cmd channel 1) parameters. Example: "First, let's enter the motor nameplate data. Navigate to the [drC-] menu. What is the standard motor frequency (parameter [bFr])? It should be 50 or 60Hz."`;
+    } else if (vfdBrand === 'Schneider Electric' && (vfdModel === 'Altivar Process ATV630' || vfdModel === 'Altivar Process ATV650')) {
+        expertKnowledge = `For the Schneider Electric ATV630/650, you MUST guide the user through the 'Simply start' menu on the graphic display terminal. Start by asking for basic settings like motor standard, power, voltage, current, and speed. After the basic settings, ask about their application (e.g., pump, fan) to configure macros and PID settings. Example: "Welcome to the Simply Start menu. Let's enter the motor nameplate data. First, what is the motor's nominal power [nPr] in kW or HP?"`;
+    } else if (vfdBrand === 'Danfoss' && vfdModel === 'VLT Midi Drive FC 280') {
+        expertKnowledge = `For the Danfoss VLT FC 280, you MUST guide the user through the "Quick Menu" for initial setup. Start by asking for Motor Power (parameter 1-20), Motor Voltage (1-22), Motor Frequency (1-23), Motor Current (1-24), and Motor Speed (1-25). After the basic motor data is set, confirm their control method (e.g., 2-wire start/stop on DI 18) and reference source (e.g., Analog Input 53). Example: "First, let's set the basic motor parameters. Navigate to parameter 1-20 [Motor Power]. What is the motor power in kW from the nameplate?"`;
+    } else if (vfdBrand === 'Danfoss' && vfdModel === 'VLT FC 302') {
+        expertKnowledge = `For the Danfoss VLT FC 302, you MUST guide the user through the "Quick Menu" via the graphical LCP. Start by asking for Motor Power [kW] (parameter 1-20), Motor Voltage (1-22), Motor Frequency (1-23), Motor Current (1-24), and Motor Speed (1-25). Emphasize that these are in Group 1: Load/Motor. After motor data, confirm their control method (e.g., Start on DI 18, parameter 5-10) and reference source (e.g., Analog Input 53, parameter 3-15). Example: "First, using the LCP, navigate to the Quick Menu and find parameter 1-20 Motor Power. What is the motor power in kW?"`;
+    } else if (vfdBrand === 'Mitsubishi Electric' && vfdModel === 'FR-E800') {
+        expertKnowledge = `For the Mitsubishi Electric FR-E800, you MUST guide the user through the basic parameters for their application. Start with Pr.9 (Motor capacity), Pr.1 (Maximum frequency), Pr.7 (Acceleration time), and Pr.8 (Deceleration time). After these are set, confirm their operation mode (Pr.79), for example, External/PU combination mode. Then ask about motor specific data like Pr.82 (Motor rated voltage). Example: "First, let's set the basic motor parameters. What is the motor capacity in kW? You will enter this value in Pr.9."`;
+    } else if (vfdBrand === 'Mitsubishi Electric' && vfdModel === 'FR-D700') {
+        expertKnowledge = `For the Mitsubishi Electric FR-D700, you MUST guide the user through the basic parameters. Start with Pr.1 (Maximum frequency), Pr.7 (Acceleration time), Pr.8 (Deceleration time), and then motor protection with Pr.9 (Electronic thermal O/L relay). After these are set, confirm their operation mode (Pr.79), for example, External operation mode. Example: "First, let's set the basic operational parameters. What is the maximum frequency you need? You will enter this value in Pr.1."`;
+    } else if (vfdBrand === 'Eaton' && vfdModel === 'PowerXL DG1') {
+        expertKnowledge = `For the Eaton PowerXL DG1, you MUST guide the user through the Quick Start menu (Group P1). Start by asking for motor nameplate data for parameters like P1.06 (Motor Voltage), P1.07 (Motor FLA), P1.08 (Motor Frequency), and P1.09 (Motor RPM). After motor data, confirm their control method (e.g., 2-wire via DIN1) and reference source (e.g., Analog Input 1). Example: "Let's begin with the Quick Start menu. First, what is the motor's nominal voltage? You will enter this in parameter P1.06."`;
+    }
 
     const systemInstruction = `You are a VFD commissioning expert, acting as an interactive, safety-conscious guide.
     The user is commissioning a ${vfdBrand} ${vfdModel} for a specific application: "${application}".
     Your role is to guide them step-by-step. Keep responses concise. Ask questions to confirm steps are complete.
+
+    *** EXPERT KNOWLEDGE ***
+    ${expertKnowledge}
 
     *** SAFETY FIRST - MOST IMPORTANT RULE ***
     Your VERY FIRST response in this conversation MUST be a detailed safety checklist. DO NOT provide any other information until the safety check is presented.
@@ -289,13 +334,6 @@ export const generateCommissioningChatResponse = async (messages: Message[], lan
     - Ensuring the motor shaft is free to rotate and disconnected from the load for initial tests.
     After presenting the checklist, ask the user to confirm they have completed these steps before proceeding.
 
-    *** APPLICATION-SPECIFIC PARAMETERS ***
-    After the initial safety and wiring steps are covered, you MUST provide a basic list of essential parameters to configure for the "${application}" application.
-    - For a "conveyor", suggest appropriate Accel/Decel times and motor rotation check.
-    - For a "fan" or "pump", suggest parameters related to V/Hz squared pattern, PID settings (if applicable), and sleep modes.
-    - For "general purpose", provide a standard set of essential motor data parameters.
-    Provide parameter numbers or names specific to the ${vfdModel} where possible.
-
     *** WIRING AND DIAGRAMS ***
     When discussing wiring, reference specific terminal numbers for the ${vfdModel}.
     **Crucially, if your response involves specific terminals on a wiring diagram, you must append a JSON object to the end of your text response.**
@@ -304,6 +342,18 @@ export const generateCommissioningChatResponse = async (messages: Message[], lan
     Example response format:
     "Great, next connect the start signal to terminal DI1 and common to terminal DCOM.
     {"diagram_terminals": ["DI1", "DCOM"]}"
+
+    *** PARAMETER CONFIGURATION WIZARD ***
+    After wiring and initial power-up checks are confirmed, you MUST transition into a 'Parameter Wizard' mode.
+    In this mode, you will ask the user for ONE piece of motor nameplate data at a time.
+    1. Start by asking for the motor's nominal voltage. For example: "Great, the wiring is complete. Now let's configure the basic motor parameters. What is the motor's nominal voltage?"
+    2. When the user provides a value (e.g., "480V"), you MUST respond by telling them the specific parameter number/name for the ${vfdModel} and the value they should enter. For example: "OK, set parameter [P101] Motor Voltage to 480V."
+    3. Immediately after providing the parameter, ask the NEXT question in the sequence. For example: "Now, what is the motor's Full Load Amps (FLA)?"
+    4. Continue this question-and-answer process for the following essential parameters in this order: Voltage, Current (FLA), Frequency, RPM (Base Speed), and Horsepower/Kilowatts.
+    5. Once the basic motor data is collected, provide a summary and then instruct the user on how to perform a motor rotation check at low speed.
+
+    *** HANDLING USER QUESTIONS ***
+    If the user asks a question, like about a specific terminal, answer it directly and accurately. Then, gently guide them back to the current step of the commissioning process.
 
     ${langInstruction}`;
 
@@ -316,10 +366,33 @@ export const generateCommissioningChatResponse = async (messages: Message[], lan
 export const analyzeFaultCode = async (params: { language: 'en' | 'es'; vfdBrand: string; vfdModel: string; faultCode: string; context: string }): Promise<string> => {
     const { language, vfdBrand, vfdModel, faultCode, context } = params;
     const langInstruction = language === 'es' ? 'Responde en español.' : 'Respond in English.';
+    
+    let expertKnowledge = '';
+    if (vfdBrand === 'ABB' && vfdModel === 'ACS580') {
+        expertKnowledge = "Your analysis of this ABB ACS580 fault must be particularly detailed, referencing information from its official firmware manual. Include possible causes, specific remedies, and relevant parameters to check from the manual.";
+    } else if (vfdBrand === 'ABB' && vfdModel === 'ACS355') {
+        expertKnowledge = "Your analysis for this ABB ACS355 fault must be precise. Consult the official manual's troubleshooting section for this fault code. List potential causes, corrective actions, and any relevant parameters from groups like 22 (Accel/Decel) or 30 (Fault Functions) that should be verified.";
+    } else if (vfdBrand === 'Schneider Electric' && vfdModel === 'Altivar Machine ATV320') {
+        expertKnowledge = "Your analysis for this Schneider Electric ATV320 fault must be highly specific, based on its programming manual. Refer to the [FLt-] (Fault management) menu for any associated diagnostic parameters. List the exact causes and corrective actions described in the manual for this specific fault code.";
+    } else if (vfdBrand === 'Schneider Electric' && (vfdModel === 'Altivar Process ATV630' || vfdModel === 'Altivar Process ATV650')) {
+        expertKnowledge = "Your analysis for this Schneider Electric ATV600 series fault must be precise, based on its programming manual. Refer to the [7 Diagnostics] menu for fault history and diagnostic data. List the exact causes and corrective actions from the manual.";
+    } else if (vfdBrand === 'Danfoss' && vfdModel === 'VLT Midi Drive FC 280') {
+        expertKnowledge = "Your analysis for this Danfoss VLT FC 280 fault/warning must be precise, based on its official programming guide. List the exact causes and corrective actions described in the manual for this specific alarm code. Differentiate between a Warning (W) and an Alarm (A).";
+    } else if (vfdBrand === 'Danfoss' && vfdModel === 'VLT FC 302') {
+        expertKnowledge = "Your analysis for this Danfoss VLT FC 302 fault/warning must be highly specific, based on its programming guide. Differentiate between a Warning (W) and an Alarm (A). List the exact causes and corrective actions from the manual. Reference relevant parameters from groups 14-** (Special Functions) or 1-** (Load/Motor) that may need to be checked.";
+    } else if (vfdBrand === 'Mitsubishi Electric' && vfdModel === 'FR-E800') {
+        expertKnowledge = "Your analysis for this Mitsubishi FR-E800 fault must be highly specific, based on its instruction manual. List the exact causes and corrective actions from the manual for this specific error code (e.g., E.OC1, E.OV1).";
+    } else if (vfdBrand === 'Mitsubishi Electric' && vfdModel === 'FR-D700') {
+        expertKnowledge = "Your analysis for this Mitsubishi FR-D700 fault must be highly specific, based on its instruction manual (IB-0600438). List the exact causes and corrective actions from the manual for this specific error code (e.g., E.OC1, E.UVT, E.THM).";
+    } else if (vfdBrand === 'Eaton' && vfdModel === 'PowerXL DG1') {
+        expertKnowledge = "Your analysis for this Eaton PowerXL DG1 fault must be highly specific, based on its instruction manual (MN040010). List the exact causes and corrective actions from the manual for this specific error code (e.g., E-01, E-02). Reference relevant parameters from Group P6 (Protection) that might be related.";
+    }
+
     const prompt = `Act as a senior VFD troubleshooter. Analyze the following fault.
     VFD: ${vfdBrand} ${vfdModel}
     Fault Code: ${faultCode}
     Context: ${context}
+    ${expertKnowledge}
 
     Provide an analysis in markdown that includes:
     1.  **Fault Name & Description:** The official name of the fault code for this model.
@@ -376,8 +449,17 @@ export const verifyCriticalLogic = async (params: { language: 'en' | 'es'; code:
     
     const prompt = `Act as an expert safety logic auditor. Your role is to analyze PLC code against a set of safety rules to identify potential vulnerabilities or deviations from best practices.
 
+    *** CRUCIAL CONTEXT: FAIL-SAFE WIRING & LOGIC ***
+    You MUST consider the standard industrial practice for safety circuits (fail-safe design).
+    1.  **Physical Device:** Safety inputs like Emergency Stop buttons, gate switches, or safety mats are physically wired "Normally Closed" (NC).
+    2.  **Electrical State:** In the normal, safe-to-run state (e.g., E-Stop NOT pressed), the NC contact is closed, allowing 24VDC to flow to the PLC input. The PLC sees this as a logical '1'.
+    3.  **Action State:** When the safety device is activated (e.g., E-Stop IS pressed), the contact opens, the circuit is broken, and the PLC input sees 0VDC. The PLC sees this as a logical '0'.
+    4.  **Fail-Safe:** A broken wire in the circuit has the same effect as activating the safety device (PLC input goes to '0'), causing a safe shutdown. This is the core reason for using NC contacts.
+    5.  **PLC Instruction:** To correctly represent this in ladder logic, a programmer must use a "Normally Open" instruction (XIC, --| |--). This instruction is TRUE when the PLC input bit is '1' (i.e., when the physical NC E-Stop is NOT pressed). The logic reads as "If the E-Stop circuit is healthy and not activated...".
+    6.  **INCORRECT LOGIC:** Using a "Normally Closed" instruction (XIO, --|/|--) for a physical NC safety device is a critical mistake. It inverts the logic and defeats the fail-safe principle. A broken wire would be seen as a "safe" condition by the logic.
+
     You will be given a piece of PLC code and a set of immutable safety rules.
-    Your task is to analyze if the code appears to violate any of the rules under plausible conditions.
+    Your task is to analyze if the code appears to violate any of the rules under plausible conditions, PAYING SPECIAL ATTENTION to the fail-safe principles described above.
 
     Code:
     \`\`\`
@@ -390,6 +472,7 @@ export const verifyCriticalLogic = async (params: { language: 'en' | 'es'; code:
     Analyze the logic against the rules.
     - If the code appears to be sound and does not violate the rules, your response must start with the single character ✅ followed by a detailed explanation of why the logic is robust.
     - If the code could possibly violate a rule, your response must start with the single character ❌ followed by a "counterexample" or scenario that demonstrates how the violation can occur.
+    - If you detect a violation of the fail-safe principle (e.g., an XIO on an E-Stop tag), you MUST treat it as a critical vulnerability and provide a counterexample explaining the danger (e.g., what happens if a wire breaks).
     Your explanation must be rigorous and logical.
 
     **IMPORTANT:** You MUST append the following disclaimer to the end of your entire response, exactly as written:
@@ -420,6 +503,7 @@ export const validatePlcLogic = async (params: { language: 'en' | 'es'; code: st
     Specifically look for:
     - **Errors:** Definite problems like duplicate outputs (OTE), unreachable code (dead code), or invalid instruction sequences.
     - **Warnings:** Inefficient patterns, overly complex rungs, and opportunities for simplification. For example, if you see several rungs with identical logic patterns but different tags (e.g., Motor1_Start, Motor2_Start), suggest using an array, a subroutine (Add-On Instruction), or a loop to reduce redundancy.
+    - **Fail-Safe Violations (Critical Warning):** Standard safety practice dictates that physical stop devices (Emergency Stops, physical Stop buttons) are wired Normally Closed (NC). This means they provide a '1' signal to the PLC when not pressed. The correct way to represent this in logic is with a Normally Open instruction (XIC). If you find a Normally Closed instruction (XIO) used on a tag that implies a stop or safety function (e.g., 'E_Stop', 'Stop_Button', 'Safety_Gate'), this is a critical violation of the fail-safe principle. A broken wire would not be detected and would create an unsafe condition. Issue a "Warning" with a message explaining this specific risk. Example message: "The tag 'E_Stop' likely represents a physical NC button. Using an XIO instruction for it violates the fail-safe principle, as a broken wire would go undetected. It should be an XIC."
 
     Your response MUST be a valid JSON array of objects. Each object represents an issue and must have these keys:
     - "line": The 1-based line number where the issue was found.
@@ -432,7 +516,8 @@ export const validatePlcLogic = async (params: { language: 'en' | 'es'; code: st
     Example of a response with issues:
     [
         {"line": 2, "type": "Error", "message": "OTE for 'Motor' is used on multiple rungs. This can cause unpredictable behavior."},
-        {"line": 5, "type": "Warning", "message": "The logic for Motor1_Control, Motor2_Control, and Motor3_Control is identical. Consider using a subroutine or an Add-On Instruction (AOI) to simplify this repeated pattern."}
+        {"line": 5, "type": "Warning", "message": "The logic for Motor1_Control, Motor2_Control, and Motor3_Control is identical. Consider using a subroutine or an Add-On Instruction (AOI) to simplify this repeated pattern."},
+        {"line": 1, "type": "Warning", "message": "The tag 'E_Stop' likely represents a physical NC button. Using an XIO instruction for it violates the fail-safe principle, as a broken wire would go undetected. It should be an XIC."}
     ]
 
     ${langInstruction}`;
