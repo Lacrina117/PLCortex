@@ -6,12 +6,13 @@ import { PlcScalingCalculator } from '../components/calculators/PlcScalingCalcul
 import { VoltageDropCalculator } from '../components/calculators/VoltageDropCalculator';
 import { DcPowerSupplyCalculator } from '../components/calculators/DcPowerSupplyCalculator';
 import { EncoderMotionCalculator } from '../components/calculators/EncoderMotionCalculator';
+import { SensorSelectionCalculator } from '../components/calculators/SensorSelectionCalculator';
 
-type CalculatorType = 'thermal' | 'motor' | 'scaling' | 'voltageDrop' | 'dcPower' | 'encoderMotion';
+type CalculatorType = 'thermal' | 'motor' | 'scaling' | 'voltageDrop' | 'dcPower' | 'encoderMotion' | 'sensorSelection';
 
 export const CalculatorView: React.FC = () => {
     const { t } = useTranslation();
-    const [activeCalc, setActiveCalc] = useState<CalculatorType>('encoderMotion');
+    const [activeCalc, setActiveCalc] = useState<CalculatorType>('sensorSelection');
 
     const calculators = [
         { key: 'thermal', title: t('calculator.thermal.tabTitle'), Component: ThermalLoadCalculator },
@@ -20,6 +21,7 @@ export const CalculatorView: React.FC = () => {
         { key: 'voltageDrop', title: t('calculator.voltageDrop.tabTitle'), Component: VoltageDropCalculator },
         { key: 'dcPower', title: t('calculator.dcPowerSupply.tabTitle'), Component: DcPowerSupplyCalculator },
         { key: 'encoderMotion', title: t('calculator.encoderMotion.tabTitle'), Component: EncoderMotionCalculator },
+        { key: 'sensorSelection', title: t('calculator.sensorSelection.tabTitle'), Component: SensorSelectionCalculator },
     ];
     
     const ActiveComponent = calculators.find(c => c.key === activeCalc)!.Component;

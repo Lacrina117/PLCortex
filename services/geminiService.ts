@@ -146,6 +146,11 @@ interface CommissioningPlanParams {
     application: string;
 }
 
+interface SensorRecommendationParams {
+    language: 'en' | 'es';
+    details: string;
+}
+
 export const generateChatResponse = async (messages: Message[], context: ChatContext): Promise<string> => {
     const langInstruction = context.language === 'es' ? 'Responde en español.' : 'Respond in English.';
     let prompt = "";
@@ -182,6 +187,12 @@ export const generateChatResponse = async (messages: Message[], context: ChatCon
             }
         } else { // PLC
             if (context.plcBrand && context.plcBrand !== 'General') {
+                if (context.plcBrand === 'Siemens') {
+                    let siemensExpertKnowledge = "When discussing Siemens PLCs, be aware of the differences between the major families: LOGO! (logic modules for small automation), S7-1200 (basic controllers, TIA Portal), and S7-1500 (advanced controllers, TIA Portal).";
+                    siemensExpertKnowledge += " You have expert-level knowledge of the Siemens LOGO! logic module (specifically the 0BA4 series from the manual). LOGO! is programmed with LOGO!Soft Comfort using function blocks (FBD) or ladder logic (LAD). It is ideal for small automation tasks like lighting, pumps, and simple machine control. Be familiar with its basic functions (AND, OR), special functions (timers, counters, analog functions), wiring of inputs/outputs, and menu structure for on-device programming and parameterization.";
+                    const softwareStr = context.plcSoftware && context.plcSoftware !== 'General' ? ` with ${context.plcSoftware}` : '';
+                    return `The user is working with a ${context.plcBrand} PLC${softwareStr}. ${siemensExpertKnowledge}`;
+                }
                 const softwareStr = context.plcSoftware && context.plcSoftware !== 'General' ? ` with ${context.plcSoftware}` : '';
                 return `The user is working with a ${context.plcBrand} PLC${softwareStr}.`;
             }
@@ -215,6 +226,7 @@ export const generatePractice = async (params: PracticeParams): Promise<string> 
     Difficulty: ${difficulty}
     ${topic === 'VFD' ? `Specific VFD: ${vfdBrand} ${vfdModel}` : ''}
     ${topic === 'PLC' ? `Specific PLC: ${plcBrand} with ${plcSoftware}` : ''}
+    ${topic === 'PLC' && plcBrand === 'Siemens' ? `When generating a Siemens problem, strongly consider using the LOGO! logic module for beginner/intermediate tasks, as it is a common platform for learning basic automation concepts based on function blocks.` : ''}
     ${topic === 'PLC' ? `PLC Programming Language: ${plcLanguage}` : ''}
     
     The output must be in markdown and follow this structure exactly:
@@ -316,6 +328,10 @@ export const generateCommissioningChatResponse = async (messages: Message[], lan
         expertKnowledge = `For the Mitsubishi Electric FR-D700, you MUST guide the user through the basic parameters. Start with Pr.1 (Maximum frequency), Pr.7 (Acceleration time), Pr.8 (Deceleration time), and then motor protection with Pr.9 (Electronic thermal O/L relay). After these are set, confirm their operation mode (Pr.79), for example, External operation mode. Example: "First, let's set the basic operational parameters. What is the maximum frequency you need? You will enter this value in Pr.1."`;
     } else if (vfdBrand === 'Eaton' && vfdModel === 'PowerXL DG1') {
         expertKnowledge = `For the Eaton PowerXL DG1, you MUST guide the user through the Quick Start menu (Group P1). Start by asking for motor nameplate data for parameters like P1.06 (Motor Voltage), P1.07 (Motor FLA), P1.08 (Motor Frequency), and P1.09 (Motor RPM). After motor data, confirm their control method (e.g., 2-wire via DIN1) and reference source (e.g., Analog Input 1). Example: "Let's begin with the Quick Start menu. First, what is the motor's nominal voltage? You will enter this in parameter P1.06."`;
+    } else if (vfdBrand === 'Siemens' && vfdModel === 'Micromaster 440') {
+        expertKnowledge = `For the Siemens Micromaster 440, you MUST guide the user through the Quick Commissioning parameters. Start by instructing them to set parameter P0010 to 1. After they confirm, ask for motor nameplate data for the following parameters, one by one: P0304 (Motor Voltage), P0305 (Motor Current), P0307 (Motor Power in kW), P0310 (Motor Frequency), and P0311 (Motor Speed). After collecting motor data, guide them through setting basic operational parameters like P1082 (Max Frequency), P1120 (Accel Time), and P1121 (Decel Time). Example: "First, let's start Quick Commissioning. Using the BOP or AOP, navigate to parameter P0010 and set it to 1. Let me know when you have done this."`;
+    } else if (vfdBrand === 'Siemens' && vfdModel?.includes('Sinamics G120')) {
+        expertKnowledge = `For the Siemens Sinamics G120/G120C, you MUST guide the user through the basic commissioning using the BOP or I-OP. Start by instructing them to set parameter P0010 to 1 (Quick commissioning). Then, guide them through the essential motor data parameters one-by-one: P0304 (Motor Voltage), P0305 (Motor Current), P0307 (Motor Power), P0310 (Motor Frequency), and P0311 (Motor Speed). After motor data, instruct them to set P1300 (Control Mode - typically 20 for Vector Speed Control) and then run the motor data identification (P1900=1). Example: "First, let's start the basic commissioning. Navigate to parameter P0010 and set it to 1. This enables the quick commissioning menu. Let me know when this is done."`;
     }
 
     const systemInstruction = `You are a VFD commissioning expert, acting as an interactive, safety-conscious guide.
@@ -386,6 +402,10 @@ export const analyzeFaultCode = async (params: { language: 'en' | 'es'; vfdBrand
         expertKnowledge = "Your analysis for this Mitsubishi FR-D700 fault must be highly specific, based on its instruction manual (IB-0600438). List the exact causes and corrective actions from the manual for this specific error code (e.g., E.OC1, E.UVT, E.THM).";
     } else if (vfdBrand === 'Eaton' && vfdModel === 'PowerXL DG1') {
         expertKnowledge = "Your analysis for this Eaton PowerXL DG1 fault must be highly specific, based on its instruction manual (MN040010). List the exact causes and corrective actions from the manual for this specific error code (e.g., E-01, E-02). Reference relevant parameters from Group P6 (Protection) that might be related.";
+    } else if (vfdBrand === 'Siemens' && vfdModel === 'Micromaster 440') {
+        expertKnowledge = "Your analysis for this Siemens Micromaster 440 fault must be highly specific, based on its official manual. List the exact causes and corrective actions for this fault code (e.g., F0001, F0002, F0003, F0004). Reference relevant parameters like P1120 (Accel time), P1121 (Decel time), or motor data parameters (P03xx) that may need to be checked.";
+    } else if (vfdBrand === 'Siemens' && vfdModel?.includes('Sinamics G120')) {
+        expertKnowledge = `Your analysis for this Siemens Sinamics G120 fault must be highly specific, based on its official list manual. List the exact causes and corrective actions for this fault code (e.g., F07801, F30002). Reference relevant parameters like P1120/P1121 (Ramp times) or motor data parameters (P03xx) that may need to be checked.`;
     }
 
     const prompt = `Act as a senior VFD troubleshooter. Analyze the following fault.
@@ -481,6 +501,100 @@ export const verifyCriticalLogic = async (params: { language: 'en' | 'es'; code:
     ${langInstruction}`;
     return callApiEndpoint('verifyCriticalLogic', { prompt });
 };
+
+export const generateSensorRecommendation = async (params: SensorRecommendationParams): Promise<string> => {
+    const { language, details } = params;
+    const langInstruction = language === 'es' ? 'Responde en español.' : 'Respond in English.';
+
+    const structure_es = `
+Tu respuesta DEBE estar en markdown y seguir esta estructura exacta:
+
+### Recomendación Principal
+**Tecnología Recomendada:** [Nombre de la tecnología principal, ej. "Radar de Onda Guiada"]
+**Justificación:** [Un párrafo explicando por qué es la mejor opción basada en los datos del formulario. Haz referencia a detalles específicos.]
+
+### Tabla Comparativa de Alternativas
+[Crea una tabla markdown que califique la opción principal y 1-2 alternativas en estos criterios clave: | Tecnología | Precisión | Costo | Robustez | Facilidad de Instalación |. Usa una escala de 1-5 estrellas (ej. ***** para excelente, * para pobre).]
+
+### Modelos y Marcas Sugeridas
+**Modelos Sugeridos:** [Sugiere series o modelos específicos de fabricantes líderes. Ej: "Endress+Hauser Micropilot FMRxx, VEGAFLEX 8x, Krohne Optiflex."]
+**Disclaimer:** [Incluye este texto exacto: "Estas son sugerencias basadas en aplicaciones típicas. Siempre verifique la ficha técnica del fabricante."]
+
+### Consideraciones Críticas de Instalación
+[Proporciona 2-3 puntos con consejos de experto para la tecnología recomendada.]
+
+### Guía Rápida de Implementación
+[Proporciona un fragmento de código de ejemplo en Texto Estructurado (ST) para Rockwell/Studio 5000 para escalar una señal analógica, como se muestra a continuación.]
+
+\`\`\`st
+// Parámetros de Escalado para una señal 4-20mA
+// Asume que el rango del sensor corresponde a 0-100% del rango de medición.
+RawMin := 4000;    // Valor crudo a 4mA (formato Rockwell)
+RawMax := 20000;   // Valor crudo a 20mA (formato Rockwell)
+EngMin := 0.0;     // Unidades de ingeniería al 0%
+EngMax := 100.0;   // Unidades de ingeniería al 100%
+
+// Ejecutar instrucción de escalado (SCP)
+SCP(MyAnalogInput, RawMin, RawMax, EngMin, EngMax, MyScaledValue);
+\`\`\`
+    `;
+
+    const structure_en = `
+Your response MUST be in markdown and follow this exact structure:
+
+### Top Choice Recommendation
+**Recommended Technology:** [Name of the top choice technology, e.g., "Guided Wave Radar"]
+**Justification:** [A paragraph explaining why this is the best option based on the wizard data. Reference specific details.]
+
+### Comparative Table of Alternatives
+[Create a markdown table that rates the top choice and 1-2 alternatives on these key criteria: | Technology | Precision | Cost | Robustness | Ease of Installation |. Use a 1-5 star rating (e.g., ***** for excellent, * for poor).]
+
+### Suggested Models and Brands
+**Suggested Models:** [Suggest specific series or models from leading manufacturers. E.g., "Endress+Hauser Micropilot FMRxx, VEGAFLEX 8x, Krohne Optiflex."]
+**Disclaimer:** [Include this exact text: "These are suggestions based on typical applications. Always verify the manufacturer's data sheet."]
+
+### Critical Installation Considerations
+[Provide 2-3 bullet points with expert tips for the recommended technology.]
+
+### Quick Implementation Guide
+[Provide a sample PLC code snippet in Structured Text (ST) for Rockwell/Studio 5000 for scaling an analog signal, as shown below.]
+
+\`\`\`st
+// Scaling Parameters for a 4-20mA signal
+// Assumes sensor range corresponds to 0-100% of the measurement range.
+RawMin := 4000;    // Raw value at 4mA (Rockwell format)
+RawMax := 20000;   // Raw value at 20mA (Rockwell format)
+EngMin := 0.0;     // Engineering units at 0%
+EngMax := 100.0;   // Engineering units at 100%
+
+// Execute Scale instruction (SCP)
+SCP(MyAnalogInput, RawMin, RawMax, EngMin, EngMax, MyScaledValue);
+\`\`\`
+    `;
+
+    const structure = language === 'es' ? structure_es : structure_en;
+    
+    const prompt = `Act as a world-class instrumentation and process engineer, synthesizing the expertise from three key texts: Antonio Creus's "Instrumentación Industrial, 8th Edition," Carl Branan's "The Process Engineer's Pocket Handbook," and the VEGA catalog "Tecnología de medición de nivel y presión para el tratamiento de aguas residuales." Your recommendations must be grounded in the detailed technical comparisons from Creus, the practical process considerations from Branan, and the specific application examples from the VEGA catalog.
+
+A user has filled out a detailed wizard for a sensor application. Based on the following application details, provide a comprehensive and expert-level sensor recommendation.
+
+When generating the response, adhere to these principles:
+1.  **Synthesize Knowledge:** Your justification must be robust. Ground your choice in the instrumentation principles from Creus. Support it with process-level insights from Branan. If the application is related to wastewater, water, or similar public works, you MUST also incorporate the specific application knowledge and model series (e.g., VEGAPULS C 21, VEGABAR 82) from the VEGA catalog as prime examples.
+2.  **Comparative Analysis (Creus):** The alternatives you present must be legitimate contenders. The star ratings in your comparative table must reflect the nuanced trade-offs between technologies as detailed in "Instrumentación Industrial".
+3.  **Installation & Practicality (Creus & Branan & VEGA):** Your installation considerations must be practical. Mention instrumentation-specific points from Creus (e.g., need for straight pipe runs), process piping rules of thumb from Branan (e.g., pressure drop considerations), and if relevant (like a pumping station or clarifier), mention any specific installation benefits highlighted in the VEGA document (e.g., non-contact measurement to avoid fouling).
+4.  **Technology & Process Depth (Combined):** Demonstrate a deep understanding of sensor principles from Creus, connect them to the user's project priorities (Cost, Precision, Robustness), and contextualize them with real-world examples from Branan's handbook and the VEGA catalog.
+
+--- APPLICATION DETAILS ---
+${details}
+--- END OF DETAILS ---
+
+${structure}
+    
+${langInstruction}`;
+    
+    return callApiEndpoint('generateSensorRecommendation', { prompt });
+};
+
 
 // FIX: Added missing exports for PLC logic validation, fixing, and translation.
 export interface LogicIssue {
