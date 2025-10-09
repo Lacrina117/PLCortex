@@ -12,12 +12,12 @@ const linearScale = (value: number, inMin: number, inMax: number, outMin: number
 export const PlcScalingCalculator: React.FC = () => {
     const { t } = useTranslation();
     
-    const [rawMin, setRawMin] = useState('4000');
-    const [rawMax, setRawMax] = useState('20000');
+    const [rawMin, setRawMin] = useState('4');
+    const [rawMax, setRawMax] = useState('20');
     const [euMin, setEuMin] = useState('0');
-    const [euMax, setEuMax] = useState('60');
-    const [selectedRawPreset, setSelectedRawPreset] = useState('raw_rockwell_4_20ma');
-    const [selectedEuPreset, setSelectedEuPreset] = useState('eng_freq_60hz');
+    const [euMax, setEuMax] = useState('100');
+    const [selectedRawPreset, setSelectedRawPreset] = useState('raw_4_20ma');
+    const [selectedEuPreset, setSelectedEuPreset] = useState('eng_percent');
     const [clampOutput, setClampOutput] = useState(true);
     const [selectedCodeLang, setSelectedCodeLang] = useState<CodeLang>('st');
 
@@ -59,16 +59,22 @@ export const PlcScalingCalculator: React.FC = () => {
     const handleTesterConversion = (direction: 'rawToEu' | 'euToRaw', value: string) => {
         if (!isValid) return;
         const numValue = parseFloat(value);
-        if (isNaN(numValue)) return;
+        if (isNaN(numValue)) {
+            if (direction === 'rawToEu') setTesterRawValue(value); else setTesterEuValue(value);
+            if (value === '') {
+                if (direction === 'rawToEu') setTesterEuValue(''); else setTesterRawValue('');
+            }
+            return;
+        };
 
         if (direction === 'rawToEu') {
             setTesterRawValue(value);
             const result = linearScale(numValue, numRawMin, numRawMax, numEuMin, numEuMax);
-            setTesterEuValue(result.toString());
+            setTesterEuValue(result.toPrecision(5));
         } else {
             setTesterEuValue(value);
             const result = linearScale(numValue, numEuMin, numEuMax, numRawMin, numRawMax);
-            setTesterRawValue(result.toString());
+            setTesterRawValue(result.toPrecision(5));
         }
     };
 
@@ -210,12 +216,22 @@ ${clampOutput ? `5. LIMIT(IN:=ADD.out, MN:=EUMin, MX:=EUMax) -> FinalValue` : ''
             <div className="pt-6 border-t border-gray-200 dark:border-gray-700">
                 <h3 className="text-lg font-bold mb-4">{t('calculator.plcScaling.interactiveTester')}</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
-                    <div className="space-y-2">
-                       <div className="flex items-center gap-2">
-                           <input type="number" step="any" value={testerRawValue} onChange={e => handleTesterConversion('rawToEu', e.target.value)} className={commonInputClasses} aria-label="Raw Test Input"/><span>{rawUnit}</span>
-                           <span>&harr;</span>
-                           <input type="number" step="any" value={testerEuValue} onChange={e => handleTesterConversion('euToRaw', e.target.value)} className={commonInputClasses} aria-label="EU Test Input"/><span>{euUnit}</span>
-                       </div>
+                    <div className="grid grid-cols-[1fr_auto_1fr] gap-x-2 sm:gap-x-4 items-end">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('calculator.plcScaling.rawSignal')}</label>
+                            <div className="flex items-center gap-2">
+                                <input type="number" step="any" value={testerRawValue} onChange={e => handleTesterConversion('rawToEu', e.target.value)} className={commonInputClasses} aria-label="Raw Test Input"/>
+                                <span className="text-sm text-gray-500 dark:text-gray-400">{rawUnit}</span>
+                            </div>
+                        </div>
+                        <span className="text-2xl font-bold pb-2 text-gray-400">&harr;</span>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('calculator.plcScaling.engUnits')}</label>
+                            <div className="flex items-center gap-2">
+                                <input type="number" step="any" value={testerEuValue} onChange={e => handleTesterConversion('euToRaw', e.target.value)} className={commonInputClasses} aria-label="EU Test Input"/>
+                                <span className="text-sm text-gray-500 dark:text-gray-400">{euUnit}</span>
+                            </div>
+                        </div>
                     </div>
                     <div className="w-full aspect-square bg-gray-50 dark:bg-gray-900/50 rounded-lg p-2">
                         <svg viewBox="0 0 100 100" className="w-full h-full text-xs">

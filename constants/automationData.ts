@@ -160,6 +160,8 @@ export interface PlcScalingPreset {
 export const plcScalingPresets: { raw: PlcScalingPreset[]; engineering: PlcScalingPreset[] } = {
   raw: [
     { key: 'custom', translationKey: 'custom', unit: 'counts', min: '', max: '' },
+    { key: 'raw_4_20ma', translationKey: 'raw_4_20ma', unit: 'mA', min: '4', max: '20' },
+    { key: 'raw_0_10v', translationKey: 'raw_0_10v', unit: 'V', min: '0', max: '10' },
     { key: 'raw_rockwell_4_20ma', translationKey: 'raw_rockwell_4_20ma', unit: 'counts', min: '4000', max: '20000' },
     { key: 'raw_siemens_4_20ma', translationKey: 'raw_siemens_4_20ma', unit: 'counts', min: '0', max: '27648' },
     { key: 'raw_unsigned_12', translationKey: 'raw_unsigned_12', unit: 'counts', min: '0', max: '4095' },
@@ -177,7 +179,9 @@ export const plcScalingPresets: { raw: PlcScalingPreset[]; engineering: PlcScali
     { key: 'eng_torque_300', translationKey: 'eng_torque_300', unit: '%', min: '0', max: '300' },
     { key: 'eng_psi_150', translationKey: 'eng_psi_150', unit: 'PSI', min: '0', max: '150' },
     { key: 'eng_celsius_100', translationKey: 'eng_celsius_100', unit: '°C', min: '0', max: '100' },
+    { key: 'eng_fahrenheit_212', translationKey: 'eng_fahrenheit_212', unit: '°F', min: '32', max: '212' },
     { key: 'eng_gpm_500', translationKey: 'eng_gpm_500', unit: 'GPM', min: '0', max: '500' },
+    { key: 'eng_liters_1000', translationKey: 'eng_liters_1000', unit: 'L', min: '0', max: '1000' },
   ]
 };
 

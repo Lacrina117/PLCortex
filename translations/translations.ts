@@ -410,6 +410,8 @@ export const translations = {
                     applyFormula: '2. Apply linear scaling formula',
                 },
                 interactiveTester: 'Interactive Tester & Graph',
+                rawSignal: 'Raw Signal',
+                engUnits: 'Engineering Units',
                 rawToEu: 'Raw to EU',
                 euToRaw: 'EU to Raw',
                 convert: 'Convert',
@@ -421,6 +423,8 @@ export const translations = {
                 alarmLL: 'Low-Low Alarm',
                 units: {
                     custom: 'Custom',
+                    raw_4_20ma: 'Current 4-20mA',
+                    raw_0_10v: 'Voltage 0-10V',
                     raw_rockwell_4_20ma: 'Rockwell 4-20mA (4000-20000)',
                     raw_siemens_4_20ma: 'Siemens 4-20mA (0-27648)',
                     raw_unsigned_12: '12-bit Unsigned (0-4095)',
@@ -435,7 +439,9 @@ export const translations = {
                     eng_torque_300: 'Torque (0-300%)',
                     eng_psi_150: 'Pressure (0-150 PSI)',
                     eng_celsius_100: 'Temperature (0-100 °C)',
+                    eng_fahrenheit_212: 'Temperature (32-212 °F)',
                     eng_gpm_500: 'Flow (0-500 GPM)',
+                    eng_liters_1000: 'Volume (0-1000 Liters)',
                 }
             },
             voltageDrop: {
@@ -1052,6 +1058,8 @@ export const translations = {
                     applyFormula: '2. Aplicar la fórmula de escalado lineal',
                 },
                 interactiveTester: 'Probador Interactivo y Gráfico',
+                rawSignal: 'Señal Cruda',
+                engUnits: 'Unidades de Ingeniería',
                 rawToEu: 'Crudo a UI',
                 euToRaw: 'UI a Crudo',
                 convert: 'Convertir',
@@ -1063,6 +1071,8 @@ export const translations = {
                 alarmLL: 'Alarma Muy Baja',
                 units: {
                     custom: 'Personalizado',
+                    raw_4_20ma: 'Corriente 4-20mA',
+                    raw_0_10v: 'Voltaje 0-10V',
                     raw_rockwell_4_20ma: 'Rockwell 4-20mA (4000-20000)',
                     raw_siemens_4_20ma: 'Siemens 4-20mA (0-27648)',
                     raw_unsigned_12: '12-bit Sin Signo (0-4095)',
@@ -1077,7 +1087,9 @@ export const translations = {
                     eng_torque_300: 'Par Motor (0-300%)',
                     eng_psi_150: 'Presión (0-150 PSI)',
                     eng_celsius_100: 'Temperatura (0-100 °C)',
+                    eng_fahrenheit_212: 'Temperatura (32-212 °F)',
                     eng_gpm_500: 'Flujo (0-500 GPM)',
+                    eng_liters_1000: 'Volumen (0-1000 Litros)',
                 }
             },
             voltageDrop: {
