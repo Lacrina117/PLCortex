@@ -187,32 +187,133 @@ export const generateChatResponse = async (messages: Message[], context: ChatCon
             }
         } else { // PLC
             if (context.plcBrand && context.plcBrand !== 'General') {
+                const softwareStr = context.plcSoftware && context.plcSoftware !== 'General' ? ` using ${context.plcSoftware}` : '';
+                
                 if (context.plcBrand === 'Siemens') {
-                    let siemensExpertKnowledge = "When discussing Siemens PLCs, be aware of the differences between the major families: LOGO! (logic modules for small automation), S7-1200 (basic controllers, TIA Portal), and S7-1500 (advanced controllers, TIA Portal).";
-                    siemensExpertKnowledge += " You have expert-level knowledge of the Siemens LOGO! logic module (specifically the 0BA4 series from the manual). LOGO! is programmed with LOGO!Soft Comfort using function blocks (FBD) or ladder logic (LAD). It is ideal for small automation tasks like lighting, pumps, and simple machine control. Be familiar with its basic functions (AND, OR), special functions (timers, counters, analog functions), wiring of inputs/outputs, and menu structure for on-device programming and parameterization.";
-                    const softwareStr = context.plcSoftware && context.plcSoftware !== 'General' ? ` with ${context.plcSoftware}` : '';
-                    return `The user is working with a ${context.plcBrand} PLC${softwareStr}. ${siemensExpertKnowledge}`;
+                    expertKnowledge = `You are a world-leading expert on the Siemens automation ecosystem. Your knowledge is based on the "Programming Guideline for S7-1200/1500" (for TIA Portal) and the "Diagrama de funciones (FUP) para S7-300 y S7-400" manual (for classic STEP 7 V5.x). You MUST differentiate between these two platforms. For TIA Portal, you will apply modern principles: optimized blocks, symbolic addressing (e.g., "Start_Button" vs %I0.0), and IEC timers/counters. For classic STEP 7, you will use its specific conventions: absolute addressing (E, A, M), and classic S5 Timers (e.g., S_IMPULS, S_EVERZ).`;
+                } else if (context.plcBrand === 'Allen-Bradley') {
+                    expertKnowledge = `You have expert knowledge of the Rockwell Automation ecosystem, including Studio 5000, RSLogix 5000, and RSLogix 500. You are proficient with the tag-based structure of Logix controllers (ControlLogix, CompactLogix) and the file-based structure of older platforms (PLC-5, SLC 500). You understand Add-On Instructions (AOIs) and the use of mnemonics for text-based logic representation.`;
                 }
-                const softwareStr = context.plcSoftware && context.plcSoftware !== 'General' ? ` with ${context.plcSoftware}` : '';
-                return `The user is working with a ${context.plcBrand} PLC${softwareStr}.`;
+                
+                return `The user is working with a ${context.plcBrand} PLC${softwareStr}. ${expertKnowledge}`;
             }
         }
         return 'The user has not specified any particular hardware. Provide general advice, and be prepared to give more specific answers if the user provides context later in the conversation.';
+    };
+
+    const buildLadderLogicStyleGuide = () => {
+        // SIEMENS TIA PORTAL / STEP 7 STYLE
+        if (context.plcBrand === 'Siemens') {
+            // TIA Portal Style Guide
+            if (context.plcSoftware === 'TIA Portal') {
+                return `
+                When generating PLC ladder logic diagrams for Siemens TIA Portal, you MUST adhere to the following strict three-part format, with each part clearly labeled using markdown bold headers. Your ASCII diagrams must be 100% precise, with perfect alignment and using only the specified characters.
+
+                1.  **Ladder Diagram (LAD) for TIA Portal:** Create ASCII art that perfectly resembles the TIA Portal editor.
+                    *   **Power Rails:** Use vertical bars \`|\` for power rails on both the far left and far right of every network (rung).
+                    *   **Networks:** Use the box-drawing character \`─\` (U+2500) for all horizontal segments. **Do not use hyphens (\`-\`).**
+                    *   **Instructions:**
+                        *   Normally Open Contact: Represent as \`[ ]\`.
+                        *   Normally Closed Contact: Represent as \`[/]\`.
+                        *   Output Coil: Represent as \`( )\`.
+                        *   Function Blocks (Timers, Counters): Represent with their instruction name inside brackets, e.g., \`[TON]\`, \`[CTU]\`.
+                    *   **Tagging:** Place tag names directly above their instruction. You **must** include both the symbolic name (in quotes) and the absolute address (in parentheses) if applicable. For example: \`"Start_Button" (%I0.0)\`. For timer or counter instances, use the instance DB name, e.g., \`"My_Timer_DB"\`.
+                    *   **Branching:** Use \`┬\` to start a branch, \`│\` for vertical lines, and \`┘\` to join a branch from below. **Do not use plus signs (\`+\`).**
+
+                2.  **Network Logic Description:** Below the diagram, provide a human-readable description of what the logic in the network does. **Do not provide Allen-Bradley mnemonics.**
+
+                3.  **Instruction Details:** For any non-basic contacts or coils (like timers or counters), provide a clear, bulleted list explaining the configuration and parameters for the specific Siemens instruction.
+                    *   **IEC_TIMER (TON - On-Delay Timer):**
+                        *   **Instance DB:** The name of the instance Data Block for the timer (e.g., \`"My_Timer_DB"\`).
+                        *   **IN:** The Boolean condition that enables the timer.
+                        *   **PT (Preset Time):** The target time duration, formatted as T#... (e.g., \`T#5s\` for 5 seconds).
+                        *   **Q:** The Boolean output that becomes true when the timer is done.
+                        *   **ET (Elapsed Time):** The current accumulated time, of data type TIME.
+                    *   **IEC_COUNTER (CTU - Count Up):**
+                        *   **Instance DB:** The name of the instance Data Block for the counter.
+                        *   **CU:** The Boolean input that increments the counter on a rising edge.
+                        *   **R (Reset):** The Boolean input that resets the counter to 0.
+                        *   **PV (Preset Value):** The target count value (Integer).
+                        *   **Q:** The Boolean output that becomes true when CV >= PV.
+                        *   **CV (Count Value):** The current accumulated count (Integer).
+                `;
+            }
+            // Classic STEP 7 (S7-300/400) Style Guide
+            else {
+                return `
+                When generating PLC logic diagrams for Siemens STEP 7 V5.x (classic), you MUST adhere to the following strict format. Your ASCII diagrams must be 100% precise and use absolute addressing.
+
+                1.  **Function Block Diagram (FUP) for STEP 7:** Create ASCII art that perfectly resembles the classic STEP 7 FUP/FBD editor.
+                    *   **Instructions:** Represent logic gates and blocks as boxes with their function inside, e.g., \`& \` for AND, \`>=1\` for OR, \`S_IMPULS\` for a timer.
+                    *   **Connections:** Use \`─\` for horizontal lines and \`|\` for vertical lines to connect inputs and outputs.
+                    *   **Tagging:** Use absolute addresses (e.g., \`E 0.0\`, \`A 4.0\`, \`M 1.1\`, \`T 5\`). Place input tags to the left of the block and output tags to the right.
+                    *   **Assignments:** Use the assignment block \`=\` to assign a logic result to an output.
+
+                2.  **Logic Description:** Below the diagram, provide a human-readable description of the network's function.
+
+                3.  **Instruction Details:** For any complex blocks (like timers or counters), provide a clear explanation of its parameters.
+                    *   **S5 Timer (e.g., S_IMPULS - Pulse Timer):**
+                        *   **Nº:** The timer number (e.g., \`T 5\`).
+                        *   **S:** The start input condition.
+                        *   **TW:** The preset time value, formatted as S5T#... (e.g., \`S5T#2s\` for 2 seconds).
+                        *   **R:** The reset input condition.
+                        *   **BI / BCD:** The current time value outputs.
+                        *   **Q:** The Boolean output bit of the timer.
+                `;
+            }
+        }
+        
+        // DEFAULT/ALLEN-BRADLEY STYLE
+        return `
+        When generating PLC ladder logic diagrams, you MUST adhere to the following strict three-part format for Allen-Bradley (Studio 5000 / RSLogix), with each part clearly labeled using markdown bold headers. Your ASCII diagrams must be 100% precise, with perfect alignment and using only the specified characters.
+
+        1.  **Ladder Diagram:** Create ASCII art that perfectly resembles a modern PLC editor.
+            *   **Power Rails:** Use vertical bars \`|\` for power rails on both the far left and far right of every rung.
+            *   **Rungs:** Use the box-drawing character \`─\` (U+2500) for all horizontal rung segments. **Do not use hyphens (\`-\`).**
+            *   **Instructions:**
+                *   Normally Open Contact (XIC): Represent as \`[ ]\`.
+                *   Normally Closed Contact (XIO): Represent as \`[/]\`.
+                *   Output Coil (OTE): Represent as \`( )\`.
+                *   Other instructions (Timers, Counters): Represent with their mnemonic inside brackets, e.g., \`[TON]\`, \`[CTU]\`, \`[MOV]\`.
+            *   **Tag Alignment:** Place tag names directly above the center of their corresponding instruction.
+            *   **Branching:** Use \`┬\` to start a branch, \`│\` for vertical lines, and \`┘\` to join a branch. **Do not use plus signs (\`+\`).**
+
+        2.  **Mnemonic Code:** Below the diagram, provide the corresponding Allen-Bradley mnemonic (text-based) representation for each rung. For example: \`BST XIC(Start) NXB XIC(Motor) BND XIC(Stop) OTE(Motor)\`.
+
+        3.  **Instruction Details:** If the logic uses any instructions other than basic XIC, XIO, or OTE, provide a clear, bulleted list explaining how to configure each one.
+            *   **TON (Timer On-Delay):** Explain the \`Timer\` tag, \`.PRE\` (Preset), \`.ACC\` (Accumulator), and the purpose of the \`.EN\`, \`.TT\`, and \`.DN\` bits.
+            *   **CTU (Count Up):** Explain the \`Counter\` tag, \`.PRE\` (Preset), \`.ACC\` (Accumulator), and the \`.CU\`, \`.DN\` bits.
+
+        Here is the new, precise example of an Allen-Bradley motor seal-in circuit that you **MUST** follow:
+
+        **Ladder Diagram:**
+        \`\`\`
+               Start_Button           Stop_Button              Motor
+        |──────────[ ]──────────┬──────────[ ]──────────────────( )──────────|
+        |                        │                                             |
+        |          Motor         │                                             |
+        |──────────[ ]──────────┘                                             |
+        \`\`\`
+
+        **Mnemonic Code:**
+        \`\`\`
+        BST XIC(Start_Button) NXB XIC(Motor) BND XIC(Stop_Button) OTE(Motor)
+        \`\`\`
+
+        **Instruction Details:**
+        *   **Important Note on Stop Logic:** The \`Stop_Button\` uses an \`XIC\` (Normally Open) instruction, represented as \`[ ]\`. This is the fail-safe industry standard. It assumes the physical stop button is a Normally Closed (NC) contact. When the button is NOT pressed, the NC contact is closed, sending a '1' to the PLC input, making the \`XIC(Stop_Button)\` instruction true. If the button is pressed OR a wire in the stop circuit breaks, the input becomes '0', the \`XIC(Stop_Button)\` instruction becomes false, and the motor safely stops.
+        `;
     };
 
     const systemInstruction = `You are a world-class industrial automation expert specializing in ${context.topic}s.
     ${buildContextString()}
     Provide clear, concise, and technically accurate advice. Use markdown for code blocks, lists, and emphasis.
     When creating wiring diagrams as ASCII art, use box-drawing characters (like │, ─, ┌, └, ┐, ┘, ├, ┤, ┬, ┴, ┼) and ensure perfect alignment within markdown code blocks for clarity.
-    When generating PLC ladder logic diagrams, create ASCII art that closely resembles the Allen-Bradley RSLogix 5000 / Studio 5000 style. Use vertical bars | for power rails on both sides. Use -[ ]- for Normally Open contacts (XIC), -[/]- for Normally Closed contacts (XIO), and -( )- for coils (OTE). Place tag names directly above the instructions. Use vertical lines and '+' characters to create branches. Ensure all elements are perfectly aligned within a markdown code block for a clean, professional appearance.
-Example of a motor seal-in circuit:
-\`\`\`
-      Start        Stop         Motor
-|-----[ ]----------[/]----------( )----|
-|      |                            |
-|      +------[ ]------------------+
-|             Motor                 |
-\`\`\`
+    
+    *** LADDER LOGIC RULES ***
+    IMPORTANT: Before providing a ladder logic solution, you MUST ask the user which PLC software they are using (e.g., 'Studio 5000' for Allen-Bradley, or 'TIA Portal for S7-1200/1500' vs 'STEP 7 v5.x for S7-300/400' for Siemens) if it has not already been specified in the context. Your ladder logic style MUST conform to their selection based on the platform-specific guides below.
+    ${buildLadderLogicStyleGuide()}
+    
     ${langInstruction}`;
 
     return callApiEndpoint('generateChatResponse', { prompt, config: { systemInstruction } });
@@ -221,6 +322,72 @@ Example of a motor seal-in circuit:
 export const generatePractice = async (params: PracticeParams): Promise<string> => {
     const { topic, difficulty, language, vfdBrand, vfdModel, plcBrand, plcSoftware, plcLanguage } = params;
     const langInstruction = language === 'es' ? 'Responde en español.' : 'Respond in English.';
+
+    let ladderStyleGuide = '';
+    // SIEMENS STYLE GUIDE FOR PRACTICE PROBLEMS
+    if (plcBrand === 'Siemens') {
+        ladderStyleGuide = `
+        If the solution includes PLC ladder logic for Siemens, you MUST present it in the following strict three-part format.
+    
+        1.  **Ladder Diagram (LAD) for TIA Portal/STEP 7:** Create ASCII art that perfectly resembles the Siemens editor.
+            *   **Power Rails & Networks:** Use \`|\` for power rails and \`─\` for horizontal segments.
+            *   **Instructions:** Use \`[ ]\` for NO Contact, \`[/]\` for NC Contact, and \`( )\` for Coil.
+            *   **Tagging:** Place tags above instructions, including both symbolic name and absolute address (e.g., \`"Start_Button" (%I0.0)\`).
+            *   **Branching:** Use \`┬\`, \`│\`, and \`┘\`.
+    
+        2.  **Network Logic Description:** Provide a human-readable description of the network's function. **Do not use Allen-Bradley mnemonics.**
+    
+        3.  **Instruction Details:** Explain any complex instructions (like timers or counters) using Siemens' parameter names.
+            *   **For an IEC_TIMER (TON):** Explain the Instance DB, IN, PT, Q, and ET parameters.
+            *   **For an IEC_COUNTER (CTU):** Explain the Instance DB, CU, R, PV, Q, and CV parameters.
+        
+        Example of a complete Siemens motor seal-in circuit response inside the ### Solution section:
+        
+        **Ladder Diagram (LAD) for TIA Portal/STEP 7:**
+        \`\`\`
+               "Start_Button"         "Stop_Button"           "Motor_Output"
+                  (%I0.0)                (%I0.1)                 (%Q0.0)
+        |───────────[ ]──────────┬──────────[/]───────────────────( )──────────|
+        |                        │                                             |
+        |           "Motor_Output" │                                             |
+        |              (%Q0.0)     │                                             |
+        |───────────[ ]──────────┘                                             |
+        \`\`\`
+
+        **Network Logic Description:**
+        This network starts the "Motor_Output" when "Start_Button" is pressed. The output remains latched on through its own contact until the normally closed "Stop_Button" input is opened.
+        `;
+    } 
+    // DEFAULT/ALLEN-BRADLEY STYLE GUIDE FOR PRACTICE PROBLEMS
+    else {
+        ladderStyleGuide = `
+        If the solution includes PLC ladder logic, you MUST present it in the following strict three-part format for Allen-Bradley.
+    
+        1.  **Ladder Diagram:** Create ASCII art resembling a Rockwell editor. Use \`[ ]\` (XIC), \`[/]\` (XIO), and \`( )\` (OTE). Place tags above instructions.
+    
+        2.  **Mnemonic Code:** Provide the corresponding Allen-Bradley mnemonic (text-based) representation (e.g., \`BST XIC(Tag1) NXB ...\`).
+    
+        3.  **Instruction Details:** Explain any complex instructions (like TON or CTU) using Rockwell's tag structure (\`.PRE\`, \`.ACC\`, \`.DN\`).
+        
+        Example of a complete Allen-Bradley motor seal-in circuit response inside the ### Solution section:
+        
+        **Ladder Diagram:**
+        \`\`\`
+               Start_Button           Stop_Button              Motor
+        |──────────[ ]──────────┬──────────[ ]──────────────────( )──────────|
+        |                        │                                             |
+        |          Motor         │                                             |
+        |──────────[ ]──────────┘                                             |
+        \`\`\`
+        
+        **Mnemonic Code:**
+        \`\`\`
+        BST XIC(Start_Button) NXB XIC(Motor) BND XIC(Stop_Button) OTE(Motor)
+        \`\`\`
+        `;
+    }
+
+
     const prompt = `Generate a practice problem for an industrial automation technician.
     Topic: ${topic}
     Difficulty: ${difficulty}
@@ -236,23 +403,8 @@ export const generatePractice = async (params: PracticeParams): Promise<string> 
     ### Solution
     [A step-by-step solution to the problem, including code snippets, parameter settings, or wiring instructions as needed.]
 
-    IMPORTANT STYLE GUIDE FOR LADDER LOGIC:
-    If the solution includes a PLC ladder logic diagram, you MUST create ASCII art that closely resembles the Allen-Bradley RSLogix 5000 / Studio 5000 style.
-    - Use vertical bars | for power rails on both sides of the rung.
-    - Use -[ ]- for Normally Open contacts (XIC).
-    - Use -[/]- for Normally Closed contacts (XIO).
-    - Use -( )- for coils (OTE).
-    - Place tag names directly above the instructions.
-    - Use vertical lines and '+' characters to create branches.
-    - Ensure all elements are perfectly aligned within a markdown code block for a clean, professional appearance.
-    - Example of a motor seal-in circuit:
-    \`\`\`
-          Start        Stop         Motor
-    |-----[ ]----------[/]----------( )----|
-    |      |                            |
-    |      +------[ ]------------------+
-    |             Motor                 |
-    \`\`\`
+    *** IMPORTANT STYLE GUIDE FOR LADDER LOGIC ***
+    ${ladderStyleGuide}
 
     ${langInstruction}`;
 

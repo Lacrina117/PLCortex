@@ -329,8 +329,8 @@ export const ChatView = <T extends ChatContext>({
                         onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); } }}
                         placeholder={t(placeholderKey)}
                         disabled={isLoading}
-                        className="flex-grow p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 transition duration-150 ease-in-out bg-gray-50 dark:bg-gray-700 disabled:opacity-50 resize-none max-h-48"
-                        rows={1}
+                        className="flex-grow p-3 pr-12 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 transition duration-150 ease-in-out bg-gray-50 dark:bg-gray-700 disabled:opacity-50 resize-none max-h-48"
+                        rows={2}
                     />
                     <button
                         onClick={() => handleSendMessage()}
