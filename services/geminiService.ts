@@ -9,6 +9,7 @@ declare const process: {
 // Import necessary types and classes from the GenAI SDK for direct API calls in local development.
 // FIX: Corrected import from '@google/genai'. `GenerateContentRequest` is deprecated and was replaced with `GenerateContentParameters` which is the correct type. Since this file intelligently switches between API calls, this type is aliased to `GenerateContentRequest` to maintain consistency with the existing code structure.
 import { GoogleGenAI, GenerateContentParameters as GenerateContentRequest, Type } from '@google/genai';
+import { vfdTerminalData } from '../constants/vfdTerminalData';
 
 // --- START of updated API call logic ---
 
@@ -486,12 +487,27 @@ export const generateCommissioningChatResponse = async (messages: Message[], lan
         expertKnowledge = `For the Siemens Sinamics G120/G120C, you MUST guide the user through the basic commissioning using the BOP or I-OP. Start by instructing them to set parameter P0010 to 1 (Quick commissioning). Then, guide them through the essential motor data parameters one-by-one: P0304 (Motor Voltage), P0305 (Motor Current), P0307 (Motor Power), P0310 (Motor Frequency), and P0311 (Motor Speed). After motor data, instruct them to set P1300 (Control Mode - typically 20 for Vector Speed Control) and then run the motor data identification (P1900=1). Example: "First, let's start the basic commissioning. Navigate to parameter P0010 and set it to 1. This enables the quick commissioning menu. Let me know when this is done."`;
     }
 
+    let terminalInfo = '';
+    if (vfdModel && vfdTerminalData[vfdModel]) {
+        const diagramData = vfdTerminalData[vfdModel];
+        const terminals = diagramData.blocks.flatMap(block => block.terminals);
+        
+        terminalInfo = `
+        You have the following terminal data for the ${vfdModel}. You MUST use this information when answering questions about wiring.
+
+        *** TERMINAL DATA FOR ${vfdModel} ***
+        ${terminals.map(t => `- Terminal ID: "${t.id}", Label: "${t.label}", Function: "${t.function || 'N/A'}", Description: "${t.description || 'N/A'}"`).join('\n')}
+        `;
+    }
+
     const systemInstruction = `You are a VFD commissioning expert, acting as an interactive, safety-conscious guide.
     The user is commissioning a ${vfdBrand} ${vfdModel} for a specific application: "${application}".
     Your role is to guide them step-by-step. Keep responses concise. Ask questions to confirm steps are complete.
 
     *** EXPERT KNOWLEDGE ***
     ${expertKnowledge}
+    
+    ${terminalInfo}
 
     *** SAFETY FIRST - MOST IMPORTANT RULE ***
     Your VERY FIRST response in this conversation MUST be a detailed safety checklist. DO NOT provide any other information until the safety check is presented.
@@ -503,13 +519,13 @@ export const generateCommissioningChatResponse = async (messages: Message[], lan
     After presenting the checklist, ask the user to confirm they have completed these steps before proceeding.
 
     *** WIRING AND DIAGRAMS ***
-    When discussing wiring, reference specific terminal numbers for the ${vfdModel}.
+    When discussing wiring, reference specific terminal numbers for the ${vfdModel}. You MUST use the terminal data provided above. Be precise with both the Label (e.g., "DI1") and the terminal ID/number (e.g., "13").
     **Crucially, if your response involves specific terminals on a wiring diagram, you must append a JSON object to the end of your text response.**
     The JSON object must have a key "diagram_terminals" which is an array of strings, where each string is the ID of a terminal to highlight (e.g., ["STF", "STR", "SD"]).
     The terminal IDs must match the ones provided in the application's diagram data. Do not invent terminal IDs.
     Example response format:
-    "Great, next connect the start signal to terminal DI1 and common to terminal DCOM.
-    {"diagram_terminals": ["DI1", "DCOM"]}"
+    "Great, next connect the start signal to terminal DI1 (pin 13) and common to terminal DCOM (pin 12).
+    {"diagram_terminals": ["13", "12"]}"
 
     *** PARAMETER CONFIGURATION WIZARD ***
     After wiring and initial power-up checks are confirmed, you MUST transition into a 'Parameter Wizard' mode.
