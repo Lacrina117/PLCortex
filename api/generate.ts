@@ -25,7 +25,7 @@ export default async function handler(req: Request) {
         return new Response(JSON.stringify({ error: 'Missing task or params' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
     }
 
-    let request: GenerateContentRequest = { model };
+    let request: GenerateContentRequest = { model, contents: '' };
 
     // All current tasks use the same structure: a prompt and an optional config.
     // The client-side service will be responsible for creating the final prompt string.
