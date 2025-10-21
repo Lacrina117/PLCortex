@@ -51,7 +51,6 @@ export const Header: React.FC<HeaderProps> = ({ currentView, setView }) => {
         { key: 'solutions', label: t('header.solutions'), description: t('header_descriptions.solutions') },
         { key: 'practices', label: t('header.practices'), description: t('header_descriptions.practices') },
         { key: 'tools', label: t('header.tools'), description: t('header_descriptions.tools') },
-        { key: 'commissioning', label: t('header.commissioning'), description: t('header_descriptions.commissioning') },
         { key: 'reference', label: t('header.reference'), description: t('header_descriptions.reference') },
         { key: 'calculator', label: t('header.calculator'), description: t('header_descriptions.calculator') },
     ];

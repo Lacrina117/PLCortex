@@ -14,7 +14,7 @@ export const getRecentActivity = (): View[] => {
             const views = JSON.parse(stored);
             if (Array.isArray(views)) {
                 // Basic validation to ensure stored items are valid views
-                const validViews: View[] = ['solutions', 'practices', 'tools', 'commissioning', 'reference', 'calculator'];
+                const validViews: View[] = ['solutions', 'practices', 'tools', 'reference', 'calculator'];
                 return views.filter(v => validViews.includes(v));
             }
         }

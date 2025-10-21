@@ -16,6 +16,10 @@ interface CommissioningSession {
     createdAt: number;
 }
 
+interface CommissioningViewProps {
+    onBack?: () => void;
+}
+
 const STORAGE_KEY = 'plcortex_commissioning_sessions';
 
 const VfdTerminalDiagram: React.FC<{
@@ -241,7 +245,7 @@ const VfdSelection: React.FC<{
     );
 };
 
-export const CommissioningView: React.FC = () => {
+export const CommissioningView: React.FC<CommissioningViewProps> = ({ onBack }) => {
     const { t } = useTranslation();
     const { language } = useLanguage();
     const [sessions, setSessions] = useState<CommissioningSession[]>([]);
@@ -373,7 +377,7 @@ export const CommissioningView: React.FC = () => {
     const diagramData = vfdTerminalData[activeSession?.vfdModel || ''];
 
     return (
-        <div className="flex flex-grow font-sans overflow-hidden">
+        <div className="flex flex-grow font-sans overflow-hidden bg-white dark:bg-gray-800">
             {/* Sidebar */}
             <aside className={`absolute md:relative z-20 w-72 bg-gray-100 dark:bg-gray-900/50 border-r border-gray-200 dark:border-gray-700 flex flex-col transition-transform transform ${isHistoryOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}>
                 <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
@@ -399,6 +403,14 @@ export const CommissioningView: React.FC = () => {
             {/* Main Content Area */}
             <main className="flex-1 flex flex-col bg-white dark:bg-gray-800 overflow-hidden">
                  <header className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center flex-shrink-0">
+                    {onBack && (
+                        <button onClick={onBack} className="mr-4 p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2 text-sm">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+                            </svg>
+                            <span className="hidden md:inline">{t('tools.backToTools')}</span>
+                        </button>
+                    )}
                     <button onClick={() => setIsHistoryOpen(true)} className="md:hidden mr-4 p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700"><svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg></button>
                     <h2 className="text-lg font-bold truncate">{activeSessionDisplayTitle}</h2>
                 </header>

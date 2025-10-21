@@ -1,7 +1,3 @@
-// FIX: The original App.tsx was a duplicate of the application entry point.
-// It has been replaced with the main application component, which manages
-// application state (like authentication and view routing) and exports the
-// `View` type, resolving multiple import/export errors across the project.
 import React, { useState, useEffect } from 'react';
 
 // Import services
@@ -17,7 +13,6 @@ import { DashboardView } from './views/DashboardView';
 import { SolutionsView } from './views/SolutionsView';
 import { PracticesView } from './views/PracticesView';
 import { ToolsView } from './views/ToolsView';
-import { CommissioningView } from './views/CommissioningView';
 import { ReferenceView } from './views/ReferenceView';
 import { CalculatorView } from './views/CalculatorView';
 
@@ -28,7 +23,6 @@ export type View =
   | 'solutions'
   | 'practices'
   | 'tools'
-  | 'commissioning'
   | 'reference'
   | 'calculator';
 
@@ -58,8 +52,6 @@ const App: React.FC = () => {
                 return <PracticesView />;
             case 'tools':
                 return <ToolsView />;
-            case 'commissioning':
-                return <CommissioningView />;
             case 'reference':
                 return <ReferenceView />;
             case 'calculator':
@@ -88,7 +80,7 @@ const App: React.FC = () => {
         case 'admin':
             return <AdminView onLogout={handleLogout} />;
         case 'app':
-            const isFullBleedView = ['solutions', 'commissioning'].includes(currentView);
+            const isFullBleedView = ['solutions'].includes(currentView);
             
             const mainClasses = isFullBleedView
                 ? "flex-grow flex flex-col overflow-hidden"

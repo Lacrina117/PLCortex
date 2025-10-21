@@ -898,3 +898,40 @@ export const translateLadderToText = async (params: { language: 'en' | 'es'; cod
 
     return callApiEndpoint('translateLadderToText', { prompt });
 };
+
+export const analyzeAsciiFrame = async (params: { language: 'en' | 'es'; frame: string }): Promise<string> => {
+    const { language, frame } = params;
+    const langInstruction = language === 'es' ? 'Responde en español.' : 'Respond in English.';
+    const prompt = `Act as a serial communication protocol expert. The user has provided an ASCII data frame, which may contain non-printable control characters represented by mnemonics like <STX>, <ETX>, <CR>, <LF>, etc.
+    Your task is to:
+    1.  **Decode the Frame:** Rewrite the frame, replacing mnemonics with their common names and hex values in brackets. For example, '<STX>' becomes '[STX (0x02)]'.
+    2.  **Provide a Detailed Analysis:** In a separate section, describe the frame's structure, total byte count, start/end delimiters, and your interpretation of the useful data payload.
+
+    Frame to analyze:
+    \`\`\`
+    ${frame}
+    \`\`\`
+
+    Your response must be in markdown.
+    ${langInstruction}`;
+    return callApiEndpoint('analyzeAsciiFrame', { prompt });
+};
+
+export const getNetworkHardwarePlan = async (params: { language: 'en' | 'es'; devices: string[] }): Promise<string> => {
+    const { language, devices } = params;
+    const langInstruction = language === 'es' ? 'Responde en español.' : 'Respond in English.';
+    const prompt = `You are a senior industrial network architect. Your expertise covers Profinet, EtherNet/IP, Modbus TCP, and serial protocols. The user has provided a list of devices they want to connect.
+    Your task is to provide a markdown report with the following sections:
+
+    1.  **Compatibility Analysis:** Determine if the devices can communicate directly based on their native protocols. Clearly state if there is a protocol mismatch.
+    2.  **Hardware Solution:**
+        *   If there is a mismatch, recommend a specific type of gateway (e.g., "Profinet to EtherNet/IP gateway") and give an example model (e.g., "Anybus Communicator", "Prosoft Technology Gateway"). Explain why it's needed.
+        *   If the protocols are compatible (e.g., all EtherNet/IP), recommend the necessary networking hardware. Be specific: "You will need an industrial managed Ethernet switch (e.g., Stratix 5700, Scalance XB205)" and "Use shielded Cat5e or Cat6 Ethernet cables."
+    3.  **Connection Overview:** Provide a brief explanation of the physical connections (e.g., "Connect all devices to the Ethernet switch. The gateway will have one port for the Profinet network and one for the EtherNet/IP network.").
+
+    Devices to connect:
+    ${devices.join(', ')}
+    
+    ${langInstruction}`;
+    return callApiEndpoint('getNetworkHardwarePlan', { prompt });
+};

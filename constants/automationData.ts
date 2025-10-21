@@ -242,3 +242,16 @@ export const dcLoadTemplates: DcLoadTemplate[] = [
 ];
 
 export const standardDcPowerSupplySizes: number[] = [1, 2.5, 5, 10, 20, 40];
+
+export const networkDevices: string[] = [
+    'Siemens S7-1200 (Profinet)',
+    'Siemens S7-1500 (Profinet)',
+    'Siemens HMI KTP700 Basic (Profinet)',
+    'Allen-Bradley CompactLogix L1 (EtherNet/IP)',
+    'Allen-Bradley ControlLogix (EtherNet/IP)',
+    'Allen-Bradley PowerFlex 525 (EtherNet/IP)',
+    'Schneider M241 PLC (Modbus TCP)',
+    'Generic VFD (Modbus RTU)',
+    'Generic Barcode Scanner (ASCII Serial)',
+    'Anybus Communicator Gateway',
+];
