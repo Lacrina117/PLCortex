@@ -211,32 +211,43 @@ export const generateChatResponse = async (messages: Message[], context: ChatCon
                 When generating PLC ladder logic diagrams for Siemens TIA Portal, you MUST adhere to the following strict three-part format, with each part clearly labeled using markdown bold headers. Your ASCII diagrams must be 100% precise, with perfect alignment and using only the specified characters.
 
                 1.  **Ladder Diagram (LAD) for TIA Portal:** Create ASCII art that perfectly resembles the TIA Portal editor.
-                    *   **Power Rails:** Use vertical bars \`|\` for power rails on both the far left and far right of every network (rung).
-                    *   **Networks:** Use the box-drawing character \`─\` (U+2500) for all horizontal segments. **Do not use hyphens (\`-\`).**
+                    *   **Characters:** Use \`|\` for power rails and \`─\` (U+2500) for all horizontal segments. **Never use hyphens (-).**
+                    *   **Rung Structure (CRITICAL):** A complete network MUST have a left power rail \`|\`, a logic section, and a right power rail \`|\`. Example: \`|───[ ]───( )───|\`.
                     *   **Instructions:**
-                        *   Normally Open Contact: Represent as \`[ ]\`.
-                        *   Normally Closed Contact: Represent as \`[/]\`.
-                        *   Output Coil: Represent as \`( )\`.
-                        *   Function Blocks (Timers, Counters): Represent with their instruction name inside brackets, e.g., \`[TON]\`, \`[CTU]\`.
-                    *   **Tagging:** Place tag names directly above their instruction. You **must** include both the symbolic name (in quotes) and the absolute address (in parentheses) if applicable. For example: \`"Start_Button" (%I0.0)\`. For timer or counter instances, use the instance DB name, e.g., \`"My_Timer_DB"\`.
-                    *   **Branching:** Use \`┬\` to start a branch, \`│\` for vertical lines, and \`┘\` to join a branch from below. **Do not use plus signs (\`+\`).**
+                        *   Normally Open Contact: \`[ ]\`
+                        *   Normally Closed Contact: \`[/]\`
+                        *   Output Coil: \`( )\`
+                        *   Function Blocks (Timers, Counters): \`[TON]\`, \`[CTU]\`.
+                    *   **Tagging:** Place tag names directly above their instruction, including the symbolic name (in quotes) and the absolute address (in parentheses). e.g., \`"Start_Button" (%I0.0)\`.
+                    *   **Branching:** Use \`┬\` to start a branch, \`│\` for vertical lines, and \`┘\` to join. **Never use plus signs (+).**
 
-                2.  **Network Logic Description:** Below the diagram, provide a human-readable description of what the logic in the network does. **Do not provide Allen-Bradley mnemonics.**
+                2.  **Network Logic Description:** Below the diagram, describe the network's function in plain language. **Do not provide Allen-Bradley mnemonics.**
 
-                3.  **Instruction Details:** For any non-basic contacts or coils (like timers or counters), provide a clear, bulleted list explaining the configuration and parameters for the specific Siemens instruction.
-                    *   **IEC_TIMER (TON - On-Delay Timer):**
-                        *   **Instance DB:** The name of the instance Data Block for the timer (e.g., \`"My_Timer_DB"\`).
-                        *   **IN:** The Boolean condition that enables the timer.
-                        *   **PT (Preset Time):** The target time duration, formatted as T#... (e.g., \`T#5s\` for 5 seconds).
-                        *   **Q:** The Boolean output that becomes true when the timer is done.
-                        *   **ET (Elapsed Time):** The current accumulated time, of data type TIME.
-                    *   **IEC_COUNTER (CTU - Count Up):**
-                        *   **Instance DB:** The name of the instance Data Block for the counter.
-                        *   **CU:** The Boolean input that increments the counter on a rising edge.
-                        *   **R (Reset):** The Boolean input that resets the counter to 0.
-                        *   **PV (Preset Value):** The target count value (Integer).
-                        *   **Q:** The Boolean output that becomes true when CV >= PV.
-                        *   **CV (Count Value):** The current accumulated count (Integer).
+                3.  **Instruction Details:** For any non-basic instructions (timers, counters), provide a bulleted list explaining their parameters (Instance DB, IN, PT, Q, etc.).
+
+                **CRITICAL LOGIC RULES:**
+                *   **Terminating Rungs:** Every network MUST terminate with an output-type instruction (e.g., a coil \`( )\` or a function block). A network cannot end with only conditional instructions like contacts.
+                *   **Duplicate Outputs:** **NEVER** use the same output coil instruction (e.g., \`( )\` with tag \`"Motor"\`) on more than one network. This causes unpredictable "rung-fighting" and is a critical programming error.
+                *   **Fail-Safe Stop Logic:** A physical stop button MUST be a Normally Closed (NC) contact for fail-safe wiring. In the ladder logic, this NC contact is represented by a Normally Open instruction \`[ ]\`. This ensures that if the wire breaks (signal goes to 0), the logic sees it as a "stop" condition. Using a Normally Closed instruction \`[/]\` for a stop button is a dangerous error.
+
+                Here is a new, precise example of a Siemens motor seal-in circuit that you **MUST** follow:
+
+                **Ladder Diagram (LAD) for TIA Portal:**
+                \`\`\`
+                       "Start_Button"         "Stop_Button"           "Motor_Output"
+                          (%I0.0)                (%I0.1)                 (%Q0.0)
+                |───────────[ ]──────────┬──────────[ ]───────────────────( )──────────|
+                |                        │                                             |
+                |           "Motor_Output" │                                             |
+                |              (%Q0.0)     │                                             |
+                |───────────[ ]──────────┘                                             |
+                \`\`\`
+
+                **Network Logic Description:**
+                This network starts the "Motor_Output" when "Start_Button" is pressed. The output remains latched on through its own contact until the "Stop_Button" input (which is physically wired as Normally Closed) is pressed, opening the circuit.
+
+                **Instruction Details:**
+                *   **Important Note on Stop Logic:** The \`"Stop_Button"\` uses a Normally Open \`[ ]\` instruction. This is the fail-safe industry standard, assuming the physical stop button is a Normally Closed (NC) contact. When the button is NOT pressed, the NC contact is closed, sending a '1' to the PLC input, making the \`[ ]\` instruction true. If the button is pressed OR a wire in the stop circuit breaks, the input becomes '0', the instruction becomes false, and the motor safely stops.
                 `;
             }
             // Classic STEP 7 (S7-300/400) Style Guide
@@ -268,22 +279,24 @@ export const generateChatResponse = async (messages: Message[], context: ChatCon
         return `
         When generating PLC ladder logic diagrams, you MUST adhere to the following strict three-part format for Allen-Bradley (Studio 5000 / RSLogix), with each part clearly labeled using markdown bold headers. Your ASCII diagrams must be 100% precise, with perfect alignment and using only the specified characters.
 
-        1.  **Ladder Diagram:** Create ASCII art that perfectly resembles a modern PLC editor.
-            *   **Power Rails:** Use vertical bars \`|\` for power rails on both the far left and far right of every rung.
-            *   **Rungs:** Use the box-drawing character \`─\` (U+2500) for all horizontal rung segments. **Do not use hyphens (\`-\`).**
+        1.  **Ladder Diagram:** Create "pixel-perfect" ASCII art that resembles a modern PLC editor.
+            *   **Characters:** Use \`|\` for power rails and \`─\` (U+2500) for all horizontal segments. **Never use hyphens (-).**
+            *   **Rung Structure (CRITICAL):** A complete rung must have a left power rail \`|\`, a logic section, and a right power rail \`|\`. Example: \`|───[ ]───( )───|\`.
             *   **Instructions:**
-                *   Normally Open Contact (XIC): Represent as \`[ ]\`.
-                *   Normally Closed Contact (XIO): Represent as \`[/]\`.
-                *   Output Coil (OTE): Represent as \`( )\`.
-                *   Other instructions (Timers, Counters): Represent with their mnemonic inside brackets, e.g., \`[TON]\`, \`[CTU]\`, \`[MOV]\`.
+                *   Normally Open Contact (XIC): \`[ ]\`
+                *   Normally Closed Contact (XIO): \`[/]\`
+                *   Output Coil (OTE): \`( )\`
+                *   Other instructions (Timers, Counters): \`[TON]\`, \`[CTU]\`, \`[MOV]\`.
             *   **Tag Alignment:** Place tag names directly above the center of their corresponding instruction.
-            *   **Branching:** Use \`┬\` to start a branch, \`│\` for vertical lines, and \`┘\` to join a branch. **Do not use plus signs (\`+\`).**
+            *   **Branching:** Use \`┬\` to start a branch, \`│\` for vertical lines, and \`┘\` to join. **Never use plus signs (+).**
 
-        2.  **Mnemonic Code:** Below the diagram, provide the corresponding Allen-Bradley mnemonic (text-based) representation for each rung. For example: \`BST XIC(Start) NXB XIC(Motor) BND XIC(Stop) OTE(Motor)\`.
+        2.  **Mnemonic Code:** Below the diagram, provide the corresponding Allen-Bradley mnemonic (text-based) representation for each rung. (e.g., for RSLogix 500 style: \`BST XIC(Start) NXB XIC(Motor) BND XIC(Stop) OTE(Motor)\`).
 
-        3.  **Instruction Details:** If the logic uses any instructions other than basic XIC, XIO, or OTE, provide a clear, bulleted list explaining how to configure each one.
-            *   **TON (Timer On-Delay):** Explain the \`Timer\` tag, \`.PRE\` (Preset), \`.ACC\` (Accumulator), and the purpose of the \`.EN\`, \`.TT\`, and \`.DN\` bits.
-            *   **CTU (Count Up):** Explain the \`Counter\` tag, \`.PRE\` (Preset), \`.ACC\` (Accumulator), and the \`.CU\`, \`.DN\` bits.
+        3.  **Instruction Details:** If the logic uses any instructions other than basic XIC, XIO, or OTE, provide a clear, bulleted list explaining how to configure each one (e.g., for a TON, explain the Timer tag, .PRE, .ACC, and .DN bits).
+
+        **CRITICAL LOGIC RULES:**
+        *   **Transitional Instructions:** One-Shot instructions like \`[ONS]\` are not outputs. They only condition the rung. They **MUST** be followed by an output instruction (e.g., a coil \`( )\` or a block like \`[MOV]\`). A rung cannot logically end with an \`[ONS]\` instruction.
+        *   **Duplicate Outputs:** **NEVER** use the same output coil instruction (e.g., \`( )\` with tag "Motor") on more than one rung. This causes unpredictable 'rung-fighting' and is a critical programming error. Use intermediate bits (flags) if necessary to combine logic for a single output.
 
         Here is the new, precise example of an Allen-Bradley motor seal-in circuit that you **MUST** follow:
 
@@ -330,25 +343,24 @@ export const generatePractice = async (params: PracticeParams): Promise<string> 
         ladderStyleGuide = `
         If the solution includes PLC ladder logic for Siemens, you MUST present it in the following strict three-part format.
     
-        1.  **Ladder Diagram (LAD) for TIA Portal/STEP 7:** Create ASCII art that perfectly resembles the Siemens editor.
-            *   **Power Rails & Networks:** Use \`|\` for power rails and \`─\` for horizontal segments.
-            *   **Instructions:** Use \`[ ]\` for NO Contact, \`[/]\` for NC Contact, and \`( )\` for Coil.
-            *   **Tagging:** Place tags above instructions, including both symbolic name and absolute address (e.g., \`"Start_Button" (%I0.0)\`).
-            *   **Branching:** Use \`┬\`, \`│\`, and \`┘\`.
+        1.  **Ladder Diagram (LAD) for TIA Portal/STEP 7:** Create ASCII art that perfectly resembles the Siemens editor. Use \`[ ]\` for NO, \`[/]\` for NC, and \`( )\` for Coil. Place tags above instructions.
     
         2.  **Network Logic Description:** Provide a human-readable description of the network's function. **Do not use Allen-Bradley mnemonics.**
     
-        3.  **Instruction Details:** Explain any complex instructions (like timers or counters) using Siemens' parameter names.
-            *   **For an IEC_TIMER (TON):** Explain the Instance DB, IN, PT, Q, and ET parameters.
-            *   **For an IEC_COUNTER (CTU):** Explain the Instance DB, CU, R, PV, Q, and CV parameters.
+        3.  **Instruction Details:** Explain any complex instructions (like timers or counters) using Siemens' parameter names (Instance DB, IN, PT, Q, etc.).
         
+        **CRITICAL LOGIC RULES:**
+        *   Every network must end with an output instruction (like a coil).
+        *   **NEVER** use the same output coil tag on more than one network.
+        *   For a physical NC stop button, you **MUST** use a NO instruction \`[ ]\` in the logic for fail-safe behavior.
+
         Example of a complete Siemens motor seal-in circuit response inside the ### Solution section:
         
         **Ladder Diagram (LAD) for TIA Portal/STEP 7:**
         \`\`\`
                "Start_Button"         "Stop_Button"           "Motor_Output"
                   (%I0.0)                (%I0.1)                 (%Q0.0)
-        |───────────[ ]──────────┬──────────[/]───────────────────( )──────────|
+        |───────────[ ]──────────┬──────────[ ]───────────────────( )──────────|
         |                        │                                             |
         |           "Motor_Output" │                                             |
         |              (%Q0.0)     │                                             |
@@ -356,7 +368,7 @@ export const generatePractice = async (params: PracticeParams): Promise<string> 
         \`\`\`
 
         **Network Logic Description:**
-        This network starts the "Motor_Output" when "Start_Button" is pressed. The output remains latched on through its own contact until the normally closed "Stop_Button" input is opened.
+        This network starts the "Motor_Output" when "Start_Button" is pressed. The output remains latched on through its own contact until the physically Normally Closed "Stop_Button" input is opened. This is a fail-safe design.
         `;
     } 
     // DEFAULT/ALLEN-BRADLEY STYLE GUIDE FOR PRACTICE PROBLEMS
@@ -366,10 +378,14 @@ export const generatePractice = async (params: PracticeParams): Promise<string> 
     
         1.  **Ladder Diagram:** Create ASCII art resembling a Rockwell editor. Use \`[ ]\` (XIC), \`[/]\` (XIO), and \`( )\` (OTE). Place tags above instructions.
     
-        2.  **Mnemonic Code:** Provide the corresponding Allen-Bradley mnemonic (text-based) representation (e.g., \`BST XIC(Tag1) NXB ...\`).
+        2.  **Mnemonic Code:** Provide the corresponding Allen-Bradley mnemonic representation (e.g., \`BST XIC(Tag1) NXB ...\`).
     
         3.  **Instruction Details:** Explain any complex instructions (like TON or CTU) using Rockwell's tag structure (\`.PRE\`, \`.ACC\`, \`.DN\`).
         
+        **CRITICAL LOGIC RULES:**
+        *   Transitional instructions like One-Shots (\`[ONS]\`) MUST be followed by an output instruction. A rung cannot end with an \`[ONS]\`.
+        *   **NEVER** use the same output coil tag (OTE) on more than one rung.
+
         Example of a complete Allen-Bradley motor seal-in circuit response inside the ### Solution section:
         
         **Ladder Diagram:**
@@ -712,7 +728,7 @@ Your response MUST be in markdown and follow this exact structure:
 
 ### Top Choice Recommendation
 **Recommended Technology:** [Name of the top choice technology, e.g., "Guided Wave Radar"]
-**Justification:** [A paragraph explaining why this is the best option based on the wizard data. Reference specific details.]
+**Justificación:** [A paragraph explaining why this is the best option based on the wizard data. Reference specific details.]
 
 ### Comparative Table of Alternatives
 [Create a markdown table that rates the top choice and 1-2 alternatives on these key criteria: | Technology | Precision | Cost | Robustness | Ease of Installation |. Use a 1-5 star rating (e.g., ***** for excellent, * for poor).]
