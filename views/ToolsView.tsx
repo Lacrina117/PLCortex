@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useTranslation } from '../hooks/useTranslation';
 import { useLanguage } from '../contexts/LanguageContext';
-import { vfdBrands, vfdModelsByBrand, networkDevices } from '../constants/automationData';
+// FIX: Imported `networkProtocols` instead of the non-existent `networkDevices`.
+import { vfdBrands, vfdModelsByBrand, networkProtocols } from '../constants/automationData';
 import { analyzeFaultCode, analyzeScanTime, generateEnergyEfficiencyPlan, verifyCriticalLogic, validatePlcLogic, suggestPlcLogicFix, LogicIssue, analyzeAsciiFrame, getNetworkHardwarePlan } from '../services/geminiService';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { ErrorAlert } from '../components/ErrorAlert';
@@ -86,7 +87,8 @@ export const ToolsView: React.FC = () => {
     const [logicIssues, setLogicIssues] = useState<LogicIssue[]>([]);
     const [hexFrame, setHexFrame] = useState('01 03 00 0A 00 01');
     const [asciiFrame, setAsciiFrame] = useState('<STX>+0015.50g<CR><LF>');
-    const [selectedDevices, setSelectedDevices] = useState<string[]>([]);
+    // FIX: Renamed state from `selectedDevices` to `selectedProtocols` for clarity.
+    const [selectedProtocols, setSelectedProtocols] = useState<string[]>([]);
     const [crcResult, setCrcResult] = useState<CrcResult | null>(null);
     
     const commonInputClasses = "w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-150 ease-in-out bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-200 text-sm";
@@ -113,9 +115,10 @@ export const ToolsView: React.FC = () => {
         resetForm();
     };
     
-    const handleDeviceSelection = (device: string) => {
-        setSelectedDevices(prev => 
-            prev.includes(device) ? prev.filter(d => d !== device) : [...prev, device]
+    // FIX: Renamed handler from `handleDeviceSelection` to `handleProtocolSelection`.
+    const handleProtocolSelection = (protocol: string) => {
+        setSelectedProtocols(prev => 
+            prev.includes(protocol) ? prev.filter(p => p !== protocol) : [...prev, protocol]
         );
     };
 
@@ -211,12 +214,14 @@ export const ToolsView: React.FC = () => {
                             res = await analyzeAsciiFrame({ language, frame: asciiFrame });
                             break;
                         case 'hardware':
-                             if (selectedDevices.length < 2) {
-                                setError("Please select at least two devices to connect.");
+                             // FIX: Check selectedProtocols instead of selectedDevices.
+                             if (selectedProtocols.length < 2) {
+                                setError("Please select at least two protocols to connect.");
                                 return;
                             }
                             setIsLoading(true);
-                            res = await getNetworkHardwarePlan({ language, devices: selectedDevices });
+                            // FIX: Passed `protocols` property instead of `devices` to match the function signature.
+                            res = await getNetworkHardwarePlan({ language, protocols: selectedProtocols });
                             break;
                     }
                     break;
@@ -366,12 +371,15 @@ export const ToolsView: React.FC = () => {
                         
                         {activeNetworkTool === 'hardware' && (
                             <div>
-                                <label className="block text-sm font-medium mb-1">{t('tools.network.hardware.devicesLabel')}</label>
+                                {/* FIX: Used correct translation key `protocolsLabel`. */}
+                                <label className="block text-sm font-medium mb-1">{t('tools.network.hardware.protocolsLabel')}</label>
                                 <div className="mt-2 grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-60 overflow-y-auto p-2 border dark:border-gray-600 rounded-lg">
-                                    {networkDevices.map(device => (
-                                        <label key={device} className="flex items-center space-x-2 p-2 bg-gray-50 dark:bg-gray-700/50 rounded-md cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700">
-                                            <input type="checkbox" checked={selectedDevices.includes(device)} onChange={() => handleDeviceSelection(device)} className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" />
-                                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{device}</span>
+                                    {/* FIX: Mapped over `networkProtocols` instead of `networkDevices`. */}
+                                    {networkProtocols.map(protocol => (
+                                        <label key={protocol} className="flex items-center space-x-2 p-2 bg-gray-50 dark:bg-gray-700/50 rounded-md cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700">
+                                            {/* FIX: Used `selectedProtocols` and `handleProtocolSelection`. */}
+                                            <input type="checkbox" checked={selectedProtocols.includes(protocol)} onChange={() => handleProtocolSelection(protocol)} className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" />
+                                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{protocol}</span>
                                         </label>
                                     ))}
                                 </div>

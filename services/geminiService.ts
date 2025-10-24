@@ -607,6 +607,27 @@ export const analyzeFaultCode = async (params: { language: 'en' | 'es'; vfdBrand
     return callApiEndpoint('analyzeFaultCode', { prompt });
 };
 
+// FIX: Add missing analyzeAsciiFrame function to be exported.
+export const analyzeAsciiFrame = async (params: { language: 'en' | 'es'; frame: string }): Promise<string> => {
+    const { language, frame } = params;
+    const langInstruction = language === 'es' ? 'Responde en español.' : 'Respond in English.';
+    const prompt = `Act as a serial protocol analyzer. The user has provided an ASCII frame. Your task is to analyze it and provide a detailed breakdown.
+
+    - Identify and explain any non-printable control characters represented by tags (e.g., <STX>, <CR>, <LF>).
+    - Describe the purpose of the data payload.
+    - Provide the full hexadecimal representation of the entire frame.
+
+    Frame to Analyze:
+    \`\`\`
+    ${frame}
+    \`\`\`
+
+    Present the output as a markdown report.
+
+    ${langInstruction}`;
+    return callApiEndpoint('analyzeAsciiFrame', { prompt });
+};
+
 export const analyzeScanTime = async (params: { language: 'en' | 'es'; code: string }): Promise<string> => {
     const { language, code } = params;
     const langInstruction = language === 'es' ? 'Responde en español.' : 'Respond in English.';
@@ -707,6 +728,9 @@ Tu respuesta DEBE estar en markdown y seguir esta estructura exacta:
 ### Consideraciones Críticas de Instalación
 [Proporciona 2-3 puntos con consejos de experto para la tecnología recomendada.]
 
+### ⚠️ Advertencia Crítica de Estándares y Cableado
+[SI Y SOLO SI la variable es Temperatura y la recomendación es un termopar, llena esta sección. Explica el código de colores correcto (ANSI o IEC) basado en la región y advierte sobre la polaridad.]
+
 ### Guía Rápida de Implementación
 [Proporciona un fragmento de código de ejemplo en Texto Estructurado (ST) para Rockwell/Studio 5000 para escalar una señal analógica, como se muestra a continuación.]
 
@@ -728,7 +752,7 @@ Your response MUST be in markdown and follow this exact structure:
 
 ### Top Choice Recommendation
 **Recommended Technology:** [Name of the top choice technology, e.g., "Guided Wave Radar"]
-**Justificación:** [A paragraph explaining why this is the best option based on the wizard data. Reference specific details.]
+**Justification:** [A paragraph explaining why this is the best option based on the wizard data. Reference specific details.]
 
 ### Comparative Table of Alternatives
 [Create a markdown table that rates the top choice and 1-2 alternatives on these key criteria: | Technology | Precision | Cost | Robustness | Ease of Installation |. Use a 1-5 star rating (e.g., ***** for excellent, * for poor).]
@@ -739,6 +763,9 @@ Your response MUST be in markdown and follow this exact structure:
 
 ### Critical Installation Considerations
 [Provide 2-3 bullet points with expert tips for the recommended technology.]
+
+### ⚠️ Critical Standards & Wiring Warning
+[IF AND ONLY IF the variable is Temperature and the recommendation is a thermocouple, fill this section. Explain the correct color code (ANSI or IEC) based on the region and warn about polarity.]
 
 ### Quick Implementation Guide
 [Provide a sample PLC code snippet in Structured Text (ST) for Rockwell/Studio 5000 for scaling an analog signal, as shown below.]
@@ -758,25 +785,44 @@ SCP(MyAnalogInput, RawMin, RawMax, EngMin, EngMax, MyScaledValue);
 
     const structure = language === 'es' ? structure_es : structure_en;
     
-    const prompt = `Act as a world-class instrumentation and process engineer, synthesizing the expertise from three key texts: Antonio Creus's "Instrumentación Industrial, 8th Edition," Carl Branan's "The Process Engineer's Pocket Handbook," and the VEGA catalog "Tecnología de medición de nivel y presión para el tratamiento de aguas residuales." Your recommendations must be grounded in the detailed technical comparisons from Creus, the practical process considerations from Branan, and the specific application examples from the VEGA catalog.
+    const systemInstruction = `You are a world-class instrumentation and process engineer, synthesizing the expertise from three key texts: Antonio Creus's "Instrumentación Industrial, 8th Edition," Carl Branan's "The Process Engineer's Pocket Handbook," and the VEGA catalog "Tecnología de medición de nivel y presión para el tratamiento de aguas residuales." Your recommendations must be grounded in the detailed technical comparisons from Creus, the practical process considerations from Branan, and the specific application examples from the VEGA catalog.
 
-A user has filled out a detailed wizard for a sensor application. Based on the following application details, provide a comprehensive and expert-level sensor recommendation.
+Your main task is to analyze user-provided application details and give an expert-level sensor recommendation.
 
-When generating the response, adhere to these principles:
+When generating the response, you MUST adhere to these principles:
 1.  **Synthesize Knowledge:** Your justification must be robust. Ground your choice in the instrumentation principles from Creus. Support it with process-level insights from Branan. If the application is related to wastewater, water, or similar public works, you MUST also incorporate the specific application knowledge and model series (e.g., VEGAPULS C 21, VEGABAR 82) from the VEGA catalog as prime examples.
 2.  **Comparative Analysis (Creus):** The alternatives you present must be legitimate contenders. The star ratings in your comparative table must reflect the nuanced trade-offs between technologies as detailed in "Instrumentación Industrial".
 3.  **Installation & Practicality (Creus & Branan & VEGA):** Your installation considerations must be practical. Mention instrumentation-specific points from Creus (e.g., need for straight pipe runs), process piping rules of thumb from Branan (e.g., pressure drop considerations), and if relevant (like a pumping station or clarifier), mention any specific installation benefits highlighted in the VEGA document (e.g., non-contact measurement to avoid fouling).
 4.  **Technology & Process Depth (Combined):** Demonstrate a deep understanding of sensor principles from Creus, connect them to the user's project priorities (Cost, Precision, Robustness), and contextualize them with real-world examples from Branan's handbook and the VEGA catalog.
 
---- APPLICATION DETAILS ---
+*** STANDARDS & DIRECTIVES (CRITICAL) ***
+1.  **Standard Override:** If the user provides an "Estándar de Termopar Específico", you MUST use that standard for the wiring warning, ignoring the "País/Región de Instalación" field for color code selection. If this field is not present or is "Autodetect", proceed with the geographic context logic below.
+2.  **Geographic Context:** You must use the "País/Región de Instalación" field to determine the predominant instrumentation standard for thermocouples. This is your primary directive for color codes.
+    *   **North America Region (e.g., Mexico, USA, Canada):** Assume **ANSI MC96.1**.
+    *   **Japan Region (e.g., Japón, Japan):** Assume **JIS C 1602**.
+    *   **Germany Region (e.g., Alemania, Germany):** Assume the current standard is **IEC 60584**, but be aware of the legacy **DIN 43710** standard.
+    *   **Other Regions (Europe, Asia, South America, etc.):** Default to **IEC 60584**.
+3.  **Thermocouple Wiring Warning (IF Variable is Temperature):** If your recommendation includes a thermocouple, you MUST include the "⚠️ Advertencia Crítica de Estándares y Cableado" section and provide the correct color code based on the geographic context.
+    *   **ANSI MC96.1:** State that the rule is **RED is NEGATIVE (-)**. For a Type K, explicitly mention "Yellow is Positive (+), Red is Negative (-)".
+    *   **IEC 60584:** For a Type K, explicitly state: "**GREEN is POSITIVE (+)** and **WHITE is NEGATIVE (-)**. CAUTION! This is the opposite of the ANSI standard."
+    *   **JIS C 1602:** For a Type K, explicitly state: "**RED is POSITIVE (+)** and **WHITE is NEGATIVE (-)**. CAUTION! This is different from both ANSI and IEC standards."
+    *   **Germany Context:** State the current **IEC 60584** standard first. Then, add a warning: "Be aware that older installations in Germany may use the legacy **DIN 43710** standard. For a Type K under DIN, the color code is Red (+) and Green (-). Always verify the standard used in your specific facility to avoid miswiring."
+4.  **Classified Area Validation:** The "Modelos y Marcas Sugeridas" MUST match the requested "Clasificación de Área". This is a separate concept from thermocouple standards. Do not confuse them.
+    *   If "Clase/División" is requested, you must suggest models with **FM, UL, or CSA** approval (e.g., "Cl I, Div 1").
+    *   If "ATEX/IECEx" is requested, you must suggest models with **ATEX/IECEx** approval (e.g., "Ex ia IIC T4 Ga").
+    *   If you detect a conflict (e.g., user is in "Mexico" but requests "ATEX"), you must mention it in your justification: "ATEX models are suggested as requested, though the predominant standard in Mexico is Class/Division. Please verify your plant's specific standards."
+`;
+    
+    const prompt = `--- APPLICATION DETAILS ---
 ${details}
 --- END OF DETAILS ---
 
+Now, generate the response following the exact markdown structure provided below.
 ${structure}
     
 ${langInstruction}`;
     
-    return callApiEndpoint('generateSensorRecommendation', { prompt });
+    return callApiEndpoint('generateSensorRecommendation', { prompt, config: { systemInstruction } });
 };
 
 
@@ -915,39 +961,26 @@ export const translateLadderToText = async (params: { language: 'en' | 'es'; cod
     return callApiEndpoint('translateLadderToText', { prompt });
 };
 
-export const analyzeAsciiFrame = async (params: { language: 'en' | 'es'; frame: string }): Promise<string> => {
-    const { language, frame } = params;
+export const getNetworkHardwarePlan = async (params: { language: 'en' | 'es'; protocols: string[] }): Promise<string> => {
+    const { language, protocols } = params;
     const langInstruction = language === 'es' ? 'Responde en español.' : 'Respond in English.';
-    const prompt = `Act as a serial communication protocol expert. The user has provided an ASCII data frame, which may contain non-printable control characters represented by mnemonics like <STX>, <ETX>, <CR>, <LF>, etc.
-    Your task is to:
-    1.  **Decode the Frame:** Rewrite the frame, replacing mnemonics with their common names and hex values in brackets. For example, '<STX>' becomes '[STX (0x02)]'.
-    2.  **Provide a Detailed Analysis:** In a separate section, describe the frame's structure, total byte count, start/end delimiters, and your interpretation of the useful data payload.
-
-    Frame to analyze:
-    \`\`\`
-    ${frame}
-    \`\`\`
-
-    Your response must be in markdown.
-    ${langInstruction}`;
-    return callApiEndpoint('analyzeAsciiFrame', { prompt });
-};
-
-export const getNetworkHardwarePlan = async (params: { language: 'en' | 'es'; devices: string[] }): Promise<string> => {
-    const { language, devices } = params;
-    const langInstruction = language === 'es' ? 'Responde en español.' : 'Respond in English.';
-    const prompt = `You are a senior industrial network architect. Your expertise covers Profinet, EtherNet/IP, Modbus TCP, and serial protocols. The user has provided a list of devices they want to connect.
-    Your task is to provide a markdown report with the following sections:
-
-    1.  **Compatibility Analysis:** Determine if the devices can communicate directly based on their native protocols. Clearly state if there is a protocol mismatch.
-    2.  **Hardware Solution:**
-        *   If there is a mismatch, recommend a specific type of gateway (e.g., "Profinet to EtherNet/IP gateway") and give an example model (e.g., "Anybus Communicator", "Prosoft Technology Gateway"). Explain why it's needed.
-        *   If the protocols are compatible (e.g., all EtherNet/IP), recommend the necessary networking hardware. Be specific: "You will need an industrial managed Ethernet switch (e.g., Stratix 5700, Scalance XB205)" and "Use shielded Cat5e or Cat6 Ethernet cables."
-    3.  **Connection Overview:** Provide a brief explanation of the physical connections (e.g., "Connect all devices to the Ethernet switch. The gateway will have one port for the Profinet network and one for the EtherNet/IP network.").
-
-    Devices to connect:
-    ${devices.join(', ')}
+    const prompt = `You are a senior industrial network architect. Your expertise covers Profinet, EtherNet/IP, Modbus TCP, and serial protocols. The user wants to interconnect devices that use the following protocols.
     
+    Protocols to connect:
+    ${protocols.join(', ')}
+
+    Provide a markdown report with the following detailed sections:
+
+    1.  **Compatibility Analysis:** Determine if the protocols can communicate directly. Clearly state any mismatches and explain *why* they are incompatible (e.g., "Although both use Ethernet cables, Profinet and EtherNet/IP are fundamentally different Layer 7 application protocols.").
+    2.  **Hardware Solution & Topology:**
+        *   Recommend a specific type of gateway if needed (e.g., "Profinet to EtherNet/IP gateway") and give an example model series (e.g., "Anybus Communicator", "Prosoft Technology Gateway").
+        *   Recommend necessary networking hardware like industrial managed Ethernet switches (e.g., "Stratix 5700", "Scalance XB205") and explain why they are recommended (e.g., support for QoS, IGMP Snooping, LLDP).
+        *   Provide a simple ASCII-art block diagram showing the network topology, including PLCs, switches, gateways, and end devices.
+    3.  **Key Considerations:** Provide a bulleted list of critical points for the integrator, such as:
+        *   **Latency:** Mention that gateways introduce small delays and may not be suitable for high-speed motion control.
+        *   **Configuration:** Explain that gateways require manual data mapping between protocols.
+        *   **Cabling:** Specify appropriate cabling (e.g., "Use shielded Cat5e or Cat6 Ethernet cables for industrial environments.").
+
     ${langInstruction}`;
     return callApiEndpoint('getNetworkHardwarePlan', { prompt });
 };

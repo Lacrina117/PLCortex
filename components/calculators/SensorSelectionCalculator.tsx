@@ -19,7 +19,9 @@ const initialFormData = {
     pressureMin: '-1',
     pressureMax: '10',
     location: { indoor: true, outdoor: false, vibration: false, washdown: false },
-    areaClassification: 'general',
+    installationRegion: 'México',
+    thermocoupleStandard: 'autodetect',
+    areaClassification: 'general_safe',
     signalTypes: { '4-20mA': true, '4-20mA_HART': false, '0-10V': false, PNP_NPN: false, Relay: false, 'IO-Link': false, Profinet_EtherNetIP: false },
     priorityCost: 50,
     priorityPrecision: 50,
@@ -48,6 +50,15 @@ const PrioritySlider: React.FC<{ label: string, value: number, onChange: (value:
             onChange={e => onChange(parseInt(e.target.value, 10))}
             className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
         />
+    </div>
+);
+
+const Tooltip: React.FC<{ text: string }> = ({ text }) => (
+    <div className="group relative flex items-center justify-center ml-2">
+        <span className="h-4 w-4 flex items-center justify-center bg-gray-300 dark:bg-gray-600 text-gray-600 dark:text-gray-300 rounded-full text-xs font-bold cursor-help">?</span>
+        <span className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-64 p-2 bg-gray-800 text-white text-xs rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-10">
+            {text}
+        </span>
     </div>
 );
 
@@ -89,7 +100,7 @@ export const SensorSelectionCalculator: React.FC = () => {
             .map(([key]) => t(`calculator.sensorSelection.${translationKey}.${key}`))
             .join(', ') || 'None';
 
-        const details = `
+        let details = `
 - Variable de Proceso: ${t(`calculator.sensorSelection.vars.${formData.processVariable}`)}
 - Tipo de Medio: ${t(`calculator.sensorSelection.types.${formData.mediumType}`)}
 ${formData.mediumType === 'liquid' ? `
@@ -103,7 +114,14 @@ ${formData.mediumType === 'liquid' ? `
 - Temperatura de Operación: ${formData.tempMin} a ${formData.tempMax} °C
 - Presión de Operación: ${formData.pressureMin} a ${formData.pressureMax} bar
 - Ubicación: ${getCheckedItems(formData.location, 'locs')}
+- País/Región de Instalación: ${formData.installationRegion || 'No especificado'}
 - Clasificación de Área: ${t(`calculator.sensorSelection.areas.${formData.areaClassification}`)}
+`;
+        if (formData.processVariable === 'temperature' && formData.thermocoupleStandard !== 'autodetect') {
+            details += `- Estándar de Termopar Específico: ${t(`calculator.sensorSelection.thermocoupleStandards.${formData.thermocoupleStandard}`)}\n`;
+        }
+
+        details += `
 - Tipos de Señal Requeridos: ${getCheckedItems(formData.signalTypes, 'signals')}
 - Prioridades del Proyecto: Costo (${formData.priorityCost}%), Precisión (${formData.priorityPrecision}%), Robustez (${formData.priorityRobustness}%)
     `.trim();
@@ -233,10 +251,31 @@ ${formData.mediumType === 'liquid' ? `
                                  </div>
                             </div>
                              <div>
+                                <label className="block text-sm font-medium mb-1 flex items-center">
+                                    {t('calculator.sensorSelection.installationRegion')}
+                                    <Tooltip text={t('calculator.sensorSelection.installationRegionTooltip')} />
+                                </label>
+                                <input type="text" value={formData.installationRegion} onChange={e => handleFormChange('installationRegion', e.target.value)} className={commonInputClasses} />
+                            </div>
+                            {formData.processVariable === 'temperature' && (
+                                <div className="animate-fade-in">
+                                    <label className="block text-sm font-medium mb-1 flex items-center">
+                                        {t('calculator.sensorSelection.thermocoupleStandard')}
+                                        <Tooltip text={t('calculator.sensorSelection.thermocoupleStandardTooltip')} />
+                                    </label>
+                                    <select value={formData.thermocoupleStandard} onChange={e => handleFormChange('thermocoupleStandard', e.target.value)} className={commonInputClasses}>
+                                        {Object.keys(t('calculator.sensorSelection.thermocoupleStandards')).map(key => (
+                                            <option key={key} value={key}>{t(`calculator.sensorSelection.thermocoupleStandards.${key}`)}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            )}
+                             <div>
                                 <label className="block text-sm font-medium mb-1">{t('calculator.sensorSelection.areaClassification')}</label>
                                 <select value={formData.areaClassification} onChange={e => handleFormChange('areaClassification', e.target.value)} className={commonInputClasses}>
-                                    <option value="general">{t('calculator.sensorSelection.areas.general')}</option>
-                                    <option value="explosive">{t('calculator.sensorSelection.areas.explosive')}</option>
+                                    {Object.keys(t('calculator.sensorSelection.areas')).map(key => (
+                                        <option key={key} value={key}>{t(`calculator.sensorSelection.areas.${key}`)}</option>
+                                    ))}
                                 </select>
                             </div>
                         </div>
