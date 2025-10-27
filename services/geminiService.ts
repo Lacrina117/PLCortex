@@ -208,46 +208,56 @@ export const generateChatResponse = async (messages: Message[], context: ChatCon
             // TIA Portal Style Guide
             if (context.plcSoftware === 'TIA Portal') {
                 return `
-                When generating PLC ladder logic diagrams for Siemens TIA Portal, you MUST adhere to the following strict three-part format, with each part clearly labeled using markdown bold headers. Your ASCII diagrams must be 100% precise, with perfect alignment and using only the specified characters.
+                When generating PLC ladder logic diagrams for Siemens TIA Portal, you MUST adhere to the following strict three-part format, with each part clearly labeled using markdown bold headers.
 
-                1.  **Ladder Diagram (LAD) for TIA Portal:** Create ASCII art that perfectly resembles the TIA Portal editor.
+                1.  **Pixel-Perfect Ladder Diagram (LAD) for TIA Portal:** You must create flawlessly aligned ASCII art that perfectly mimics a real PLC editor. Adherence to the following character and alignment rules is mandatory.
                     *   **Characters:** Use \`|\` for power rails and \`─\` (U+2500) for all horizontal segments. **Never use hyphens (-).**
-                    *   **Rung Structure (CRITICAL):** A complete network MUST have a left power rail \`|\`, a logic section, and a right power rail \`|\`. Example: \`|───[ ]───( )───|\`.
+                    *   **Rung Structure:** A complete network MUST have a left power rail \`|\`, a logic section, and a right power rail \`|\`.
+                    *   **Instruction Spacing:** A standard 3-character instruction (e.g., \`[ ]\`, \`( )\`) must be padded by exactly three dashes on each side: \`───[ ]───\`.
                     *   **Instructions:**
                         *   Normally Open Contact: \`[ ]\`
                         *   Normally Closed Contact: \`[/]\`
                         *   Output Coil: \`( )\`
                         *   Function Blocks (Timers, Counters): \`[TON]\`, \`[CTU]\`.
-                    *   **Tagging:** Place tag names directly above their instruction, including the symbolic name (in quotes) and the absolute address (in parentheses). e.g., \`"Start_Button" (%I0.0)\`.
-                    *   **Branching:** Use \`┬\` to start a branch, \`│\` for vertical lines, and \`┘\` to join. **Never use plus signs (+).**
+                    *   **Precise Tag Alignment:** Tag names (symbolic in quotes, absolute in parentheses) MUST be perfectly centered on separate lines above their instruction.
+                    *   **Advanced Branching:** Use branches for OR logic. A branch group MUST start from a main line with \`┬\`. Vertical segments MUST use \`│\`. To add another parallel branch from a vertical line, use \`├\`. The last branch in a parallel group MUST join the vertical line with \`└\`. The vertical line MUST rejoin the main horizontal line using \`┘\`. All vertical characters MUST be perfectly aligned.
 
                 2.  **Network Logic Description:** Below the diagram, describe the network's function in plain language. **Do not provide Allen-Bradley mnemonics.**
 
                 3.  **Instruction Details:** For any non-basic instructions (timers, counters), provide a bulleted list explaining their parameters (Instance DB, IN, PT, Q, etc.).
 
-                **CRITICAL LOGIC RULES:**
-                *   **Terminating Rungs:** Every network MUST terminate with an output-type instruction (e.g., a coil \`( )\` or a function block). A network cannot end with only conditional instructions like contacts.
+                **CRITICAL ARCHITECTURE & LOGIC RULES:**
+                *   **Rung Completion (Syntax):** Every single rung/network MUST terminate with a valid output-type instruction (e.g., \`( )\`, \`[MOV]\`, \`[TON]\`). A rung that ends with only conditions is a syntax error and is strictly forbidden.
+                *   **State Machines for Sequences:** For any sequential process (e.g., Fill -> Mix -> Drain), **YOU MUST** implement a state machine pattern. **DO NOT** use multiple chained seal-in/latching rungs. Use a single integer tag (e.g., a DINT named "Sequence_Step") as the state register. Use equality comparison instructions to enable the logic for each step, and use MOVE instructions to transition to the next step. This is non-negotiable for creating robust, scalable logic.
                 *   **Duplicate Outputs:** **NEVER** use the same output coil instruction (e.g., \`( )\` with tag \`"Motor"\`) on more than one network. This causes unpredictable "rung-fighting" and is a critical programming error.
-                *   **Fail-Safe Stop Logic:** A physical stop button MUST be a Normally Closed (NC) contact for fail-safe wiring. In the ladder logic, this NC contact is represented by a Normally Open instruction \`[ ]\`. This ensures that if the wire breaks (signal goes to 0), the logic sees it as a "stop" condition. Using a Normally Closed instruction \`[/]\` for a stop button is a dangerous error.
+                *   **Latching Logic (Seal-In vs. Set/Reset):** **DO NOT** use separate Set \`[S]\` and Reset \`[R]\` instructions for the same tag. This creates a scan-order dependency and can lead to unpredictable behavior if both conditions are met in the same scan. **ALWAYS** use a standard "seal-in" circuit with a single output coil \`( )\` for latching logic. The reset/stop condition must be in series before the coil to ensure it has priority.
+                *   **Fail-Safe Stop Logic:** A physical stop button MUST be a Normally Closed (NC) contact for fail-safe wiring. In the ladder logic, this NC contact is represented by a Normally Open instruction \`[ ]\`. This ensures that if the wire breaks (signal goes to 0), the logic sees it as a "stop" condition. Using a Normally Closed instruction \`[/]\` for a stop button is a dangerous error and is strictly forbidden.
+                *   **Code Reusability (DRY Principle):** Avoid repeating identical or very similar logic patterns across multiple rungs. If a pattern is used for multiple devices (e.g., Motor1_Control, Motor2_Control), you MUST consider encapsulating it in a reusable block like a Function Block (FB) or suggest an array-based approach to reduce redundancy and improve maintainability.
+                *   **Timer Logic Efficiency:** Do not use a timer's \`EN\` output as a condition in the logic that feeds into the same timer's \`IN\` pin. The \`EN\` output is implicitly true when the \`IN\` condition is met, making this redundant and poor practice.
+                *   **Redundant Timer Resets:** Do not use an explicit Reset instruction \`[RST]\` on a \`TON\` timer if the reset condition is simply the inverse of the timer's enable condition. The \`TON\` instruction resets automatically when its input logic becomes false. Rely on this inherent behavior.
 
-                Here is a new, precise example of a Siemens motor seal-in circuit that you **MUST** follow:
+                Here is a new, precise example of a Siemens motor control circuit that you **MUST** follow:
 
-                **Ladder Diagram (LAD) for TIA Portal:**
+                **Pixel-Perfect Ladder Diagram (LAD) for TIA Portal:**
                 \`\`\`
-                       "Start_Button"         "Stop_Button"           "Motor_Output"
-                          (%I0.0)                (%I0.1)                 (%Q0.0)
-                |───────────[ ]──────────┬──────────[ ]───────────────────( )──────────|
-                |                        │                                             |
-                |           "Motor_Output" │                                             |
-                |              (%Q0.0)     │                                             |
-                |───────────[ ]──────────┘                                             |
+                                "Start_PB"            "Stop_PB"               "Motor"
+                                 (%I0.0)               (%I0.1)                 (%Q0.0)
+                |───┬───────────[ ]───────────┬──────────[ ]───────────────────( )───|
+                |   │                         │                                       |
+                |   │        "Jog_PB"         │                                       |
+                |   │         (%I0.2)         │                                       |
+                |   ├───────────[ ]───────────┤                                       |
+                |   │                         │                                       |
+                |   │         "Motor"         │                                       |
+                |   │         (%Q0.0)         │                                       |
+                |   └───────────[ ]───────────┘                                       |
                 \`\`\`
 
                 **Network Logic Description:**
-                This network starts the "Motor_Output" when "Start_Button" is pressed. The output remains latched on through its own contact until the "Stop_Button" input (which is physically wired as Normally Closed) is pressed, opening the circuit.
+                This network implements a standard motor starter with a seal-in and a jog function. The "Motor" output is activated if the "Start_PB" is pressed, OR if the "Jog_PB" is pressed. The "Motor" contact provides seal-in logic so the motor remains on after "Start_PB" is released. The "Stop_PB" will break the logic and stop the motor.
 
                 **Instruction Details:**
-                *   **Important Note on Stop Logic:** The \`"Stop_Button"\` uses a Normally Open \`[ ]\` instruction. This is the fail-safe industry standard, assuming the physical stop button is a Normally Closed (NC) contact. When the button is NOT pressed, the NC contact is closed, sending a '1' to the PLC input, making the \`[ ]\` instruction true. If the button is pressed OR a wire in the stop circuit breaks, the input becomes '0', the instruction becomes false, and the motor safely stops.
+                *   **Important Note on Stop Logic:** The \`"Stop_Button"\` uses a Normally Open \`[ ]\` instruction. This is the fail-safe industry standard, assuming the physical stop button is a Normally Closed (NC) contact.
                 `;
             }
             // Classic STEP 7 (S7-300/400) Style Guide
@@ -277,45 +287,55 @@ export const generateChatResponse = async (messages: Message[], context: ChatCon
         
         // DEFAULT/ALLEN-BRADLEY STYLE
         return `
-        When generating PLC ladder logic diagrams, you MUST adhere to the following strict three-part format for Allen-Bradley (Studio 5000 / RSLogix), with each part clearly labeled using markdown bold headers. Your ASCII diagrams must be 100% precise, with perfect alignment and using only the specified characters.
+        When generating PLC ladder logic diagrams, you MUST adhere to the following strict three-part format for Allen-Bradley (Studio 5000 / RSLogix), with each part clearly labeled using markdown bold headers.
 
-        1.  **Ladder Diagram:** Create "pixel-perfect" ASCII art that resembles a modern PLC editor.
+        1.  **Pixel-Perfect Ladder Diagram:** You must create flawlessly aligned ASCII art that perfectly mimics a real PLC editor. Adherence to the following character and alignment rules is mandatory.
             *   **Characters:** Use \`|\` for power rails and \`─\` (U+2500) for all horizontal segments. **Never use hyphens (-).**
-            *   **Rung Structure (CRITICAL):** A complete rung must have a left power rail \`|\`, a logic section, and a right power rail \`|\`. Example: \`|───[ ]───( )───|\`.
+            *   **Rung Structure:** A complete rung is a complete horizontal line of logic. It MUST start with a left power rail \`|\`, contain instructions connected by \`─\` characters, and end with a right power rail \`|\`.
+            *   **Instruction Spacing:** A standard 3-character instruction (e.g., \`[ ]\`, \`( )\`) must be padded by exactly three dashes on each side: \`───[ ]───\`. Wider instructions (e.g., \`[TON]\`) must also be padded: \`───[TON]───\`. Ensure consistent spacing throughout the diagram.
             *   **Instructions:**
                 *   Normally Open Contact (XIC): \`[ ]\`
                 *   Normally Closed Contact (XIO): \`[/]\`
                 *   Output Coil (OTE): \`( )\`
                 *   Other instructions (Timers, Counters): \`[TON]\`, \`[CTU]\`, \`[MOV]\`.
-            *   **Tag Alignment:** Place tag names directly above the center of their corresponding instruction.
-            *   **Branching:** Use \`┬\` to start a branch, \`│\` for vertical lines, and \`┘\` to join. **Never use plus signs (+).**
+            *   **Precise Tag Alignment:** Tag names MUST be perfectly centered above their respective instruction.
+            *   **Advanced Branching:** Use branches for OR logic. A branch group MUST start from a main line with \`┬\`. Vertical segments MUST use \`│\`. To add another parallel branch from a vertical line, use \`├\`. The last branch in a parallel group MUST join the vertical line with \`└\`. The vertical line MUST rejoin the main horizontal line using \`┘\`. All vertical characters MUST be perfectly aligned.
 
         2.  **Mnemonic Code:** Below the diagram, provide the corresponding Allen-Bradley mnemonic (text-based) representation for each rung. (e.g., for RSLogix 500 style: \`BST XIC(Start) NXB XIC(Motor) BND XIC(Stop) OTE(Motor)\`).
 
         3.  **Instruction Details:** If the logic uses any instructions other than basic XIC, XIO, or OTE, provide a clear, bulleted list explaining how to configure each one (e.g., for a TON, explain the Timer tag, .PRE, .ACC, and .DN bits).
 
-        **CRITICAL LOGIC RULES:**
-        *   **Transitional Instructions:** One-Shot instructions like \`[ONS]\` are not outputs. They only condition the rung. They **MUST** be followed by an output instruction (e.g., a coil \`( )\` or a block like \`[MOV]\`). A rung cannot logically end with an \`[ONS]\` instruction.
+        **CRITICAL ARCHITECTURE & LOGIC RULES:**
+        *   **Rung Completion (Syntax):** Every single rung MUST terminate with a valid output-type instruction (e.g., \`( )\`, \`[MOV]\`, \`[TON]\`). A rung that ends with only conditions is a syntax error and is strictly forbidden.
+        *   **State Machines for Sequences:** For any sequential process (e.g., Fill -> Mix -> Drain), **YOU MUST** implement a state machine pattern. **DO NOT** use multiple chained seal-in/latching rungs. Use a single integer tag (e.g., a DINT named "Sequence.Step") as the state register. Use \`EQU\` instructions to enable the logic for the active state, and \`MOV\` instructions to transition to the next state. This is non-negotiable for creating robust, scalable logic.
         *   **Duplicate Outputs:** **NEVER** use the same output coil instruction (e.g., \`( )\` with tag "Motor") on more than one rung. This causes unpredictable 'rung-fighting' and is a critical programming error. Use intermediate bits (flags) if necessary to combine logic for a single output.
+        *   **Latching Logic (Seal-In vs. Latch/Unlatch):** **DO NOT** use separate Latch \`[L]\` and Unlatch \`[U]\` instructions for the same tag. This creates a scan-order dependency and can lead to unpredictable behavior if both conditions are met in the same scan. **ALWAYS** use a standard "seal-in" circuit with a single output coil (OTE, \`( )\`) for latching logic. The unlatch/stop condition must be in series before the coil to ensure it has priority.
+        *   **Fail-Safe Stop Logic:** A physical stop button MUST be a Normally Closed (NC) contact for fail-safe wiring. In the ladder logic, this NC contact is represented by a Normally Open instruction (XIC, \`[ ]\`). This ensures that if the wire breaks (signal goes to 0), the logic sees it as a "stop" condition. Using a Normally Closed instruction (XIO, \`[/]\`) for a stop button is a dangerous error and is strictly forbidden.
+        *   **Code Reusability (DRY Principle):** Avoid repeating identical or very similar logic patterns across multiple rungs. If a pattern is used for multiple devices (e.g., Motor1_Control, Motor2_Control), you MUST consider encapsulating it in a reusable block like an Add-On Instruction (AOI) or suggest an array-based approach to reduce redundancy and improve maintainability.
+        *   **Timer Logic Efficiency:** Do not use a timer's own Enable bit (\`.EN\`) as a condition on the same rung that enables the timer. The \`.EN\` bit is implicitly true when the rung conditions are met, so adding an \`XIC(Timer.EN)\` instruction is redundant and poor practice.
+        *   **Redundant Timer Resets:** Do not use an explicit Reset instruction (\`RST\`) on a \`TON\` timer if the reset condition is simply the inverse of the timer's enable condition. The \`TON\` instruction resets automatically when its input logic becomes false. Rely on this inherent behavior.
 
-        Here is the new, precise example of an Allen-Bradley motor seal-in circuit that you **MUST** follow:
+        Here is the new, precise example of an Allen-Bradley motor control circuit that you **MUST** follow:
 
-        **Ladder Diagram:**
+        **Pixel-Perfect Ladder Diagram:**
         \`\`\`
-               Start_Button           Stop_Button              Motor
-        |──────────[ ]──────────┬──────────[ ]──────────────────( )──────────|
-        |                        │                                             |
-        |          Motor         │                                             |
-        |──────────[ ]──────────┘                                             |
+                      Start_PB              Stop_PB                 Motor
+        |───┬───────────[ ]───────────┬──────────[ ]───────────────────( )───|
+        |   │                         │                                       |
+        |   │         Jog_PB          │                                       |
+        |   ├───────────[ ]───────────┤                                       |
+        |   │                         │                                       |
+        |   │           Motor         │                                       |
+        |   └───────────[ ]───────────┘                                       |
         \`\`\`
 
         **Mnemonic Code:**
         \`\`\`
-        BST XIC(Start_Button) NXB XIC(Motor) BND XIC(Stop_Button) OTE(Motor)
+        BST XIC(Start_PB) NXB XIC(Jog_PB) NXB XIC(Motor) BND XIC(Stop_PB) OTE(Motor)
         \`\`\`
 
         **Instruction Details:**
-        *   **Important Note on Stop Logic:** The \`Stop_Button\` uses an \`XIC\` (Normally Open) instruction, represented as \`[ ]\`. This is the fail-safe industry standard. It assumes the physical stop button is a Normally Closed (NC) contact. When the button is NOT pressed, the NC contact is closed, sending a '1' to the PLC input, making the \`XIC(Stop_Button)\` instruction true. If the button is pressed OR a wire in the stop circuit breaks, the input becomes '0', the \`XIC(Stop_Button)\` instruction becomes false, and the motor safely stops.
+        *   **Important Note on Stop Logic:** The \`Stop_PB\` uses an \`XIC\` (Normally Open) instruction, represented as \`[ ]\`. This is the fail-safe industry standard. It assumes the physical stop button is a Normally Closed (NC) contact.
         `;
     };
 
@@ -328,6 +348,46 @@ export const generateChatResponse = async (messages: Message[], context: ChatCon
     IMPORTANT: Before providing a ladder logic solution, you MUST ask the user which PLC software they are using (e.g., 'Studio 5000' for Allen-Bradley, or 'TIA Portal for S7-1200/1500' vs 'STEP 7 v5.x for S7-300/400' for Siemens) if it has not already been specified in the context. Your ladder logic style MUST conform to their selection based on the platform-specific guides below.
     ${buildLadderLogicStyleGuide()}
     
+    *** STRUCTURED TEXT (ST) RULES ***
+    When generating Structured Text, you MUST follow these critical principles to avoid common errors.
+
+    1.  **Timer Scan-Order Dependency:** This is a critical rule. A timer instance (e.g., \`MyTimer(IN:=..., PT:=...);\`) must be called on **every scan** to update its internal state. The most common mistake is to have conflicting logic that affects the timer in the same scan.
+        *   **Correct Implementation:** Consolidate all conditions for the timer into its \`IN\` parameter. The timer will automatically start on a rising edge of \`IN\` and reset when \`IN\` becomes \`FALSE\`.
+        *   **Incorrect Implementation:** **DO NOT** have a separate \`IF E_Stop THEN MyTimer.IN := FALSE; END_IF;\` statement if another call to \`MyTimer(...)\` exists elsewhere in the scan. The last call to the timer in the scan cycle will determine its state, overriding any previous logic.
+
+    2.  **Fail-Safe Stop Logic:** A physical stop button (like an E-Stop) MUST be a Normally Closed (NC) contact. This means the PLC input is \`TRUE\` or \`1\` when the system is safe to run. In ST, this is checked with a condition like \`IF E_Stop_Healthy THEN ...\`. Be explicit about this assumption in your explanation.
+
+    3.  **Consolidate Safety Conditions (DRY Principle):** **DO NOT** repeat the same set of safety conditions (like \`E_Stop_Healthy AND Stop_PB_Healthy\`) across multiple \`IF\` statements or function calls. Create a single intermediate boolean variable (e.g., \`Safety_OK\`) at the beginning of your logic block to represent the "permission to run". All subsequent logic MUST then reference this single variable. This improves readability, maintainability, and prevents errors.
+
+    4.  **Single Output Assignment (No Rung Fighting):** An output variable (e.g., a physical light, a motor contactor) **MUST NEVER** be assigned a value using \`:=\` in more than one place. This is a critical error equivalent to "rung fighting" in ladder logic.
+        *   **Correct Implementation:** Consolidate all conditions for an output into a single boolean expression. The output is assigned the result of this expression only once at the end of the logic block.
+        *   **Incorrect Implementation:** **DO NOT** use multiple \`IF/THEN\` statements to set an output to \`TRUE\` or \`FALSE\` separately. For example, avoid \`IF condition1 THEN MyOutput := TRUE; END_IF;\` followed later by \`IF condition2 THEN MyOutput := FALSE; END_IF;\`. The second statement can override the first, leading to unpredictable behavior.
+
+        **Correct ST Example with All Rules:**
+        \`\`\`st
+        (* 
+          This logic is robust, follows DRY, and avoids scan-order issues.
+        *)
+
+        // Rule 3: Consolidate safety permissives into one variable.
+        // Rule 2: Assume E_Stop_Healthy is TRUE when physical NC circuit is closed.
+        Safety_OK := DI_EStop_Healthy AND DI_Stop_PB_Healthy;
+
+        // Rule 1: All timer logic is consolidated into the IN parameter.
+        Mix_Timer(
+            IN:= (Current_State = 'MIXING' AND Safety_OK), 
+            PT:= T#10s
+        );
+        
+        // State transitions also use the consolidated safety check
+        IF NOT Safety_OK THEN
+            Current_State := 'IDLE'; // Or 'FAULTED'
+        END_IF;
+
+        // Rule 4: Outputs are assigned only ONCE using a consolidated boolean expression.
+        Light_SystemRunning := (Current_State = 'MIXING' OR Current_State = 'DRAINING') AND Safety_OK;
+        Light_SystemFault := (Current_State = 'FAULTED') OR (NOT Safety_OK);
+        \`\`\`
     ${langInstruction}`;
 
     return callApiEndpoint('generateChatResponse', { prompt, config: { systemInstruction } });
@@ -343,28 +403,33 @@ export const generatePractice = async (params: PracticeParams): Promise<string> 
         ladderStyleGuide = `
         If the solution includes PLC ladder logic for Siemens, you MUST present it in the following strict three-part format.
     
-        1.  **Ladder Diagram (LAD) for TIA Portal/STEP 7:** Create ASCII art that perfectly resembles the Siemens editor. Use \`[ ]\` for NO, \`[/]\` for NC, and \`( )\` for Coil. Place tags above instructions.
+        1.  **Pixel-Perfect Ladder Diagram (LAD) for TIA Portal/STEP 7:** Create flawlessly aligned ASCII art that resembles a Siemens editor. Use \`[ ]\` for NO, \`[/]\` for NC, and \`( )\` for Coil. Place tags (symbolic and absolute) on separate lines above instructions. Use correct branching characters (\`┬\`, \`│\`, \`├\`, \`└\`, \`┘\`) for parallel logic.
     
         2.  **Network Logic Description:** Provide a human-readable description of the network's function. **Do not use Allen-Bradley mnemonics.**
     
         3.  **Instruction Details:** Explain any complex instructions (like timers or counters) using Siemens' parameter names (Instance DB, IN, PT, Q, etc.).
         
-        **CRITICAL LOGIC RULES:**
-        *   Every network must end with an output instruction (like a coil).
-        *   **NEVER** use the same output coil tag on more than one network.
-        *   For a physical NC stop button, you **MUST** use a NO instruction \`[ ]\` in the logic for fail-safe behavior.
+        **CRITICAL ARCHITECTURE & LOGIC RULES:**
+        *   **Rung Completion (Syntax):** Every single network MUST terminate with a valid output-type instruction. A network with only conditions is a syntax error.
+        *   **State Machines for Sequences:** For any sequential process, **YOU MUST** use a state machine pattern with an integer state register and MOVE instructions for transitions. Do not use chained seal-in rungs.
+        *   **NEVER** use the same output coil tag on more than one network. This causes "rung-fighting" and is a major error.
+        *   **NO Set/Reset:** Do not use separate Set \`[S]\` and Reset \`[R]\` instructions for the same tag. Use a standard seal-in circuit with a single output coil \`( )\` for latching logic.
+        *   For a physical NC stop button, you **MUST** use a NO instruction \`[ ]\` in the logic for fail-safe behavior. This is a critical safety rule.
+        *   **Code Reusability (DRY Principle):** Avoid repeating identical or very similar logic patterns. If a pattern is used for multiple devices, suggest encapsulating it in a reusable Function Block (FB).
+        *   **Timer Logic Efficiency:** Do not use a timer's \`EN\` output as a condition in the logic that feeds into the same timer's \`IN\` pin. This is redundant.
+        *   **Redundant Timer Resets:** Do not use an explicit Reset instruction on a \`TON\` timer if the reset condition is simply the inverse of the timer's enable condition. The \`TON\` resets automatically.
 
         Example of a complete Siemens motor seal-in circuit response inside the ### Solution section:
         
-        **Ladder Diagram (LAD) for TIA Portal/STEP 7:**
+        **Pixel-Perfect Ladder Diagram (LAD) for TIA Portal:**
         \`\`\`
-               "Start_Button"         "Stop_Button"           "Motor_Output"
-                  (%I0.0)                (%I0.1)                 (%Q0.0)
-        |───────────[ ]──────────┬──────────[ ]───────────────────( )──────────|
-        |                        │                                             |
-        |           "Motor_Output" │                                             |
-        |              (%Q0.0)     │                                             |
-        |───────────[ ]──────────┘                                             |
+                        "Start_Button"        "Stop_Button"           "Motor_Output"
+                           (%I0.0)               (%I0.1)                 (%Q0.0)
+        |───────────[ ]───────────┬───────────[ ]───────────────────( )───────────|
+        |                         │                                             |
+        |            "Motor_Output" │                                             |
+        |               (%Q0.0)     │                                             |
+        |───────────[ ]───────────┘                                             |
         \`\`\`
 
         **Network Logic Description:**
@@ -376,25 +441,31 @@ export const generatePractice = async (params: PracticeParams): Promise<string> 
         ladderStyleGuide = `
         If the solution includes PLC ladder logic, you MUST present it in the following strict three-part format for Allen-Bradley.
     
-        1.  **Ladder Diagram:** Create ASCII art resembling a Rockwell editor. Use \`[ ]\` (XIC), \`[/]\` (XIO), and \`( )\` (OTE). Place tags above instructions.
+        1.  **Pixel-Perfect Ladder Diagram:** Create flawlessly aligned ASCII art resembling a Rockwell editor. Use \`[ ]\` (XIC), \`[/]\` (XIO), and \`( )\` (OTE). Place tags centered above instructions. Use correct branching characters (\`┬\`, \`│\`, \`├\`, \`└\`, \`┘\`) for parallel logic.
     
         2.  **Mnemonic Code:** Provide the corresponding Allen-Bradley mnemonic representation (e.g., \`BST XIC(Tag1) NXB ...\`).
     
         3.  **Instruction Details:** Explain any complex instructions (like TON or CTU) using Rockwell's tag structure (\`.PRE\`, \`.ACC\`, \`.DN\`).
         
-        **CRITICAL LOGIC RULES:**
-        *   Transitional instructions like One-Shots (\`[ONS]\`) MUST be followed by an output instruction. A rung cannot end with an \`[ONS]\`.
-        *   **NEVER** use the same output coil tag (OTE) on more than one rung.
+        **CRITICAL ARCHITECTURE & LOGIC RULES:**
+        *   **Rung Completion (Syntax):** Every single rung MUST terminate with a valid output-type instruction. A rung with only conditions is a syntax error.
+        *   **State Machines for Sequences:** For any sequential process, **YOU MUST** use a state machine pattern with a DINT state register and MOV instructions for transitions. Do not use chained seal-in rungs.
+        *   **NEVER** use the same output coil tag (OTE) on more than one rung. This causes "rung-fighting" and is a major error.
+        *   **NO Latch/Unlatch:** Do not use separate Latch \`[L]\` and Unlatch \`[U]\` instructions for the same tag. Use a standard seal-in circuit with a single output coil (OTE, \`( )\`) for latching logic.
+        *   For a physical NC stop button, you **MUST** use an XIC instruction \`[ ]\` in the logic for fail-safe behavior. This is a critical safety rule.
+        *   **Code Reusability (DRY Principle):** Avoid repeating identical or very similar logic patterns. If a pattern is used for multiple devices, suggest encapsulating it in a reusable Add-On Instruction (AOI).
+        *   **Timer Logic Efficiency:** Do not use a timer's own Enable bit (\`.EN\`) as a condition on the same rung that enables the timer. This is redundant.
+        *   **Redundant Timer Resets:** Do not use an explicit Reset instruction (\`RST\`) on a \`TON\` timer if the reset condition is simply the inverse of the timer's enable condition. The \`TON\` resets automatically.
 
         Example of a complete Allen-Bradley motor seal-in circuit response inside the ### Solution section:
         
-        **Ladder Diagram:**
+        **Pixel-Perfect Ladder Diagram:**
         \`\`\`
-               Start_Button           Stop_Button              Motor
-        |──────────[ ]──────────┬──────────[ ]──────────────────( )──────────|
-        |                        │                                             |
-        |          Motor         │                                             |
-        |──────────[ ]──────────┘                                             |
+                       Start_Button          Stop_Button             Motor
+        |───────────[ ]───────────┬───────────[ ]───────────────────( )───────────|
+        |                         │                                             |
+        |           Motor         │                                             |
+        |───────────[ ]───────────┘                                             |
         \`\`\`
         
         **Mnemonic Code:**
@@ -403,6 +474,49 @@ export const generatePractice = async (params: PracticeParams): Promise<string> 
         \`\`\`
         `;
     }
+
+    const stStyleGuide = `
+    *** IMPORTANT STYLE GUIDE FOR STRUCTURED TEXT (ST) ***
+    When generating Structured Text, you MUST follow these critical principles to avoid common errors.
+
+    1.  **Timer Scan-Order Dependency:** This is a critical rule. A timer instance (e.g., \`MyTimer(IN:=..., PT:=...);\`) must be called on **every scan** to update its internal state. The most common mistake is to have conflicting logic that affects the timer in the same scan.
+        *   **Correct Implementation:** Consolidate all conditions for the timer into its \`IN\` parameter. The timer will automatically start on a rising edge of \`IN\` and reset when \`IN\` becomes \`FALSE\`.
+        *   **Incorrect Implementation:** **DO NOT** have a separate \`IF E_Stop THEN MyTimer.IN := FALSE; END_IF;\` statement if another call to \`MyTimer(...)\` exists elsewhere in the scan. The last call to the timer in the scan cycle will determine its state, overriding any previous logic.
+
+    2.  **Fail-Safe Stop Logic:** A physical stop button (like an E-Stop) MUST be a Normally Closed (NC) contact. This means the PLC input is \`TRUE\` or \`1\` when the system is safe to run. In ST, this is checked with a condition like \`IF E_Stop_Healthy THEN ...\`. Be explicit about this assumption in your explanation.
+
+    3.  **Consolidate Safety Conditions (DRY Principle):** **DO NOT** repeat the same set of safety conditions (like \`E_Stop_Healthy AND Stop_PB_Healthy\`) across multiple \`IF\` statements or function calls. Create a single intermediate boolean variable (e.g., \`Safety_OK\`) at the beginning of your logic block to represent the "permission to run". All subsequent logic MUST then reference this single variable. This improves readability, maintainability, and prevents errors.
+
+    4.  **Single Output Assignment (No Rung Fighting):** An output variable (e.g., a physical light, a motor contactor) **MUST NEVER** be assigned a value using \`:=\` in more than one place. This is a critical error equivalent to "rung fighting" in ladder logic.
+        *   **Correct Implementation:** Consolidate all conditions for an output into a single boolean expression. The output is assigned the result of this expression only once at the end of the logic block.
+        *   **Incorrect Implementation:** **DO NOT** use multiple \`IF/THEN\` statements to set an output to \`TRUE\` or \`FALSE\` separately. For example, avoid \`IF condition1 THEN MyOutput := TRUE; END_IF;\` followed later by \`IF condition2 THEN MyOutput := FALSE; END_IF;\`. The second statement can override the first, leading to unpredictable behavior.
+
+        **Correct ST Example with All Rules:**
+        \`\`\`st
+        (* 
+          This logic is robust, follows DRY, and avoids scan-order issues.
+        *)
+
+        // Rule 3: Consolidate safety permissives into one variable.
+        // Rule 2: Assume E_Stop_Healthy is TRUE when physical NC circuit is closed.
+        Safety_OK := DI_EStop_Healthy AND DI_Stop_PB_Healthy;
+
+        // Rule 1: All timer logic is consolidated into the IN parameter.
+        Mix_Timer(
+            IN:= (Current_State = 'MIXING' AND Safety_OK), 
+            PT:= T#10s
+        );
+        
+        // State transitions also use the consolidated safety check
+        IF NOT Safety_OK THEN
+            Current_State := 'IDLE'; // Or 'FAULTED'
+        END_IF;
+
+        // Rule 4: Outputs are assigned only ONCE using a consolidated boolean expression.
+        Light_SystemRunning := (Current_State = 'MIXING' OR Current_State = 'DRAINING') AND Safety_OK;
+        Light_SystemFault := (Current_State = 'FAULTED') OR (NOT Safety_OK);
+        \`\`\`
+    `;
 
 
     const prompt = `Generate a practice problem for an industrial automation technician.
@@ -422,6 +536,8 @@ export const generatePractice = async (params: PracticeParams): Promise<string> 
 
     *** IMPORTANT STYLE GUIDE FOR LADDER LOGIC ***
     ${ladderStyleGuide}
+
+    ${stStyleGuide}
 
     ${langInstruction}`;
 
@@ -837,7 +953,7 @@ export const validatePlcLogic = async (params: { language: 'en' | 'es'; code: st
     const { language, code } = params;
     const langInstruction = language === 'es' ? 'Responde en español.' : 'Respond in English.';
     const prompt = `Act as a PLC logic validator. Analyze the provided text-based ladder logic for common errors, style violations, and potential race conditions.
-    The logic format is simple: Instructions like XIC(tag), XIO(tag), OTE(tag). Branches are denoted by [ ].
+    The logic format is simple: Instructions like XIC(tag), XIO(tag), OTE(tag), OTL(tag) / OTU(tag) or S(tag) / R(tag) for Siemens. Branches are denoted by [ ].
 
     Code to analyze:
     \`\`\`
@@ -845,9 +961,15 @@ export const validatePlcLogic = async (params: { language: 'en' | 'es'; code: st
     \`\`\`
 
     Specifically look for:
-    - **Errors:** Definite problems like duplicate outputs (OTE), unreachable code (dead code), or invalid instruction sequences.
-    - **Warnings:** Inefficient patterns, overly complex rungs, and opportunities for simplification. For example, if you see several rungs with identical logic patterns but different tags (e.g., Motor1_Start, Motor2_Start), suggest using an array, a subroutine (Add-On Instruction), or a loop to reduce redundancy.
-    - **Fail-Safe Violations (Critical Warning):** Standard safety practice dictates that physical stop devices (Emergency Stops, physical Stop buttons) are wired Normally Closed (NC). This means they provide a '1' signal to the PLC when not pressed. The correct way to represent this in logic is with a Normally Open instruction (XIC). If you find a Normally Closed instruction (XIO) used on a tag that implies a stop or safety function (e.g., 'E_Stop', 'Stop_Button', 'Safety_Gate'), this is a critical violation of the fail-safe principle. A broken wire would not be detected and would create an unsafe condition. Issue a "Warning" with a message explaining this specific risk. Example message: "The tag 'E_Stop' likely represents a physical NC button. Using an XIO instruction for it violates the fail-safe principle, as a broken wire would go undetected. It should be an XIC."
+    - **Errors:** 
+        - **Duplicate Outputs:** Definite problems like duplicate outputs (OTE) which cause "rung-fighting".
+        - **Incomplete Rung:** A line of logic that contains conditional instructions (like XIC, XIO) but does not end with an output instruction (like OTE, MOV, TON, etc.) is a syntax error.
+    - **Architectural Warnings:**
+        - **State Machine Recommendation:** If you detect multiple, chained seal-in rungs that seem to represent a sequence (e.g., tags named Fill_Request, Mix_Request, Drain_Request), issue a warning. The message should state: "The use of multiple chained seal-in rungs for a sequence is fragile. Consider refactoring to a state machine using a single integer tag for better scalability and clarity."
+        - **Redundancy:** If you see several rungs with identical logic patterns but different tags (e.g., Motor1_Start, Motor2_Start), issue a warning with the message: "The logic patterns in these rungs are very similar. Consider using an Add-On Instruction (AOI), a subroutine, or an array-based approach to reduce redundancy and improve maintainability."
+    - **Critical Logic Warnings:**
+        - **Fail-Safe Violation:** Standard safety practice dictates that physical stop devices (E-Stops) are wired Normally Closed (NC). The correct way to represent this in logic is with a Normally Open instruction (XIC). If you find a Normally Closed instruction (XIO) used on a tag that implies a stop or safety function (e.g., 'E_Stop', 'Stop_Button'), this is a critical violation of the fail-safe principle. Issue a "Warning" with a message explaining this specific risk: "The tag 'E_Stop' likely represents a physical NC button. Using an XIO instruction for it violates the fail-safe principle, as a broken wire would go undetected. It should be an XIC."
+        - **Set/Reset Race Condition:** Identify the use of separate latch/set (OTL, S) and unlatch/reset (OTU, R) instructions for the same tag across different rungs. This is a critical warning because it creates a race condition dependent on scan order. The message should strongly recommend consolidating the logic into a single, standard seal-in rung using a regular OTE.
 
     Your response MUST be a valid JSON array of objects. Each object represents an issue and must have these keys:
     - "line": The 1-based line number where the issue was found.
@@ -859,9 +981,12 @@ export const validatePlcLogic = async (params: { language: 'en' | 'es'; code: st
     
     Example of a response with issues:
     [
-        {"line": 2, "type": "Error", "message": "OTE for 'Motor' is used on multiple rungs. This can cause unpredictable behavior."},
-        {"line": 5, "type": "Warning", "message": "The logic for Motor1_Control, Motor2_Control, and Motor3_Control is identical. Consider using a subroutine or an Add-On Instruction (AOI) to simplify this repeated pattern."},
-        {"line": 1, "type": "Warning", "message": "The tag 'E_Stop' likely represents a physical NC button. Using an XIO instruction for it violates the fail-safe principle, as a broken wire would go undetected. It should be an XIC."}
+        {"line": 2, "type": "Error", "message": "OTE for 'Motor' is used on multiple rungs. This can cause unpredictable behavior ('rung-fighting')."},
+        {"line": 12, "type": "Error", "message": "The rung in this line is incomplete and is missing an output instruction (e.g., OTE, MOV, RES)."},
+        {"line": 5, "type": "Warning", "message": "The logic patterns for Motor1_Control and Motor2_Control are similar. Consider using a subroutine or an Add-On Instruction (AOI) to simplify this repeated pattern."},
+        {"line": 1, "type": "Warning", "message": "The tag 'E_Stop' likely represents a physical NC button. Using an XIO instruction for it violates the fail-safe principle, as a broken wire would go undetected. It should be an XIC."},
+        {"line": 10, "type": "Warning", "message": "The use of separate Latch (OTL) and Unlatch (OTU) instructions for 'Valve_Open' can lead to a race condition. It is recommended to consolidate this into a single seal-in rung."},
+        {"line": 15, "type": "Warning", "message": "The use of multiple chained seal-in rungs for a sequence is fragile. Consider refactoring to a state machine using a single integer tag for better scalability and clarity."}
     ]
 
     ${langInstruction}`;
@@ -913,6 +1038,7 @@ export const suggestPlcLogicFix = async (params: { language: 'en' | 'es'; code: 
     - Do not include any explanations, apologies, or introductory sentences.
     - If you cannot fix an issue, leave it as is but add a comment in the code explaining the problem if possible.
     - Ensure the corrected code is in the same text-based format.
+    - **IMPORTANT:** If an issue suggests refactoring to a state machine, you MUST perform this refactoring. Replace the chained seal-in rungs with a proper state machine using a single integer tag (e.g., 'Sequence_Step') and explicit state transitions.
 
     ${langInstruction}`;
     return callApiEndpoint('suggestPlcLogicFix', { prompt });
