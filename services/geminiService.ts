@@ -349,45 +349,108 @@ export const generateChatResponse = async (messages: Message[], context: ChatCon
     ${buildLadderLogicStyleGuide()}
     
     *** STRUCTURED TEXT (ST) RULES ***
-    When generating Structured Text, you MUST follow these critical principles to avoid common errors.
+    When generating Structured Text (ST), you MUST follow these critical principles to produce robust, safe, and maintainable code. Your entire response containing ST MUST be a single, complete code block.
 
-    1.  **Timer Scan-Order Dependency:** This is a critical rule. A timer instance (e.g., \`MyTimer(IN:=..., PT:=...);\`) must be called on **every scan** to update its internal state. The most common mistake is to have conflicting logic that affects the timer in the same scan.
-        *   **Correct Implementation:** Consolidate all conditions for the timer into its \`IN\` parameter. The timer will automatically start on a rising edge of \`IN\` and reset when \`IN\` becomes \`FALSE\`.
-        *   **Incorrect Implementation:** **DO NOT** have a separate \`IF E_Stop THEN MyTimer.IN := FALSE; END_IF;\` statement if another call to \`MyTimer(...)\` exists elsewhere in the scan. The last call to the timer in the scan cycle will determine its state, overriding any previous logic.
+    1.  **Complete Declarations:** Every ST code block MUST begin with a complete \`VAR ... END_VAR\` block. You MUST declare all variables used in the logic, including inputs (\`DI_*\`), outputs (\`DO_*\`), and all internal memory/state variables (\`Current_State\`, \`Safety_OK\`, \`Fill_Valve_Cmd\`, etc.).
 
-    2.  **Fail-Safe Stop Logic:** A physical stop button (like an E-Stop) MUST be a Normally Closed (NC) contact. This means the PLC input is \`TRUE\` or \`1\` when the system is safe to run. In ST, this is checked with a condition like \`IF E_Stop_Healthy THEN ...\`. Be explicit about this assumption in your explanation.
+    2.  **Proper Commenting:** All explanatory text within the code MUST be formatted as a proper ST comment. Use \`(* ... *)\` for multi-line comments or section headers, and \`//\` for single-line comments. **DO NOT** include unformatted text, markdown headers like \`###\`, or language identifiers like \`st\` inside the code block.
 
-    3.  **Consolidate Safety Conditions (DRY Principle):** **DO NOT** repeat the same set of safety conditions (like \`E_Stop_Healthy AND Stop_PB_Healthy\`) across multiple \`IF\` statements or function calls. Create a single intermediate boolean variable (e.g., \`Safety_OK\`) at the beginning of your logic block to represent the "permission to run". All subsequent logic MUST then reference this single variable. This improves readability, maintainability, and prevents errors.
+    3.  **Fail-Safe Stop Logic:** A physical stop button (like an E-Stop) MUST be a Normally Closed (NC) contact. This means the PLC input is \`TRUE\` or \`1\` when the system is safe to run. In ST, this is checked with a condition like \`IF E_Stop_Healthy THEN ...\`. Be explicit about this assumption in your explanation.
 
-    4.  **Single Output Assignment (No Rung Fighting):** An output variable (e.g., a physical light, a motor contactor) **MUST NEVER** be assigned a value using \`:=\` in more than one place. This is a critical error equivalent to "rung fighting" in ladder logic.
-        *   **Correct Implementation:** Consolidate all conditions for an output into a single boolean expression. The output is assigned the result of this expression only once at the end of the logic block.
-        *   **Incorrect Implementation:** **DO NOT** use multiple \`IF/THEN\` statements to set an output to \`TRUE\` or \`FALSE\` separately. For example, avoid \`IF condition1 THEN MyOutput := TRUE; END_IF;\` followed later by \`IF condition2 THEN MyOutput := FALSE; END_IF;\`. The second statement can override the first, leading to unpredictable behavior.
+    4.  **Consolidate Safety Conditions (DRY Principle):** Create a single intermediate boolean variable (e.g., \`Safety_OK\`) at the beginning of your logic block to represent the "permission to run". All subsequent logic that can affect motion or process MUST then be gated by this single variable. This improves readability and prevents errors.
 
-        **Correct ST Example with All Rules:**
-        \`\`\`st
-        (* 
-          This logic is robust, follows DRY, and avoids scan-order issues.
-        *)
+    5.  **Separate Logic from Physical Outputs:** Use intermediate 'command' variables for your state machine and logic (e.g., \`Valve_A_Cmd\`, \`Mixer_On_Cmd\`). Then, at the very end of the code block, create a dedicated \`(* --- OUTPUT MAPPING --- *)\` section. In this section, and ONLY in this section, assign the state of the command variables to the physical output variables (\`DO_*\`). This assignment MUST also be gated by the main safety permissive (\`Safety_OK\`). Example: \`DO_Valve_A := Valve_A_Cmd AND Safety_OK;\`.
 
-        // Rule 3: Consolidate safety permissives into one variable.
-        // Rule 2: Assume E_Stop_Healthy is TRUE when physical NC circuit is closed.
-        Safety_OK := DI_EStop_Healthy AND DI_Stop_PB_Healthy;
+    6.  **Single Output Assignment (No Rung Fighting):** A physical output variable (\`DO_*\`) MUST NEVER be assigned a value using \`:=\` in more than one place. Rule #5 (Output Mapping) helps enforce this perfectly.
 
-        // Rule 1: All timer logic is consolidated into the IN parameter.
-        Mix_Timer(
-            IN:= (Current_State = 'MIXING' AND Safety_OK), 
-            PT:= T#10s
-        );
-        
-        // State transitions also use the consolidated safety check
-        IF NOT Safety_OK THEN
-            Current_State := 'IDLE'; // Or 'FAULTED'
-        END_IF;
+    7.  **Correct Timer & Timeout Usage:** A timer instance (e.g., \`MyTimer(IN:=..., PT:=...);\`) must be called on **every scan**. For a **timeout watchdog**, the timer's \`PT\` must be the maximum allowed time for the step. The logic must check the success condition (e.g., a sensor) first, and then use the timer's \`.Q\` output as the timeout fault condition (e.g., \`ELSIF Timeout_Timer.Q THEN Fault_Flag := TRUE;\`). Never use a timer's \`.ACC\` value for a timeout check that is greater than its \`PT\`, as this code is unreachable.
 
-        // Rule 4: Outputs are assigned only ONCE using a consolidated boolean expression.
-        Light_SystemRunning := (Current_State = 'MIXING' OR Current_State = 'DRAINING') AND Safety_OK;
-        Light_SystemFault := (Current_State = 'FAULTED') OR (NOT Safety_OK);
-        \`\`\`
+    8.  **Start/Stop Logic:** A momentary Start button only begins a sequence. It MUST NOT be used as a "hold-to-run" condition. Logic that stops a running process when the Start button is released (e.g., \`IF NOT DI_Start_Button AND System_Is_Running THEN...\`) is a critical flaw and is forbidden. Only a dedicated Stop button or a fault should halt an active sequence.
+
+    **Correct ST Example with All Rules:**
+    \`\`\`st
+    (*
+      PLC Program: Simple Mixer Control
+      Description: This program controls a simple mixing sequence following best practices.
+    *)
+    VAR
+        (* Inputs *)
+        DI_Start_Button AT %I0.0 : BOOL;
+        DI_Stop_Button AT %I0.1 : BOOL; // Assumed to be from a physical NC button circuit
+        DI_EStop_Healthy AT %I0.2 : BOOL; // Assumed to be from a physical NC E-Stop circuit
+
+        (* Outputs *)
+        DO_Fill_Valve AT %Q0.0 : BOOL;
+        DO_Mixer_Motor AT %Q0.1 : BOOL;
+        DO_Light_Running AT %Q0.2 : BOOL;
+        DO_Light_Fault AT %Q0.3 : BOOL;
+
+        (* Internal State & Timers *)
+        Current_State : INT := 0; // 0:Idle, 10:Filling, 20:Mixing
+        Safety_OK : BOOL;
+        Fill_Timer : TON;
+        Mix_Timer : TON;
+
+        (* Intermediate Commands & Status *)
+        Fill_Valve_Cmd : BOOL;
+        Mixer_Motor_Cmd : BOOL;
+        System_Running : BOOL;
+        System_Faulted : BOOL;
+    END_VAR
+
+    // --- 1. SAFETY & PERMISSIVES ---
+    (* Rule 3 & 4: Consolidate all safety conditions into a single variable *)
+    Safety_OK := DI_Stop_Button AND DI_EStop_Healthy;
+
+
+    // --- 2. STATE MACHINE LOGIC ---
+    (* This CASE statement controls the main sequence logic *)
+    CASE Current_State OF
+        0: // Idle State
+            Fill_Valve_Cmd := FALSE;
+            Mixer_Motor_Cmd := FALSE;
+            IF DI_Start_Button AND Safety_OK THEN
+                Current_State := 10; // Transition to Filling
+            END_IF;
+
+        10: // Filling State
+            Fill_Valve_Cmd := TRUE;
+            Mixer_Motor_Cmd := FALSE;
+            IF Fill_Timer.Q THEN
+                Current_State := 20; // Transition to Mixing
+            END_IF;
+
+        20: // Mixing State
+            Fill_Valve_Cmd := FALSE;
+            Mixer_Motor_Cmd := TRUE;
+            IF Mix_Timer.Q THEN
+                Current_State := 0; // Transition back to Idle
+            END_IF;
+    END_CASE;
+
+    // --- 3. GLOBAL CONDITIONS & RESETS ---
+    // Immediately return to idle if safety is lost at any point
+    IF NOT Safety_OK THEN
+        Current_State := 0;
+    END_IF;
+
+    // Rule 7: Timers are called every scan. Their IN condition handles start/reset.
+    Fill_Timer(IN:=(Current_State = 10 AND Safety_OK), PT:=T#5s);
+    Mix_Timer(IN:=(Current_State = 20 AND Safety_OK), PT:=T#10s);
+
+
+    // --- 4. STATUS INDICATOR LOGIC ---
+    System_Running := (Current_State > 0) AND Safety_OK;
+    System_Faulted := NOT Safety_OK;
+
+
+    // --- 5. OUTPUT MAPPING ---
+    (* Rule 5 & 6: Map all command variables to physical outputs in one place, gated by safety. *)
+    DO_Fill_Valve := Fill_Valve_Cmd AND Safety_OK;
+    DO_Mixer_Motor := Mixer_Motor_Cmd AND Safety_OK;
+    DO_Light_Running := System_Running;
+    DO_Light_Fault := System_Faulted;
+    \`\`\`
     ${langInstruction}`;
 
     return callApiEndpoint('generateChatResponse', { prompt, config: { systemInstruction } });
@@ -477,45 +540,108 @@ export const generatePractice = async (params: PracticeParams): Promise<string> 
 
     const stStyleGuide = `
     *** IMPORTANT STYLE GUIDE FOR STRUCTURED TEXT (ST) ***
-    When generating Structured Text, you MUST follow these critical principles to avoid common errors.
+    When generating Structured Text (ST), you MUST follow these critical principles to produce robust, safe, and maintainable code. Your entire response containing ST MUST be a single, complete code block.
 
-    1.  **Timer Scan-Order Dependency:** This is a critical rule. A timer instance (e.g., \`MyTimer(IN:=..., PT:=...);\`) must be called on **every scan** to update its internal state. The most common mistake is to have conflicting logic that affects the timer in the same scan.
-        *   **Correct Implementation:** Consolidate all conditions for the timer into its \`IN\` parameter. The timer will automatically start on a rising edge of \`IN\` and reset when \`IN\` becomes \`FALSE\`.
-        *   **Incorrect Implementation:** **DO NOT** have a separate \`IF E_Stop THEN MyTimer.IN := FALSE; END_IF;\` statement if another call to \`MyTimer(...)\` exists elsewhere in the scan. The last call to the timer in the scan cycle will determine its state, overriding any previous logic.
+    1.  **Complete Declarations:** Every ST code block MUST begin with a complete \`VAR ... END_VAR\` block. You MUST declare all variables used in the logic, including inputs (\`DI_*\`), outputs (\`DO_*\`), and all internal memory/state variables (\`Current_State\`, \`Safety_OK\`, \`Fill_Valve_Cmd\`, etc.).
 
-    2.  **Fail-Safe Stop Logic:** A physical stop button (like an E-Stop) MUST be a Normally Closed (NC) contact. This means the PLC input is \`TRUE\` or \`1\` when the system is safe to run. In ST, this is checked with a condition like \`IF E_Stop_Healthy THEN ...\`. Be explicit about this assumption in your explanation.
+    2.  **Proper Commenting:** All explanatory text within the code MUST be formatted as a proper ST comment. Use \`(* ... *)\` for multi-line comments or section headers, and \`//\` for single-line comments. **DO NOT** include unformatted text, markdown headers like \`###\`, or language identifiers like \`st\` inside the code block.
 
-    3.  **Consolidate Safety Conditions (DRY Principle):** **DO NOT** repeat the same set of safety conditions (like \`E_Stop_Healthy AND Stop_PB_Healthy\`) across multiple \`IF\` statements or function calls. Create a single intermediate boolean variable (e.g., \`Safety_OK\`) at the beginning of your logic block to represent the "permission to run". All subsequent logic MUST then reference this single variable. This improves readability, maintainability, and prevents errors.
+    3.  **Fail-Safe Stop Logic:** A physical stop button (like an E-Stop) MUST be a Normally Closed (NC) contact. This means the PLC input is \`TRUE\` or \`1\` when the system is safe to run. In ST, this is checked with a condition like \`IF E_Stop_Healthy THEN ...\`. Be explicit about this assumption in your explanation.
 
-    4.  **Single Output Assignment (No Rung Fighting):** An output variable (e.g., a physical light, a motor contactor) **MUST NEVER** be assigned a value using \`:=\` in more than one place. This is a critical error equivalent to "rung fighting" in ladder logic.
-        *   **Correct Implementation:** Consolidate all conditions for an output into a single boolean expression. The output is assigned the result of this expression only once at the end of the logic block.
-        *   **Incorrect Implementation:** **DO NOT** use multiple \`IF/THEN\` statements to set an output to \`TRUE\` or \`FALSE\` separately. For example, avoid \`IF condition1 THEN MyOutput := TRUE; END_IF;\` followed later by \`IF condition2 THEN MyOutput := FALSE; END_IF;\`. The second statement can override the first, leading to unpredictable behavior.
+    4.  **Consolidate Safety Conditions (DRY Principle):** Create a single intermediate boolean variable (e.g., \`Safety_OK\`) at the beginning of your logic block to represent the "permission to run". All subsequent logic that can affect motion or process MUST then be gated by this single variable. This improves readability and prevents errors.
 
-        **Correct ST Example with All Rules:**
-        \`\`\`st
-        (* 
-          This logic is robust, follows DRY, and avoids scan-order issues.
-        *)
+    5.  **Separate Logic from Physical Outputs:** Use intermediate 'command' variables for your state machine and logic (e.g., \`Valve_A_Cmd\`, \`Mixer_On_Cmd\`). Then, at the very end of the code block, create a dedicated \`(* --- OUTPUT MAPPING --- *)\` section. In this section, and ONLY in this section, assign the state of the command variables to the physical output variables (\`DO_*\`). This assignment MUST also be gated by the main safety permissive (\`Safety_OK\`). Example: \`DO_Valve_A := Valve_A_Cmd AND Safety_OK;\`.
 
-        // Rule 3: Consolidate safety permissives into one variable.
-        // Rule 2: Assume E_Stop_Healthy is TRUE when physical NC circuit is closed.
-        Safety_OK := DI_EStop_Healthy AND DI_Stop_PB_Healthy;
+    6.  **Single Output Assignment (No Rung Fighting):** A physical output variable (\`DO_*\`) MUST NEVER be assigned a value using \`:=\` in more than one place. Rule #5 (Output Mapping) helps enforce this perfectly.
 
-        // Rule 1: All timer logic is consolidated into the IN parameter.
-        Mix_Timer(
-            IN:= (Current_State = 'MIXING' AND Safety_OK), 
-            PT:= T#10s
-        );
-        
-        // State transitions also use the consolidated safety check
-        IF NOT Safety_OK THEN
-            Current_State := 'IDLE'; // Or 'FAULTED'
-        END_IF;
+    7.  **Correct Timer & Timeout Usage:** A timer instance (e.g., \`MyTimer(IN:=..., PT:=...);\`) must be called on **every scan**. For a **timeout watchdog**, the timer's \`PT\` must be the maximum allowed time for the step. The logic must check the success condition (e.g., a sensor) first, and then use the timer's \`.Q\` output as the timeout fault condition (e.g., \`ELSIF Timeout_Timer.Q THEN Fault_Flag := TRUE;\`). Never use a timer's \`.ACC\` value for a timeout check that is greater than its \`PT\`, as this code is unreachable.
 
-        // Rule 4: Outputs are assigned only ONCE using a consolidated boolean expression.
-        Light_SystemRunning := (Current_State = 'MIXING' OR Current_State = 'DRAINING') AND Safety_OK;
-        Light_SystemFault := (Current_State = 'FAULTED') OR (NOT Safety_OK);
-        \`\`\`
+    8.  **Start/Stop Logic:** A momentary Start button only begins a sequence. It MUST NOT be used as a "hold-to-run" condition. Logic that stops a running process when the Start button is released (e.g., \`IF NOT DI_Start_Button AND System_Is_Running THEN...\`) is a critical flaw and is forbidden. Only a dedicated Stop button or a fault should halt an active sequence.
+
+    **Correct ST Example with All Rules:**
+    \`\`\`st
+    (*
+      PLC Program: Simple Mixer Control
+      Description: This program controls a simple mixing sequence following best practices.
+    *)
+    VAR
+        (* Inputs *)
+        DI_Start_Button AT %I0.0 : BOOL;
+        DI_Stop_Button AT %I0.1 : BOOL; // Assumed to be from a physical NC button circuit
+        DI_EStop_Healthy AT %I0.2 : BOOL; // Assumed to be from a physical NC E-Stop circuit
+
+        (* Outputs *)
+        DO_Fill_Valve AT %Q0.0 : BOOL;
+        DO_Mixer_Motor AT %Q0.1 : BOOL;
+        DO_Light_Running AT %Q0.2 : BOOL;
+        DO_Light_Fault AT %Q0.3 : BOOL;
+
+        (* Internal State & Timers *)
+        Current_State : INT := 0; // 0:Idle, 10:Filling, 20:Mixing
+        Safety_OK : BOOL;
+        Fill_Timer : TON;
+        Mix_Timer : TON;
+
+        (* Intermediate Commands & Status *)
+        Fill_Valve_Cmd : BOOL;
+        Mixer_Motor_Cmd : BOOL;
+        System_Running : BOOL;
+        System_Faulted : BOOL;
+    END_VAR
+
+    // --- 1. SAFETY & PERMISSIVES ---
+    (* Rule 3 & 4: Consolidate all safety conditions into a single variable *)
+    Safety_OK := DI_Stop_Button AND DI_EStop_Healthy;
+
+
+    // --- 2. STATE MACHINE LOGIC ---
+    (* This CASE statement controls the main sequence logic *)
+    CASE Current_State OF
+        0: // Idle State
+            Fill_Valve_Cmd := FALSE;
+            Mixer_Motor_Cmd := FALSE;
+            IF DI_Start_Button AND Safety_OK THEN
+                Current_State := 10; // Transition to Filling
+            END_IF;
+
+        10: // Filling State
+            Fill_Valve_Cmd := TRUE;
+            Mixer_Motor_Cmd := FALSE;
+            IF Fill_Timer.Q THEN
+                Current_State := 20; // Transition to Mixing
+            END_IF;
+
+        20: // Mixing State
+            Fill_Valve_Cmd := FALSE;
+            Mixer_Motor_Cmd := TRUE;
+            IF Mix_Timer.Q THEN
+                Current_State := 0; // Transition back to Idle
+            END_IF;
+    END_CASE;
+
+    // --- 3. GLOBAL CONDITIONS & RESETS ---
+    // Immediately return to idle if safety is lost at any point
+    IF NOT Safety_OK THEN
+        Current_State := 0;
+    END_IF;
+
+    // Rule 7: Timers are called every scan. Their IN condition handles start/reset.
+    Fill_Timer(IN:=(Current_State = 10 AND Safety_OK), PT:=T#5s);
+    Mix_Timer(IN:=(Current_State = 20 AND Safety_OK), PT:=T#10s);
+
+
+    // --- 4. STATUS INDICATOR LOGIC ---
+    System_Running := (Current_State > 0) AND Safety_OK;
+    System_Faulted := NOT Safety_OK;
+
+
+    // --- 5. OUTPUT MAPPING ---
+    (* Rule 5 & 6: Map all command variables to physical outputs in one place, gated by safety. *)
+    DO_Fill_Valve := Fill_Valve_Cmd AND Safety_OK;
+    DO_Mixer_Motor := Mixer_Motor_Cmd AND Safety_OK;
+    DO_Light_Running := System_Running;
+    DO_Light_Fault := System_Faulted;
+    \`\`\`
     `;
 
 
