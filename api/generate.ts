@@ -27,12 +27,12 @@ export default async function handler(req: Request) {
 
     let request: GenerateContentRequest = { model, contents: '' };
 
-    // All current tasks use the same structure: a prompt and an optional config.
-    // The client-side service will be responsible for creating the final prompt string.
-    if (params.prompt) {
-        request.contents = params.prompt;
+    // All current tasks use the same structure: a 'contents' property and an optional config.
+    // The 'contents' can be a string (for single prompts) or an array of Content objects (for chat).
+    if (params.contents) {
+        request.contents = params.contents;
     } else {
-        return new Response(JSON.stringify({ error: 'Missing prompt in params' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
+        return new Response(JSON.stringify({ error: 'Missing `contents` in params' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
     }
 
     if (params.config) {
