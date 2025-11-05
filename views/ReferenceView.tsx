@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useTranslation } from '../hooks/useTranslation';
 import { BrandLogo } from '../components/BrandLogo';
 
@@ -19,6 +19,11 @@ interface ColorCodeStandard {
     name: string;
     note: string;
     codes: ColorCode[];
+}
+
+interface PlcDataType {
+    type: string;
+    desc: string;
 }
 
 const FaultTable: React.FC<{ faults: Fault[] }> = ({ faults }) => {
@@ -115,8 +120,39 @@ const ThermocoupleColorCodeTable: React.FC<{ standard: ColorCodeStandard }> = ({
     );
 };
 
+const PlcDataTable: React.FC<{ brandName: string; types: PlcDataType[] }> = ({ brandName, types }) => {
+    return (
+        <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+            <div className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-700/50">
+                <BrandLogo brand={brandName.split(' ')[0]} topic="PLC" className="h-10 w-10" />
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{brandName}</h3>
+            </div>
+            <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                    <thead className="bg-gray-50 dark:bg-gray-700/50">
+                        <tr>
+                            <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Data Type</th>
+                            <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Description</th>
+                        </tr>
+                    </thead>
+                    <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                        {types.map((type, index) => (
+                            <tr key={index}>
+                                <td className="px-4 py-4 whitespace-nowrap text-sm font-mono text-indigo-600 dark:text-indigo-400">{type.type}</td>
+                                <td className="px-4 py-4 whitespace-normal text-sm text-gray-600 dark:text-gray-300">{type.desc}</td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    );
+};
+
+
 export const ReferenceView: React.FC = () => {
     const { t } = useTranslation();
+    const [activeTab, setActiveTab] = useState<'thermocouples' | 'vfd' | 'plc'>('thermocouples');
     
     const siemensFaults: Fault[] = t('reference.faults.siemens') as any;
     const abFaults: Fault[] = t('reference.faults.allenBradley') as any;
@@ -127,6 +163,13 @@ export const ReferenceView: React.FC = () => {
     const mitsubishiFaults: Fault[] = t('reference.faults.mitsubishi') as any;
     const eatonFaults: Fault[] = t('reference.faults.eaton') as any;
     const colorCodeData = t('reference.colorCodes') as any;
+    const plcData = t('reference.plcDataTypes') as any;
+
+    const tabs = [
+        { key: 'thermocouples', title: t('reference.thermocoupleTitle') },
+        { key: 'vfd', title: t('reference.vfdTitle') },
+        { key: 'plc', title: t('reference.plcTitle') },
+    ];
 
     const vfdBrands = [
         { name: t('reference.brands.siemens'), logoName: 'Siemens', faults: siemensFaults },
@@ -147,43 +190,77 @@ export const ReferenceView: React.FC = () => {
     ];
 
     return (
-        <div className="max-w-5xl mx-auto space-y-12">
+        <div className="max-w-5xl mx-auto space-y-8">
             <header className="text-center">
                 <h1 className="text-3xl font-extrabold text-gray-800 dark:text-gray-200 tracking-tight sm:text-4xl">{t('reference.title')}</h1>
                 <p className="mt-4 text-lg text-gray-600 dark:text-gray-400">{t('reference.description')}</p>
             </header>
+            
+            <div className="flex justify-center border-b border-gray-200 dark:border-gray-700">
+                {tabs.map(tab => (
+                    <button
+                        key={tab.key}
+                        onClick={() => setActiveTab(tab.key as any)}
+                        className={`px-4 py-3 font-semibold text-sm transition-colors focus:outline-none -mb-px ${
+                            activeTab === tab.key
+                                ? 'border-b-2 border-indigo-500 text-indigo-600 dark:text-indigo-400'
+                                : 'border-b-2 border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
+                        }`}
+                        aria-current={activeTab === tab.key ? 'page' : undefined}
+                    >
+                        {tab.title}
+                    </button>
+                ))}
+            </div>
 
-            {/* Thermocouple Color Codes Section */}
-            <section>
-                <div className="bg-white dark:bg-gray-800 p-6 sm:p-8 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
-                    <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-200">{t('reference.thermocoupleTitle')}</h2>
-                    <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{t('reference.thermocoupleDesc')}</p>
-                    <div className="mt-6 space-y-8">
-                        {thermocoupleStandards.map(standard => (
-                            <ThermocoupleColorCodeTable key={standard.name} standard={standard} />
-                        ))}
-                    </div>
-                </div>
-            </section>
-
-            {/* VFD Faults Section */}
-            <section>
-                <div className="bg-white dark:bg-gray-800 p-6 sm:p-8 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
-                    <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-200">{t('reference.vfdTitle')}</h2>
-                    <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{t('reference.vfdDesc')}</p>
-                    <div className="mt-6 space-y-8">
-                        {vfdBrands.map(brand => (
-                            <div key={brand.name} className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
-                                <div className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-700/50">
-                                    <BrandLogo brand={brand.logoName} topic="VFD" className="h-10 w-10" />
-                                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{brand.name}</h3>
-                                </div>
-                                <FaultTable faults={brand.faults} />
+            <div key={activeTab} className="animate-fade-in">
+                {activeTab === 'thermocouples' && (
+                    <section>
+                        <div className="bg-white dark:bg-gray-800 p-6 sm:p-8 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
+                            <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-200">{t('reference.thermocoupleTitle')}</h2>
+                            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{t('reference.thermocoupleDesc')}</p>
+                            <div className="mt-6 space-y-8">
+                                {thermocoupleStandards.map(standard => (
+                                    <ThermocoupleColorCodeTable key={standard.name} standard={standard} />
+                                ))}
                             </div>
-                        ))}
-                    </div>
-                </div>
-            </section>
+                        </div>
+                    </section>
+                )}
+
+                {activeTab === 'vfd' && (
+                     <section>
+                        <div className="bg-white dark:bg-gray-800 p-6 sm:p-8 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
+                            <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-200">{t('reference.vfdTitle')}</h2>
+                            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{t('reference.vfdDesc')}</p>
+                            <div className="mt-6 space-y-8">
+                                {vfdBrands.map(brand => (
+                                    <div key={brand.name} className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+                                        <div className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-700/50">
+                                            <BrandLogo brand={brand.logoName} topic="VFD" className="h-10 w-10" />
+                                            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{brand.name}</h3>
+                                        </div>
+                                        <FaultTable faults={brand.faults} />
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </section>
+                )}
+
+                {activeTab === 'plc' && (
+                     <section>
+                        <div className="bg-white dark:bg-gray-800 p-6 sm:p-8 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
+                            <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-200">{t('reference.plcTitle')}</h2>
+                            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{t('reference.plcDesc')}</p>
+                            <div className="mt-6 space-y-8">
+                                <PlcDataTable brandName={plcData.allenBradley.name} types={plcData.allenBradley.types} />
+                                <PlcDataTable brandName={plcData.siemens.name} types={plcData.siemens.types} />
+                            </div>
+                        </div>
+                    </section>
+                )}
+            </div>
         </div>
     );
 };

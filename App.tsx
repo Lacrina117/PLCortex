@@ -31,11 +31,15 @@ type AppState = 'landing' | 'login' | 'app' | 'admin';
 const App: React.FC = () => {
     const [appState, setAppState] = useState<AppState>('landing');
     const [currentView, setCurrentView] = useState<View>('dashboard');
+    const [userDescription, setUserDescription] = useState<string | null>(null);
 
     useEffect(() => {
         // Simple session check for demo purposes
         if (sessionStorage.getItem('admin_token')) {
             setAppState('admin');
+        } else if (authService.isUserLoggedIn()) {
+            setAppState('app');
+            setUserDescription(authService.getUserDescription());
         }
     }, []);
 
@@ -63,8 +67,9 @@ const App: React.FC = () => {
     };
 
     const handleLogout = () => {
-        authService.adminLogout();
+        authService.logout();
         setAppState('landing');
+        setUserDescription(null);
     };
 
     switch (appState) {
@@ -73,7 +78,10 @@ const App: React.FC = () => {
         case 'login':
             return (
                 <LoginView
-                    onLoginSuccess={() => setAppState('app')}
+                    onLoginSuccess={(description) => {
+                        setAppState('app');
+                        setUserDescription(description);
+                    }}
                     onAdminLoginSuccess={() => setAppState('admin')}
                 />
             );
@@ -88,7 +96,12 @@ const App: React.FC = () => {
 
             return (
                 <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-300">
-                    <Header currentView={currentView} setView={handleSetView} />
+                    <Header 
+                        currentView={currentView} 
+                        setView={handleSetView} 
+                        userDescription={userDescription}
+                        onLogout={handleLogout}
+                    />
                     <main className={mainClasses}>
                         {renderCurrentView()}
                     </main>

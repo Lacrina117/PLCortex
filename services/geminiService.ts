@@ -48,10 +48,10 @@ const callApiEndpoint = async (task: string, params: any): Promise<string> => {
             let request: GenerateContentRequest = { model };
 
             // Build the request object based on the parameters passed from the calling function.
-            if (params.contents) {
-                request.contents = params.contents;
+            if (params.prompt) {
+                request.contents = params.prompt;
             } else {
-                throw new Error('Request params must include a `contents` property.');
+                throw new Error('Request params must include a prompt.');
             }
 
             if (params.config) {
@@ -154,13 +154,10 @@ interface SensorRecommendationParams {
 
 export const generateChatResponse = async (messages: Message[], context: ChatContext): Promise<string> => {
     const langInstruction = context.language === 'es' ? 'Responde en español.' : 'Respond in English.';
-    
-    // The Gemini API expects a 'Content' array without the timestamp for chat history.
-    // This maps the messages to the correct format, stripping the unnecessary property.
-    const contents = messages.map(({ role, parts }) => ({
-        role,
-        parts,
-    }));
+    let prompt = "";
+    messages.forEach((m: { role: string; parts: { text: string }[] }) => {
+        prompt += `${m.role}: ${m.parts[0].text}\n\n`;
+    });
     
     const buildContextString = () => {
         let expertKnowledge = '';
@@ -175,7 +172,8 @@ export const generateChatResponse = async (messages: Message[], context: ChatCon
         } else if (context.vfdBrand === 'Danfoss' && context.vfdModel === 'VLT Midi Drive FC 280') {
             expertKnowledge = "You have expert-level knowledge of the Danfoss VLT Midi Drive FC 280. When discussing this model, refer to its specific parameter groups (e.g., Group 0: Operation/Display, Group 1: Load/Motor, Group 3: Reference/Ramps, Group 5: Digital I/O, Group 6: Analog I/O, Group 14: Special Functions/Alarms). Be familiar with its LCP (Local Control Panel) menu structure and the use of the Quick Menu for basic setup.";
         } else if (context.vfdBrand === 'Danfoss' && context.vfdModel === 'VLT FC 302') {
-            expertKnowledge = "You have expert-level knowledge of the Danfoss VLT AutomationDrive FC 302. When discussing this model, refer to its matrix-style parameter groups (e.g., 1-** Load/Motor, 3-** Reference/Ramps, 5-** Digital I/O, 14-** Special Functions). Be familiar with its graphical LCP (Local Control Panel) menu structure, including the Main Menu and Quick Menu. Terminal 37 is the Safe Torque Off (STO) input.";
+            // FIX: Replaced potentially problematic '1-**' placeholders with '1-xx' to prevent any possibility of the parser misinterpreting it as an arithmetic operation.
+            expertKnowledge = "You have expert-level knowledge of the Danfoss VLT AutomationDrive FC 302. When discussing this model, refer to its matrix-style parameter groups (e.g., 1-xx Load/Motor, 3-xx Reference/Ramps, 5-xx Digital I/O, 14-xx Special Functions). Be familiar with its graphical LCP (Local Control Panel) menu structure, including the Main Menu and Quick Menu. Terminal 37 is the Safe Torque Off (STO) input.";
         } else if (context.vfdBrand === 'Mitsubishi Electric' && context.vfdModel === 'FR-E800') {
             expertKnowledge = "You have expert-level knowledge of the Mitsubishi Electric FR-E800 inverter. When discussing this model, refer to its specific parameter numbers (e.g., Pr.1 for Maximum frequency, Pr.7 for Acceleration time, Pr.8 for Deceleration time, Pr.9 for Motor capacity, Pr.79 for Operation mode selection). Be familiar with its standard terminal functions like STF (Forward start) and STR (Reverse start).";
         } else if (context.vfdBrand === 'Mitsubishi Electric' && context.vfdModel === 'FR-D700') {
@@ -205,281 +203,926 @@ export const generateChatResponse = async (messages: Message[], context: ChatCon
         return 'The user has not specified any particular hardware. Provide general advice, and be prepared to give more specific answers if the user provides context later in the conversation.';
     };
 
+    const buildLadderLogicStyleGuide = () => {
+        // SIEMENS TIA PORTAL / STEP 7 STYLE
+        if (context.plcBrand === 'Siemens') {
+            // TIA Portal Style Guide
+            if (context.plcSoftware === 'TIA Portal') {
+                return `
+                When generating PLC ladder logic diagrams for Siemens TIA Portal, you MUST adhere to the following strict four-part format for maximum clarity, with each part clearly labeled using markdown bold headers.
+
+                1.  **Ladder Logic Visual Guide:** At the very beginning of your ladder logic response, you MUST provide this small legend to help users understand the symbols.
+                    *   \`[ ]\` - Normally Open Contact
+                    *   \`[/]\` - Normally Closed Contact
+                    *   \`( )\` - Output Coil
+                    *   \`|---\` - Wire/Rail
+                    *   A branch is used for OR logic.
+
+                2.  **Annotated Ladder Diagram (LAD) for TIA Portal:** You must create flawlessly aligned ASCII art that perfectly mimics a real PLC editor. Adherence to the following character and alignment rules is **non-negotiable and must be followed with pixel-perfect precision.**
+                    *   **Network Comment (NEW):** Each network MUST be preceded by a single-line comment on its own line, explaining its purpose. The comment should be in the format: \`// Network X: Description of logic.\`
+                    *   **Characters:** Use \`|\` for power rails and **ONLY** \`─\` (U+2500) for all horizontal wire segments. **Never use hyphens (-), plus signs (+), or underscores (_).**
+                    *   **Rung Structure:** A complete network MUST have a left power rail \`|\`, a logic section, and a right power rail \`|\`.
+                    *   **Instruction Spacing:** A standard 3-character instruction (e.g., \`[ ]\`, \`( )\`) MUST be padded by **exactly three \`─\` characters on each side**: \`───[ ]───\`. Wider instructions (e.g., \`[TON]\`) must also be padded with three \`─\` characters on each side: \`───[TON]───\`. This 3-character padding is a strict rule.
+                    *   **Instructions:**
+                        *   Normally Open Contact: \`[ ]\`
+                        *   Normally Closed Contact: \`[/]\`
+                        *   Output Coil: \`( )\`
+                        *   Function Blocks (Timers, Counters): \`[TON]\`, \`[CTU]\`.
+                    *   **Precise Tag Alignment:** Tag names (symbolic in quotes, absolute in parentheses) MUST be perfectly centered on separate lines above their instruction. Parameter lines must be centered below the instruction.
+                    *   **Perfect Branching:** Use branches for OR logic. Branch alignment must be perfect.
+                        *   **Start/End:** A parallel branch MUST start from the main line with \`┬\` and rejoin the main line with \`┘\`.
+                        *   **Vertical Lines:** The vertical segments of a branch MUST use the \`│\` character. All \`│\` characters in a single vertical segment must be in the same column, creating a perfectly straight vertical line.
+                        *   **Branching Off a Branch:** To add another parallel path from an existing vertical branch line, use \`├\`. The last parallel path in a group MUST join the vertical line with \`└\`.
+                        *   **Alignment is Critical:** The character directly above a \`│\` must be \`┬\` or \`├\`. The character directly below the last \`│\` must be \`└\` or \`┘\`. There must be no character gaps or misalignments. The horizontal segments (\`─\`) must extend from the main rung to the vertical branch characters (\`┬\`, \`├\`, \`└\`, \`┘\`).
+
+                3.  **Network Logic Description:** Below the diagram, describe the network's function in plain language. **Do not provide Allen-Bradley mnemonics.**
+
+                4.  **Instruction Details:** For any non-basic instructions (timers, counters), provide a bulleted list explaining their parameters (Instance DB, IN, PT, Q, etc.).
+
+                **CRITICAL ARCHITECTURE & LOGIC RULES:**
+                *   **Rung Completion (Syntax):** Every single rung/network MUST terminate with a valid output-type instruction (e.g., \`( )\`, \`[MOV]\`, \`[TON]\`). A rung that ends with only conditions is a syntax error and is strictly forbidden.
+                *   **State Machines for Sequences:** For any sequential process (e.g., Fill -> Mix -> Drain), **YOU MUST** implement a state machine pattern. **DO NOT** use multiple chained seal-in/latching rungs. Use a single integer tag (e.g., a DINT named "Sequence_Step") as the state register. Use equality comparison instructions to enable the logic for each step, and use MOVE instructions to transition to the next step. This is non-negotiable for creating robust, scalable logic.
+                *   **Duplicate Outputs:** **NEVER** use the same output coil instruction (e.g., \`( )\` with tag \`"Motor"\`) on more than one network. This causes unpredictable "rung-fighting" and is a critical programming error.
+                *   **Latching Logic (Seal-In vs. Set/Reset):** Using separate Set \`[S]\` and Reset \`[R]\` instructions for the same tag is **STRICTLY FORBIDDEN**. This creates a scan-order dependency and can lead to unpredictable behavior. **ALWAYS** use a standard "seal-in" circuit with a single output coil \`( )\` for latching logic. The reset/stop condition must be in series before the coil to ensure it has priority.
+                *   **Fail-Safe Stop Logic:** A physical stop button MUST be a Normally Closed (NC) contact for fail-safe wiring. For a **permissive run condition**, this NC contact is represented in ladder logic by a Normally Open instruction \`[ ]\`. This is the correct and safe way to ensure that a broken wire will stop the machine. To **trigger** an action (like a reset) when the NC button is **pressed**, you must use a Normally Closed instruction \`[/]\`.
+                *   **Code Reusability (DRY Principle - FB/FC):** You MUST avoid repeating identical or very similar logic patterns. If a pattern is used for multiple devices (e.g., Motor1_Control, Motor2_Control), you MUST encapsulate it in a reusable block. For Siemens TIA Portal, this means creating a Function Block (FB) or a Function (FC). Provide a clear example of the FB/FC definition and then show how it is called for each device. This is a non-negotiable rule to reduce redundancy and improve maintainability.
+                *   **Timer Logic Efficiency:** Do not use a timer's \`EN\` output as a condition in the logic that feeds into the same timer's \`IN\` pin. The \`EN\` output is implicitly true when the \`IN\` condition is met, making this redundant and poor practice.
+                *   **Redundant Timer Resets:** Do not use an explicit Reset instruction \`[RST]\` on a \`TON\` timer if the reset condition is simply the inverse of the timer's enable condition. The \`TON\` instruction resets automatically when its input logic becomes false. Rely on this inherent behavior.
+                *   **Safety Interlocks:** For systems with mechanically opposing actuators (e.g., a motor's Forward and Reverse outputs, a valve's Open and Close commands), you **MUST** implement cross-interlocking logic. The condition for activating one output must include a normally-closed contact (\`[/]\`) of the opposing output to prevent them from being active simultaneously. This is a fundamental safety and equipment protection practice.
+                *   **Data Integrity (Math & Arrays):** All operations must be fault-proof.
+                    *   **Division by Zero:** Any math instruction performing division must be conditionally executed only after ensuring the divisor is not zero using a comparison instruction.
+                    *   **Array Bounds:** When using indexed addressing (e.g., \`MyTag[Index]\`), the \`Index\` tag's value MUST be validated with comparison instructions before the indexed instruction is executed to prevent a major controller fault.
+
+                Here is a new, precise example of a Siemens motor control circuit that you **MUST** follow:
+
+                **1. Ladder Logic Visual Guide**
+                *   \`[ ]\` - Normally Open Contact
+                *   \`[/]\` - Normally Closed Contact
+                *   \`( )\` - Output Coil
+
+                **2. Annotated Ladder Diagram (LAD) for TIA Portal**
+                \`\`\`
+                // Network 1: Motor starter with seal-in and jog.
+                                "Start_PB"            "Stop_PB"               "Motor"
+                                 (%I0.0)               (%I0.1)                 (%Q0.0)
+                |───┬───────────[ ]───────────┬──────────[ ]───────────────────( )───|
+                |   │                         │                                       |
+                |   │        "Jog_PB"         │                                       |
+                |   │         (%I0.2)         │                                       |
+                |   ├───────────[ ]───────────┤                                       |
+                |   │                         │                                       |
+                |   │         "Motor"         │                                       |
+                |   │         (%Q0.0)         │                                       |
+                |   └───────────[ ]───────────┘                                       |
+                \`\`\`
+
+                **3. Network Logic Description:**
+                This network implements a standard motor starter with a seal-in and a jog function. The "Motor" output is activated if the "Start_PB" is pressed, OR if the "Jog_PB" is pressed. The "Motor" contact provides seal-in logic so the motor remains on after "Start_PB" is released. The "Stop_PB" will break the logic and stop the motor.
+
+                **4. Instruction Details:**
+                *   **Important Note on Stop Logic:** The \`"Stop_Button"\` uses a Normally Open \`[ ]\` instruction. This is the fail-safe industry standard, assuming the physical stop button is a Normally Closed (NC) contact.
+                `;
+            }
+            // Classic STEP 7 (S7-300/400) Style Guide
+            else {
+                return `
+                When generating PLC logic diagrams for Siemens STEP 7 V5.x (classic), you MUST adhere to the following strict format. Your ASCII diagrams must be 100% precise and use absolute addressing.
+
+                1.  **Function Block Diagram (FUP) for STEP 7:** Create ASCII art that perfectly resembles the classic STEP 7 FUP/FBD editor.
+                    *   **Instructions:** Represent logic gates and blocks as boxes with their function inside, e.g., \`& \` for AND, \`>=1\` for OR, \`S_IMPULS\` for a timer.
+                    *   **Connections:** Use \`─\` for horizontal lines and \`|\` for vertical lines to connect inputs and outputs.
+                    *   **Tagging:** Use absolute addresses (e.g., \`E 0.0\`, \`A 4.0\`, \`M 1.1\`, \`T 5\`). Place input tags to the left of the block and output tags to the right.
+                    *   **Assignments:** Use the assignment block \`=\` to assign a logic result to an output.
+
+                2.  **Logic Description:** Below the diagram, provide a human-readable description of the network's function.
+
+                3.  **Instruction Details:** For any complex blocks (like timers or counters), provide a clear explanation of its parameters.
+                    *   **S5 Timer (e.g., S_IMPULS - Pulse Timer):**
+                        *   **Nº:** The timer number (e.g., \`T 5\`).
+                        *   **S:** The start input condition.
+                        *   **TW:** The preset time value, formatted as S5T#... (e.g., \`S5T#2s\` for 2 seconds).
+                        *   **R:** The reset input condition.
+                        *   **BI / BCD:** The current time value outputs.
+                        *   **Q:** The Boolean output bit of the timer.
+                `;
+            }
+        }
+        
+        // DEFAULT/ALLEN-BRADLEY STYLE
+        return `
+        When generating PLC ladder logic diagrams, you MUST adhere to the following strict four-part format for Allen-Bradley (Studio 5000 / RSLogix) for maximum clarity, with each part clearly labeled using markdown bold headers.
+
+        1.  **Ladder Logic Visual Guide:** At the very beginning of your ladder logic response, you MUST provide this small legend to help users understand the symbols.
+            *   \`[ ]\` - Normally Open Contact (XIC)
+            *   \`[/]\` - Normally Closed Contact (XIO)
+            *   \`( )\` - Output Coil (OTE)
+            *   \`|---\` - Wire/Rail
+            *   A branch is used for OR logic.
+
+        2.  **Annotated Ladder Diagram:** You must create flawlessly aligned ASCII art that perfectly mimics a real PLC editor. Adherence to the following character and alignment rules is **non-negotiable and must be followed with pixel-perfect precision.**
+            *   **Rung Comment (NEW):** Each rung MUST be preceded by a single-line comment on its own line, explaining its purpose. The comment should be in the format: \`// Rung X: Description of logic.\`
+            *   **Rung Number (NEW):** Every rung MUST begin with a 4-digit number (e.g., \`0000\`, \`0001\`) followed by a space. This number should correspond to the comment.
+            *   **Characters:** Use \`|\` for power rails and **ONLY** \`─\` (U+2500) for all horizontal wire segments. **Never use hyphens (-), plus signs (+), or underscores (_).**
+            *   **Rung Structure:** A complete rung is a complete horizontal line of logic. It MUST start with a left power rail \`|\`, contain instructions connected by \`─\` characters, and end with a right power rail \`|\`.
+            *   **Instruction Spacing:** A standard 3-character instruction (e.g., \`[ ]\`, \`( )\`) MUST be padded by **exactly three \`─\` characters on each side**: \`───[ ]───\`. Wider instructions (e.g., \`[TON]\`) must also be padded with three \`─\` characters on each side: \`───[TON]───\`. This 3-character padding is a strict rule.
+            *   **Instructions:**
+                *   Normally Open Contact (XIC): \`[ ]\`
+                *   Normally Closed Contact (XIO): \`[/]\`
+                *   Output Coil (OTE): \`( )\`
+                *   Other instructions (Timers, Counters): \`[TON]\`, \`[CTU]\`, \`[MOV]\`.
+            *   **Precise Tag Alignment:** Tag names MUST be perfectly centered on separate lines above their respective instruction. Parameter lines (e.g., for a timer) must be centered below the instruction.
+            *   **Perfect Branching:** Use branches for OR logic. Branch alignment must be perfect.
+                *   **Start/End:** A parallel branch MUST start from the main line with \`┬\` and rejoin the main line with \`┘\`.
+                *   **Vertical Lines:** The vertical segments of a branch MUST use the \`│\` character. All \`│\` characters in a single vertical segment must be in the same column, creating a perfectly straight vertical line.
+                *   **Branching Off a Branch:** To add another parallel path from an existing vertical branch line, use \`├\`. The last parallel path in a group MUST join the vertical line with \`└\`.
+                *   **Alignment is Critical:** The character directly above a \`│\` must be \`┬\` or \`├\`. The character directly below the last \`│\` must be \`└\` or \`┘\`. There must be no character gaps or misalignments. The horizontal segments (\`─\`) must extend from the main rung to the vertical branch characters (\`┬\`, \`├\`, \`└\`, \`┘\`).
+
+        3.  **Mnemonic Code:** Below the diagram, provide the corresponding Allen-Bradley mnemonic (text-based) representation for each rung. (e.g., for RSLogix 500 style: \`BST XIC(Start) NXB XIC(Motor) BND XIC(Stop) OTE(Motor)\`).
+
+        4.  **Instruction Details:** If the logic uses any instructions other than basic XIC, XIO, or OTE, provide a clear, bulleted list explaining how to configure each one (e.g., for a TON, explain the Timer tag, .PRE, .ACC, and .DN bits).
+
+        **CRITICAL ARCHITECTURE & LOGIC RULES:**
+        *   **Rung Completion (Syntax):** Every single rung MUST terminate with a valid output-type instruction (e.g., \`( )\`, \`[MOV]\`, \`[TON]\`). A rung that ends with only conditions is a syntax error and is strictly forbidden.
+        *   **State Machines for Sequences:** For any sequential process (e.g., Fill -> Mix -> Drain), **YOU MUST** implement a state machine pattern. **DO NOT** use multiple chained seal-in/latching rungs. Use a single integer tag (e.g., a DINT named "Sequence.Step") as the state register. Use \`EQU\` instructions to enable the logic for the active state, and \`MOV\` instructions to transition to the next state. This is non-negotiable for creating robust, scalable logic.
+        *   **Duplicate Outputs:** **NEVER** use the same output coil instruction (e.g., \`( )\` with tag "Motor") on more than one rung. This causes unpredictable 'rung-fighting' and is a critical programming error. Use intermediate bits (flags) if necessary to combine logic for a single output.
+        *   **Latching Logic (Seal-In vs. Latch/Unlatch):** Using separate Latch \`[L]\` and Unlatch \`[U]\` instructions for the same tag is **STRICTLY FORBIDDEN**. This creates a scan-order dependency and can lead to unpredictable behavior if both conditions are met in the same scan. **ALWAYS** use a standard "seal-in" circuit with a single output coil (OTE, \`( )\`) for latching logic. The unlatch/stop condition must be in series before the coil to ensure it has priority.
+        *   **Fail-Safe Stop Logic:** A physical stop button MUST be a Normally Closed (NC) contact for fail-safe wiring. In the ladder logic, this NC contact is represented by a Normally Open instruction (XIC, \`[ ]\`). This ensures that if the wire breaks (signal goes to 0), the logic sees it as a "stop" condition. To **trigger** an action when the NC stop button is **pressed** (input goes from 1 to 0), you MUST use a Normally Closed instruction (XIO, \`[/]\`).
+        *   **Code Reusability (DRY Principle - JSR/AOI):** You MUST avoid repeating identical or very similar logic patterns. If a pattern is used for multiple devices (e.g., Motor1_Control, Motor2_Control), you MUST encapsulate it in a reusable block. For Allen-Bradley, this means creating an Add-On Instruction (AOI) or using a subroutine (JSR). Provide a clear example of the AOI/subroutine definition and then show how it is called for each device. This is a non-negotiable rule to reduce redundancy and improve maintainability.
+        *   **Timer Logic Efficiency:** Do not use a timer's own Enable bit (\`.EN\`) as a condition on the same rung that enables the timer. The \`.EN\` bit is implicitly true when the rung conditions are met, so adding an \`XIC(Timer.EN)\` instruction is redundant and poor practice.
+        *   **Redundant Timer Resets:** Do not use an explicit Reset instruction (\`RST\`) on a \`TON\` timer if the reset condition is simply the inverse of the timer's enable condition. The \`TON\` resets automatically. Rely on this inherent behavior.
+        *   **Safety Interlocks:** For systems with mechanically opposing actuators (e.g., a motor's Forward and Reverse outputs, a valve's Open and Close commands), you **MUST** implement cross-interlocking logic. The rung for one output must contain a Normally Closed contact (XIO, \`[/]\`) of the opposing output's tag. This is a fundamental safety practice to prevent mechanical damage and hazardous conditions.
+        *   **Data Integrity (Math & Arrays):** All operations must be fault-proof.
+            *   **Division by Zero:** Any math instruction performing division (\`DIV\`, \`CPT\`) must be conditionally executed only after checking that the divisor is not zero.
+            *   **Array Bounds:** When using indexed addressing (e.g., \`MyTag[Index]\`), the \`Index\` tag's value MUST be validated with \`LIMIT\` (LIM) or comparison instructions (\`GRT\`/\`LES\`) before the indexed instruction is executed to prevent a major controller fault.
+
+        Here is the new, precise example of an Allen-Bradley motor control circuit that you **MUST** follow:
+
+        **1. Ladder Logic Visual Guide**
+        *   \`[ ]\` - Normally Open Contact (XIC)
+        *   \`[/]\` - Normally Closed Contact (XIO)
+        *   \`( )\` - Output Coil (OTE)
+
+        **2. Annotated Ladder Diagram**
+        \`\`\`
+        // Rung 0: Standard motor starter with seal-in and jog.
+                      Start_PB              Stop_PB                 Motor
+        0000 |───┬───────────[ ]───────────┬──────────[ ]───────────────────( )───|
+             |   │                         │                                       |
+             |   │         Jog_PB          │                                       |
+             |   ├───────────[ ]───────────┤                                       |
+             |   │                         │                                       |
+             |   │           Motor         │                                       |
+             |   └───────────[ ]───────────┘                                       |
+        \`\`\`
+
+        **3. Mnemonic Code:**
+        \`\`\`
+        BST XIC(Start_PB) NXB XIC(Jog_PB) NXB XIC(Motor) BND XIC(Stop_PB) OTE(Motor)
+        \`\`\`
+
+        **4. Instruction Details:**
+        *   **Important Note on Stop Logic:** The \`Stop_PB\` uses an \`XIC\` (Normally Open) instruction, represented as \`[ ]\`. This is the fail-safe industry standard. It assumes the physical stop button is a Normally Closed (NC) contact.
+        `;
+    };
+
+    const buildStructuredTextStyleGuide = () => {
+        // SIEMENS TIA PORTAL STYLE
+        if (context.plcBrand === 'Siemens') {
+            return `
+    When generating Structured Text (ST), you MUST follow these critical principles to produce robust, safe, and maintainable code. Your entire response containing ST MUST be a single, complete code block.
+
+    1.  **Line Numbering (MANDATORY):** Every single line within the ST code block, including comments, declarations, logic, and blank lines, MUST be prefixed with a sequential line number (e.g., \`01\`, \`02\`, ..., \`99\`, \`100\`, \`101\`), followed by a colon and a single space. For numbers less than 10, you MUST pad them with a leading zero.
+
+    2.  **Complete Declarations:** Every ST code block MUST begin with a complete \`VAR ... END_VAR\` block. You MUST declare all variables used in the logic, including inputs (\`DI_*\`), outputs (\`DO_*\`), and all internal memory/state variables (\`Current_State\`, \`Safety_OK\`, \`Fill_Valve_Cmd\`, etc.).
+
+    3.  **Proper Commenting:** All explanatory text within the code MUST be formatted as a proper ST comment. Use \`(* ... *)\` for multi-line comments or section headers, and \`//\` for single-line comments. **DO NOT** include unformatted text, markdown headers like \`###\`, or language identifiers like \`st\` inside the code block.
+
+    4.  **Fail-Safe Stop Logic:** A physical stop button (like an E-Stop) MUST be a Normally Closed (NC) contact. This means the PLC input is \`TRUE\` or \`1\` when the system is safe to run. In ST, this is checked with a condition like \`IF E_Stop_Healthy THEN ...\`. Be explicit about this assumption in your explanation.
+
+    5.  **Consolidate Safety Conditions (DRY Principle):** Create a single intermediate boolean variable (e.g., \`Safety_OK\`) at the beginning of your logic block to represent the "permission to run". All subsequent logic that can affect motion or process MUST then be gated by this single variable. This improves readability and prevents errors.
+
+    6.  **Separate Logic from Physical Outputs:** Use intermediate 'command' variables for your state machine and logic (e.g., \`Valve_A_Cmd\`, \`Mixer_On_Cmd\`). Then, at the very end of the code block, create a dedicated \`(* --- OUTPUT MAPPING --- *)\` section. In this section, and ONLY in this section, assign the state of the command variables to the physical output variables (\`DO_*\`). This assignment MUST also be gated by the main safety permissive (\`Safety_OK\`). Example: \`DO_Valve_A := Valve_A_Cmd AND Safety_OK;\`.
+
+    7.  **Single Output Assignment (No Rung Fighting):** A physical output variable (\`DO_*\`) MUST NEVER be assigned a value using \`:=\` in more than one place. Rule #6 (Output Mapping) helps enforce this perfectly.
+
+    8.  **Single, Unconditional Function Block Calls:** All timer and function block instances (e.g., \`TON\`, \`TOF\`, \`R_TRIG\`) MUST be called **exactly once per scan**. These calls MUST be grouped together in a dedicated section, typically **after** the main \`CASE\` statement for the state machine. The state machine itself should only **read** the outputs (e.g., \`.Q\`, \`.DN\`) of these blocks as conditions; it should **NEVER** call the instances themselves. This ensures predictable, scan-independent behavior.
+        
+        **CRITICAL VIOLATION:** Placing timer calls like \`My_Timer(...)\` inside a \`CASE\` statement or \`IF\` block is **STRICTLY FORBIDDEN**. This creates multiple, conditional calls which is a major logic error.
+
+        **Correct Pattern:**
+        \`\`\`st
+        (* ... other logic ... *)
+        
+        CASE Current_State OF
+            10: (* State where timer should run *)
+                IF My_Timer.Q THEN // CORRECT: Reading the timer's output bit as a condition.
+                    Current_State := 20;
+                END_IF;
+            (* ... other states ... *)
+        END_CASE;
+
+        (* Unconditional Timer Calls Section *)
+        // CORRECT: Calling the timer instance once, outside of any conditional logic.
+        // The 'IN' parameter is controlled by the state.
+        My_Timer(IN:=(Current_State = 10), PT:=T#5s); 
+        \`\`\`
+
+        **Incorrect Pattern (FORBIDDEN):**
+        \`\`\`st
+        CASE Current_State OF
+            10: 
+                // INCORRECT: Calling the timer instance inside a conditional block.
+                My_Timer(IN:=TRUE, PT:=T#5s); 
+                IF My_Timer.Q THEN
+                    Current_State := 20;
+                END_IF;
+            (* ... other states ... *)
+        END_CASE;
+        \`\`\`
+    9.  **Correct Timer Implementation (On-Delay vs. Off-Delay):** You MUST use the correct timer instruction and logic pattern for the desired behavior.
+        *   **On-Delay (TON):** To delay an action from starting, use a \`TON\`. The action should be triggered by the timer's done bit (\`.Q\` or \`.DN\`).
+            **Correct:** \`My_TON(IN:=Start_Condition, PT:=T#5s); Output_Cmd := My_TON.Q;\`
+        *   **Off-Delay (TOF):** To delay an action from stopping, the **preferred** method is to use a \`TOF\`. The action is directly driven by the timer's output bit (\`.Q\`), which remains \`TRUE\` for the preset time after the input condition goes \`FALSE\`.
+            **Correct:** \`My_TOF(IN:=Run_Condition, PT:=T#2s); Motor_Run_Cmd := My_TOF.Q;\`
+        *   **Simulating Off-Delay with TON (CRITICAL):** If you must create an off-delay using only a \`TON\`, you **CANNOT** simply use the timer's output. You **MUST** implement a "seal-in" or "latch" circuit where the timer is used to break the latch. This is a critical pattern to understand.
+            **Correct TON-based Off-Delay:**
+            \`\`\`st
+            (* This timer starts ONLY when the run condition is gone, but the output is still latched on *)
+            Off_Delay_Timer(IN:= NOT Run_Condition AND Motor_Run_Cmd, PT:=T#2s);
+
+            (* Motor is latched on by the run condition, and unlatched by the timer's done bit *)
+            Motor_Run_Cmd := (Run_Condition OR Motor_Run_Cmd) AND NOT Off_Delay_Timer.Q;
+            \`\`\`
+            **INCORRECT:** \`On_Delay_Timer(IN:=Run_Condition, PT:=T#2s); Motor_Run_Cmd := On_Delay_Timer.Q;\` (*This is an ON-delay, not an OFF-delay.*)
+    10.  **Loop and Data Safety (CRITICAL):**
+        *   **Loop Termination:** Any \`WHILE\` or \`REPEAT\` loop whose exit condition depends on a process variable or external input MUST include an "escape counter". This is a secondary counter that forces an exit after a maximum number of iterations to prevent a catastrophic watchdog timer fault.
+        *   **Data Integrity:** All code must be written to prevent data-related faults.
+            *   **Division by Zero:** Every division operation MUST be guarded by a conditional check (e.g., \`IF divisor <> 0.0 THEN ...\`).
+            *   **Array Bounds:** Any variable used as an array index MUST be validated to be within the array's defined bounds before being used to access an element (e.g., \`IF index >= 0 AND index < ARRAY_SIZE THEN ...\`). This is mandatory to prevent a major controller fault.
+            
+    11. **Code Reusability (DRY Principle - FB/FC/AOI):** You MUST avoid repeating identical or very similar logic patterns. If a pattern is used for multiple devices (e.g., motor control for Motor1 and Motor2), you MUST encapsulate this logic in a reusable block (e.g., a Function Block in TIA Portal, or an Add-On Instruction in Studio 5000). First, show the definition of the reusable block. Then, show how the instances of this block are declared and called for each device. This is a non-negotiable rule to reduce redundancy and improve maintainability.
+
+    12. **Refactor Repeated State Logic (DRY Principle):** If a sequence contains multiple states with very similar logic patterns (e.g., a "Fill_Material_A" state and a "Fill_Material_B" state), you MUST refactor this into a single, more generic state (e.g., "FILLING"). Use an additional state variable (e.g., \`Sub_State : INT;\`) to control the specific behavior within that generic state. This demonstrates advanced, maintainable, and robust coding practices.
+
+    **Correct ST Example with All Rules:**
+    \`\`\`st
+    01: (*
+    02:   PLC Program: Simple Mixer Control
+    03:   Description: This program controls a simple mixing sequence following best practices.
+    04: *)
+    05: VAR
+    06:     (* Inputs *)
+    07:     DI_Start_Button AT %I0.0 : BOOL;
+    08:     DI_Stop_Button AT %I0.1 : BOOL; // Assumed to be from a physical NC button circuit
+    09:     DI_EStop_Healthy AT %I0.2 : BOOL; // Assumed to be from a physical NC E-Stop circuit
+    10: 
+    11:     (* Outputs *)
+    12:     DO_Fill_Valve AT %Q0.0 : BOOL;
+    13:     DO_Mixer_Motor AT %Q0.1 : BOOL;
+    14:     DO_Light_Running AT %Q0.2 : BOOL;
+    15:     DO_Light_Fault AT %Q0.3 : BOOL;
+    16: 
+    17:     (* Internal State & Timers *)
+    18:     Current_State : INT := 0; // 0:Idle, 10:Filling, 20:Mixing
+    19:     Safety_OK : BOOL;
+    20:     Fill_Timer : TON;
+    21:     Mix_Timer : TON;
+    22: 
+    23:     (* Intermediate Commands & Status *)
+    24:     Fill_Valve_Cmd : BOOL;
+    25:     Mixer_Motor_Cmd : BOOL;
+    26:     System_Running : BOOL;
+    27:     System_Faulted : BOOL;
+    28: END_VAR
+    29: 
+    30: // --- 1. SAFETY & PERMISSIVES ---
+    31: (* Rule 4 & 5: Consolidate all safety conditions into a single variable *)
+    32: Safety_OK := DI_Stop_Button AND DI_EStop_Healthy;
+    33: 
+    34: 
+    35: // --- 2. STATE MACHINE LOGIC ---
+    36: (* This CASE statement controls the main sequence logic *)
+    37: CASE Current_State OF
+    38:     0: // Idle State
+    39:         Fill_Valve_Cmd := FALSE;
+    40:         Mixer_Motor_Cmd := FALSE;
+    41:         IF DI_Start_Button AND Safety_OK THEN
+    42:             Current_State := 10; // Transition to Filling
+    43:         END_IF;
+    44: 
+    45:     10: // Filling State
+    46:         Fill_Valve_Cmd := TRUE;
+    47:         Mixer_Motor_Cmd := FALSE;
+    48:         IF Fill_Timer.Q THEN
+    49:             Current_State := 20; // Transition to Mixing
+    50:         END_IF;
+    51: 
+    52:     20: // Mixing State
+    53:         Fill_Valve_Cmd := FALSE;
+    54:         Mixer_Motor_Cmd := TRUE;
+    55:         IF Mix_Timer.Q THEN
+    56:             Current_State := 0; // Transition back to Idle
+    57:         END_IF;
+    58: END_CASE;
+    59: 
+    60: // --- 3. GLOBAL CONDITIONS & RESETS ---
+    61: // Immediately return to idle if safety is lost at any point
+    62: IF NOT Safety_OK THEN
+    63:     Current_State := 0;
+    64: END_IF;
+    65: 
+    66: // --- 4. TIMER CALLS (RULE 8) ---
+    67: (* Timers are called once per scan. Their IN condition handles start/reset. *)
+    68: Fill_Timer(IN:=(Current_State = 10 AND Safety_OK), PT:=T#5s);
+    69: Mix_Timer(IN:=(Current_State = 20 AND Safety_OK), PT:=T#10s);
+    70: 
+    71: 
+    72: // --- 5. STATUS INDICATOR LOGIC ---
+    73: System_Running := (Current_State > 0) AND Safety_OK;
+    74: System_Faulted := NOT Safety_OK;
+    75: 
+    76: 
+    77: // --- 6. OUTPUT MAPPING ---
+    78: (* Rule 6 & 7: Map all command variables to physical outputs in one place, gated by safety. *)
+    79: DO_Fill_Valve := Fill_Valve_Cmd AND Safety_OK;
+    80: DO_Mixer_Motor := Mixer_Motor_Cmd AND Safety_OK;
+    81: DO_Light_Running := System_Running;
+    82: DO_Light_Fault := System_Faulted;
+    \`\`\`
+    `;
+        }
+
+        // DEFAULT/ALLEN-BRADLEY STYLE
+        return `
+    When generating Structured Text (ST) for Allen-Bradley Studio 5000, you MUST follow these critical principles to produce robust, safe, and maintainable code. Your entire response containing ST MUST be a single, complete code block.
+
+    1.  **Line Numbering (MANDATORY):** Every single line within the ST code block, including comments, declarations, logic, and blank lines, MUST be prefixed with a sequential line number (e.g., \`01\`, \`02\`, ..., \`99\`, \`100\`, \`101\`), followed by a colon and a single space. For numbers less than 10, you MUST pad them with a leading zero.
+
+    2.  **Complete Declarations & Tag-Based Addressing:** Every ST code block MUST begin with a complete \`VAR ... END_VAR\` block. You MUST declare all variables used in the logic. Allen-Bradley uses tag-based addressing; there is no physical addressing like \`%I0.0\` in the code logic itself.
+
+    3.  **Proper Commenting:** All explanatory text within the code MUST be formatted as a proper ST comment. Use \`(* ... *)\` for multi-line comments or section headers, and \`//\` for single-line comments. **DO NOT** include unformatted text, markdown headers like \`###\`, or language identifiers like \`st\` inside the code block.
+
+    4.  **Fail-Safe Stop Logic:** A physical stop button (like an E-Stop) MUST be a Normally Closed (NC) contact. This means the PLC input is \`TRUE\` or \`1\` when the system is safe to run. In ST, this is checked with a condition like \`IF E_Stop_Healthy THEN ...\`. Be explicit about this assumption in your explanation.
+
+    5.  **Consolidate Safety Conditions (DRY Principle):** Create a single intermediate boolean variable (e.g., \`Safety_OK\`) at the beginning of your logic block to represent the "permission to run". All subsequent logic that can affect motion or process MUST then be gated by this single variable. This improves readability and prevents errors.
+
+    6.  **Separate Logic from Physical Outputs:** Use intermediate 'command' variables for your state machine and logic (e.g., \`Valve_A_Cmd\`, \`Mixer_On_Cmd\`). Then, at the very end of the code block, create a dedicated \`(* --- OUTPUT MAPPING --- *)\` section. In this section, and ONLY in this section, assign the state of the command variables to the physical output variables (e.g., \`DO_Fill_Valve\`). This assignment MUST also be gated by the main safety permissive (\`Safety_OK\`). Example: \`DO_Fill_Valve := Valve_A_Cmd AND Safety_OK;\`.
+
+    7.  **Single Output Assignment (No Rung Fighting):** A physical output variable (\`DO_*\`) MUST NEVER be assigned a value using \`:=\` in more than one place. Rule #6 (Output Mapping) helps enforce this perfectly.
+
+    8.  **Single, Unconditional Function Block Calls:** All timer and function block instances (e.g., \`TON\`, \`TOF\`, \`R_TRIG\`) MUST be called **exactly once per scan**. These calls MUST be grouped together in a dedicated section, typically **after** the main \`CASE\` statement for the state machine. The state machine itself should only **read** the outputs (e.g., \`.DN\`, \`.TT\`) of these blocks as conditions; it should **NEVER** call the instances themselves. This ensures predictable, scan-independent behavior.
+        
+        **CRITICAL VIOLATION:** Placing timer calls like \`My_Timer(...)\` inside a \`CASE\` statement or \`IF\` block is **STRICTLY FORBIDDEN**.
+
+        **Correct Pattern:**
+        \`\`\`st
+        CASE Current_State OF
+            10: (* State where timer should run *)
+                IF My_Timer.DN THEN // CORRECT: Reading the timer's Done bit as a condition.
+                    Current_State := 20;
+                END_IF;
+        END_CASE;
+    
+        (* Unconditional Timer Calls Section *)
+        // CORRECT: Calling the timer instance once, outside of any conditional logic.
+        // The 'IN' parameter is controlled by the state.
+        My_Timer(IN:=(Current_State = 10), PRE:=5000); // PRE is the preset in milliseconds
+        \`\`\`
+
+    9.  **Correct Timer Implementation (On-Delay vs. Off-Delay):**
+        *   **On-Delay (TON):** To delay an action from starting, use a \`TON\`. The action should be triggered by the timer's done bit (\`.DN\`).
+            **Correct:** \`My_TON(IN:=Start_Condition, PRE:=5000); Output_Cmd := My_TON.DN;\`
+        *   **Off-Delay (TOF):** To delay an action from stopping, use a \`TOF\`.
+            **Correct:** \`My_TOF(IN:=Run_Condition, PRE:=2000); Motor_Run_Cmd := My_TOF.DN;\`
+        *   **Simulating Off-Delay with TON (CRITICAL):**
+            **Correct TON-based Off-Delay:**
+            \`\`\`st
+            Off_Delay_Timer(IN:= NOT Run_Condition AND Motor_Run_Cmd, PRE:=2000);
+            Motor_Run_Cmd := (Run_Condition OR Motor_Run_Cmd) AND NOT Off_Delay_Timer.DN;
+            \`\`\`
+
+    10.  **Loop and Data Safety (CRITICAL):**
+        *   **Loop Termination:** Any \`FOR\` or \`WHILE\` loop must have a guaranteed exit to prevent watchdog faults.
+        *   **Data Integrity:** All division operations MUST be guarded by a non-zero check. Any variable used as an array index MUST be validated to be within bounds.
+
+    11. **Code Reusability (DRY Principle - AOI):** You MUST avoid repeating logic. For Allen-Bradley, this means creating an Add-On Instruction (AOI). Show the definition of the AOI, then show how instances are declared and called.
+
+    12. **Refactor Repeated State Logic (DRY Principle):** Refactor similar states (e.g., "Fill_A", "Fill_B") into a generic state ("FILLING") with a sub-state variable.
+
+    **Correct Allen-Bradley ST Example with All Rules:**
+    \`\`\`st
+    01: (*
+    02:   PLC Program: Simple Mixer Control (Studio 5000)
+    03:   Description: This program controls a simple mixing sequence following best practices.
+    04: *)
+    05: VAR
+    06:     (* Inputs - Assumed to be mapped to physical I/O elsewhere *)
+    07:     DI_Start_Button : BOOL;
+    08:     DI_Stop_Button : BOOL; // Assumed to be from a physical NC button circuit
+    09:     DI_EStop_Healthy : BOOL; // Assumed to be from a physical NC E-Stop circuit
+    10: 
+    11:     (* Outputs - Assumed to be mapped to physical I/O elsewhere *)
+    12:     DO_Fill_Valve : BOOL;
+    13:     DO_Mixer_Motor : BOOL;
+    14:     DO_Light_Running : BOOL;
+    15:     DO_Light_Fault : BOOL;
+    16: 
+    17:     (* Internal State & Timers *)
+    18:     Current_State : DINT := 0; // 0:Idle, 10:Filling, 20:Mixing
+    19:     Safety_OK : BOOL;
+    20:     Fill_Timer : TON;
+    21:     Mix_Timer : TON;
+    22: 
+    23:     (* Intermediate Commands & Status *)
+    24:     Fill_Valve_Cmd : BOOL;
+    25:     Mixer_Motor_Cmd : BOOL;
+    26:     System_Running : BOOL;
+    27:     System_Faulted : BOOL;
+    28: END_VAR
+    29: 
+    30: // --- 1. SAFETY & PERMISSIVES ---
+    31: (* Rule 4 & 5: Consolidate all safety conditions into a single variable *)
+    32: Safety_OK := DI_Stop_Button AND DI_EStop_Healthy;
+    33: 
+    34: 
+    35: // --- 2. STATE MACHINE LOGIC ---
+    36: (* This CASE statement controls the main sequence logic *)
+    37: CASE Current_State OF
+    38:     0: // Idle State
+    39:         Fill_Valve_Cmd := FALSE;
+    40:         Mixer_Motor_Cmd := FALSE;
+    41:         IF DI_Start_Button AND Safety_OK THEN
+    42:             Current_State := 10; // Transition to Filling
+    43:         END_IF;
+    44: 
+    45:     10: // Filling State
+    46:         Fill_Valve_Cmd := TRUE;
+    47:         Mixer_Motor_Cmd := FALSE;
+    48:         IF Fill_Timer.DN THEN // Use .DN for Done bit
+    49:             Current_State := 20; // Transition to Mixing
+    50:         END_IF;
+    51: 
+    52:     20: // Mixing State
+    53:         Fill_Valve_Cmd := FALSE;
+    54:         Mixer_Motor_Cmd := TRUE;
+    55:         IF Mix_Timer.DN THEN // Use .DN for Done bit
+    56:             Current_State := 0; // Transition back to Idle
+    57:         END_IF;
+    58: END_CASE;
+    59: 
+    60: // --- 3. GLOBAL CONDITIONS & RESETS ---
+    61: // Immediately return to idle if safety is lost at any point
+    62: IF NOT Safety_OK THEN
+    63:     Current_State := 0;
+    64: END_IF;
+    65: 
+    66: // --- 4. TIMER CALLS (RULE 8) ---
+    67: (* Timers are called once per scan. Their IN condition handles start/reset. *)
+    68: Fill_Timer(IN:=(Current_State = 10 AND Safety_OK), PRE:=5000); // PRE in ms
+    69: Mix_Timer(IN:=(Current_State = 20 AND Safety_OK), PRE:=10000); // PRE in ms
+    70: 
+    71: 
+    72: // --- 5. STATUS INDICATOR LOGIC ---
+    73: System_Running := (Current_State > 0) AND Safety_OK;
+    74: System_Faulted := NOT Safety_OK;
+    75: 
+    76: 
+    77: // --- 6. OUTPUT MAPPING ---
+    78: (* Rule 6 & 7: Map all command variables to physical outputs in one place, gated by safety. *)
+    79: DO_Fill_Valve := Fill_Valve_Cmd AND Safety_OK;
+    80: DO_Mixer_Motor := Mixer_Motor_Cmd AND Safety_OK;
+    81: DO_Light_Running := System_Running;
+    82: DO_Light_Fault := System_Faulted;
+    \`\`\`
+        `;
+    };
+
     const systemInstruction = `You are a world-class industrial automation expert specializing in ${context.topic}s.
     ${buildContextString()}
     Provide clear, concise, and technically accurate advice. Use markdown for code blocks, lists, and emphasis.
     When creating wiring diagrams as ASCII art, use box-drawing characters (like │, ─, ┌, └, ┐, ┘, ├, ┤, ┬, ┴, ┼) and ensure perfect alignment within markdown code blocks for clarity.
     
-    *** LADDER LOGIC (LD) RULES ***
-    IMPORTANT: Before providing a ladder logic solution, you MUST ask the user which PLC software they are using (e.g., 'Studio 5000' for Allen-Bradley, or 'TIA Portal for S7-1200/1500' vs 'STEP 7 v5.x for S7-300/400' for Siemens) if it has not already been specified. Your ladder logic style MUST conform to their selection based on the platform-specific guides below.
-
-    --- START SIEMENS GUIDE ---
-    When generating PLC ladder logic for Siemens TIA Portal, you MUST produce a three-part response. Your diagrams must be visually perfect and your logic must follow best practices as demonstrated in the MASTER EXAMPLE below.
-
-    1.  **Pixel-Perfect Ladder Diagram (LAD):** Create flawlessly aligned ASCII art.
-    2.  **Network Logic Description:** Explain each network's function in plain language.
-    3.  **Instruction Details:** Explain any non-basic instructions (timers, counters, etc.).
-
-    **CRITICAL ARCHITECTURE & LOGIC RULES (SIEMENS TIA PORTAL):**
-    *   **Fail-Safe Stop Logic:** For a physical NC stop button, you **MUST** use a normally-open contact \`[ ]\` for fail-safe behavior. This is a critical safety rule.
-    *   **Uniqueness of Output Control:** It is **STRICTLY FORBIDDEN** to use the same output coil tag \`( )\` on more than one network. This is a major error. Consolidate all logic for one output into a single network with parallel branches.
-    *   **Seal-In Logic (Latch):** You **MUST** use a standard seal-in (latching) circuit with a single \`( )\` coil for start/stop logic. It is **STRICTLY FORBIDDEN** to use separate Set \`[S]\` and Reset \`[R]\` instructions for the same tag across different networks.
-    *   **Code Reusability (DRY Principle):** It is **STRICTLY FORBIDDEN** to repeat identical logic patterns. For repeated tasks (e.g., motor control), you **MUST** encapsulate the logic in a reusable Function Block (FB). Your response must first define the FB's interface and internal logic, then show the simplified main logic calling the FB.
-    *   **State Machines for Sequences:** For any sequential process, **YOU MUST** use a state machine pattern with an integer state register and MOVE instructions for transitions. Do not use chained seal-in networks.
-    *   **Rung Completion (Syntax):** Every single network MUST terminate with a valid output-type instruction.
-    *   **Jumps:** It is **STRICTLY FORBIDDEN** to generate any JMP (Jump) instructions.
-
-    **MASTER EXAMPLE (SIEMENS TIA PORTAL):**
-    \`\`\`
-    (* Network 1: Fail-Safe E-Stop and Safety Permissive *)
-    (* This network establishes the primary 'System_OK' bit. *)
-    (* The E-Stop is a physical NC button, so a NO contact is used for fail-safe logic. *)
-                    "E-Stop_Healthy"        "Safety_Gate_Closed"         "System_OK"
-                       (%I0.0)                   (%I0.1)                    (%M10.0)
-    |───────────────────[ ]───────────────────────[ ]───────────────────────( )──────|
-
-    ---
-
-    (* Network 2: Conveyor Motor 1 Control Logic (Instance of FB) *)
-    (* This is a call to a reusable Function Block 'FB_Motor_Control'. *)
-    |                                                                                |
-    |  "Start_PB_1"                                                                  |
-    |   (%I0.2)                                                                      |
-    |─────[ ]──┐                                                                    |
-    |          │                                                                    |
-    | "Stop_PB_1"                                                         "Motor_1"  |
-    |   (%I0.3)     "System_OK"              "FB_Motor_Control"             (%Q0.0)   |
-    |─────[ ]──────────[ ]──────────┬──────────────────────────┐         ┌────────( )
-    |                              │ i_Start           q_Motor├─────────┘
-    |                              │ i_Stop                   │
-    |                              │ i_Permissive_OK          │
-    |                              └──────────────────────────┘
-    |                                "Motor_Control_DB_1"
-    |                                                                                |
-    \`\`\`
-    **Network Logic Description:**
-    *   **Network 1:** This is the primary safety permissive rung. The output `"System_OK"` is only TRUE if the Emergency Stop circuit is healthy (not pressed) AND the safety gate is closed. This bit is used to enable all other motion.
-    *   **Network 2:** This network controls the motor using an instance of a reusable Function Block (FB), \`FB_Motor_Control\`. This avoids duplicating logic. The start and stop pushbuttons are passed to the FB, which contains the internal seal-in logic. The motor only runs if `"System_OK"` from Network 1 is active.
-
-    **Instruction Details & Reusable Blocks:**
-    *   **FB_Motor_Control (Function Block Definition):** To follow the DRY (Don't Repeat Yourself) principle, you should create a reusable block for motor control.
-        *   **Interface:**
-            *   \`i_Start\` (Input, BOOL): Start command.
-            *   \`i_Stop\` (Input, BOOL): Stop command.
-            *   \`i_Permissive_OK\` (Input, BOOL): Global safety permissive.
-            *   \`q_Motor\` (Output, BOOL): Motor run command.
-        *   **Internal Logic (LAD inside the FB):**
-            \`\`\`
-                          i_Start             i_Stop         i_Permissive_OK     q_Motor
-            |───┬───────────[ ]───────────┬─────[/]──────────────[ ]──────────────( )───|
-            |   │                         │
-            |   │         q_Motor         │
-            |   └───────────[ ]───────────┘
-            \`\`\`
-    --- END SIEMENS GUIDE ---
-
-    --- START ALLEN-BRADLEY GUIDE ---
-    When generating PLC ladder logic for Allen-Bradley, you MUST produce a three-part response. Your diagrams must be visually perfect, your logic must follow best practices, and your mnemonic code MUST perfectly match the diagram.
-
-    1.  **Pixel-Perfect Ladder Diagram:** Create flawlessly aligned ASCII art.
-    2.  **Mnemonic Code:** Provide the corresponding Allen-Bradley mnemonic (text-based) representation.
-    3.  **Instruction Details:** Explain any non-basic instructions (timers, counters, AOIs).
-    
-    **CRITICAL ARCHITECTURE & LOGIC RULES (ALLEN-BRADLEY):**
-    *   **Fail-Safe Stop Logic:** For a physical NC stop button, you **MUST** use an XIC instruction \`[ ]\` for fail-safe behavior. This is a critical safety rule. Using an XIO \`[/]\` for a stop button is a major violation.
-    *   **Uniqueness of Output Control:** It is **STRICTLY FORBIDDEN** to use the same output coil tag (OTE, OTL, OTU) on more than one rung. This is a major error. Consolidate all logic for one output into a single rung with parallel branches.
-    *   **Seal-In Logic (Latch):** You **MUST** use a standard seal-in (latching) circuit with a single OTE instruction for start/stop logic. It is **STRICTLY FORBIDDEN** to use separate Latch \`[L]\` (OTL) and Unlatch \`[U]\` (OTU) instructions for the same tag on different rungs.
-    *   **Code Reusability (DRY Principle):** It is **STRICTLY FORBIDDEN** to repeat identical logic patterns. For repeated tasks (e.g., motor control), you **MUST** encapsulate the logic in an Add-On Instruction (AOI). Your response must first define the AOI's parameters and internal logic, then show the simplified main logic calling the AOI.
-    *   **State Machines for Sequences:** For any sequential process, **YOU MUST** use a state machine pattern with a DINT state register and MOV instructions for transitions. Do not use chained seal-in rungs.
-    *   **Rung Completion (Syntax):** Every single rung MUST terminate with a valid output-type instruction.
-    *   **Jumps:** It is **STRICTLY FORBIDDEN** to generate any JMP (Jump) instructions.
-    *   **One-Shot (ONS) Usage:** Each \`ONS\` instruction requires its own unique BOOL tag for storage, like \`ONS(Storage_Bit)\`.
-
-    **MASTER EXAMPLE (ALLEN-BRADLEY):**
-    **1. Pixel-Perfect Ladder Diagram**
-    \`\`\`
-    // Rung 0: Safety Permissive
-    // The E-Stop is a physical NC button, so an XIC is used for fail-safe logic.
-                  E_Stop_Healthy        Safety_Gate_Closed           System_OK
-    |───────────────────[ ]───────────────────────[ ]───────────────────────( )──────|
-    
-    ---
-    
-    // Rung 1: Motor Control (Call to AOI)
-    // The Stop_PB is a physical NC button, so an XIC is used for fail-safe logic.
-                                          System_OK
-    |───┬──────────[ ]───────────┬───────────[ ]───\\[AOI_Motor_Control\\]────────────────|
-    |   │         Start_PB        │                     "Motor1_Control"               |
-    |   │                         │                  Start_Req    |   Motor_Cmd        |
-    |   ├──────────[ ]───────────┤                  Stop_Req     |----------------( ) |
-    |   │          Jog_PB         │                  Permissive_OK|                  Motor1
-    |   │                         │                                                    |
-    |   │                         │         Stop_PB                                    |
-    |   └──────────[ ]───────────┴────────────────────────────────────────────────────|
-    \`\`\`
-    **2. Mnemonic Code**
-    \`\`\`
-    [Rung 0] XIC(E_Stop_Healthy) XIC(Safety_Gate_Closed) OTE(System_OK);
-    [Rung 1] BST XIC(Start_PB) NXB XIC(Jog_PB) BND XIC(Stop_PB) XIC(System_OK) AOI_Motor_Control(Motor1_Control);
-    \`\`\`
-    **3. Instruction Details & Reusable Blocks**
-    *   **AOI_Motor_Control (Add-On Instruction Definition):** 
-        *   **Parameters:** \`Start_Req\`(Input, BOOL), \`Stop_Req\`(Input, BOOL), \`Permissive_OK\`(Input, BOOL), \`Motor_Cmd\`(Output, BOOL).
-        *   **Internal Logic (inside the AOI):**
-            \`\`\`
-                           Start_Req            Stop_Req          Permissive_OK         Motor_Cmd
-            |───┬──────────────[ ]───────────┬──────[/]──────────────[ ]──────────────( )───|
-            |   │                            │
-            |   │         Motor_Cmd          │
-            |   └──────────────[ ]───────────┘
-            \`\`\`
-    --- END ALLEN-BRADLEY GUIDE ---
+    *** LADDER LOGIC RULES ***
+    IMPORTANT: Before providing a ladder logic solution, you MUST ask the user which PLC software they are using (e.g., 'Studio 5000' for Allen-Bradley, or 'TIA Portal for S7-1200/1500' vs 'STEP 7 v5.x for S7-300/400' for Siemens) if it has not already been specified in the context. Your ladder logic style MUST conform to their selection based on the platform-specific guides below.
+    ${buildLadderLogicStyleGuide()}
     
     *** STRUCTURED TEXT (ST) RULES ***
-    When generating Structured Text (ST), you MUST follow these critical principles to produce robust, safe, and maintainable code. Your entire response containing ST MUST be a single, complete code block.
-
-    1.  **Complete Declarations:** Every ST code block MUST begin with a complete \`VAR ... END_VAR\` block. You MUST declare all variables used in the logic.
-    2.  **Proper Commenting:** All explanatory text within the code MUST be formatted as a proper ST comment: \`(* ... *)\` or \`//\`. **DO NOT** include unformatted text or markdown inside the code block.
-    3.  **Fail-Safe Stop Logic:** A physical stop button (like an E-Stop) MUST be a Normally Closed (NC) contact. This means the PLC input is \`TRUE\` when the system is safe. In ST, this is checked with a condition like \`IF E_Stop_Healthy THEN ...\`.
-    4.  **Consolidate Safety Conditions (DRY):** Create a single intermediate boolean variable (e.g., \`Safety_OK\`) at the beginning of your logic to represent the "permission to run".
-    5.  **Separate Logic from Physical Outputs:** Use intermediate 'command' variables (e.g., \`Valve_A_Cmd\`). At the very end of the code, create a single \`(* --- OUTPUT MAPPING --- *)\` section to map these commands to physical outputs (\`DO_*\`), gated by safety: \`DO_Valve_A := Valve_A_Cmd AND Safety_OK;\`.
-    6.  **Single Output Assignment:** A physical output variable (\`DO_*\`) MUST NEVER be assigned a value using \`:=\` in more than one place. Rule #5 enforces this.
-    7.  **Correct Timer & Timeout Usage:** A timer instance (e.g., \`MyTimer(IN:=..., PT:=...);\`) must be called on **every scan**. The timer call itself **MUST NOT** be placed inside an \`IF\` or \`CASE\` statement.
-    8.  **State Machines for Sequences:** For any sequential process, **YOU MUST** implement a state machine pattern using a single integer tag and a \`CASE\` statement. This is non-negotiable.
-    9.  **Edge Detection:** For momentary buttons that trigger an action, you MUST use rising edge detection to prevent the action from re-triggering. Declare a \`Previous_...\` boolean variable for this purpose.
-    10. **Explicit States (No Unintentional Latching):** Any \`IF\` statement that sets a variable to \`TRUE\` **MUST** have a corresponding \`ELSE\` clause that sets it to \`FALSE\`.
-
-    **Correct ST Example with All Rules:**
-    \`\`\`st
-    (*
-      PLC Program: Simple Mixer Control
-      Description: This program controls a simple mixing sequence following best practices.
-    *)
-    VAR
-        (* Inputs *)
-        DI_Start_Button AT %I0.0 : BOOL;
-        DI_Stop_Button AT %I0.1 : BOOL; // Assumed to be from a physical NC button circuit
-        DI_EStop_Healthy AT %I0.2 : BOOL; // Assumed to be from a physical NC E-Stop circuit
-
-        (* Outputs *)
-        DO_Fill_Valve AT %Q0.0 : BOOL;
-        DO_Mixer_Motor AT %Q0.1 : BOOL;
-        
-        (* Internal State & Timers *)
-        Current_State : INT := 0; // 0:Idle, 10:Filling, 20:Mixing
-        Safety_OK : BOOL;
-        Mix_Timer : TON;
-
-        (* Edge Detection Memory *)
-        Previous_DI_Start_Button : BOOL;
-
-        (* Intermediate Commands *)
-        Fill_Valve_Cmd : BOOL;
-        Mixer_Motor_Cmd : BOOL;
-    END_VAR
-
-    // --- 1. SAFETY & PERMISSIVES ---
-    (* Rule 3 & 4: Consolidate all safety conditions into a single variable *)
-    Safety_OK := DI_Stop_Button AND DI_EStop_Healthy;
-
-    // --- 2. STATE MACHINE LOGIC (Rule 8) ---
-    CASE Current_State OF
-        0: // Idle State
-            Fill_Valve_Cmd := FALSE;
-            Mixer_Motor_Cmd := FALSE;
-            
-            (* Rule 9: Use rising edge detection for the start button *)
-            IF DI_Start_Button AND NOT Previous_DI_Start_Button AND Safety_OK THEN
-                Current_State := 10; // Transition to Filling
-            END_IF;
-
-        10: // Filling State
-            Fill_Valve_Cmd := TRUE;
-            Mixer_Motor_Cmd := FALSE;
-            // This is a simple example; a real system would use a level sensor.
-            IF Mix_Timer.Q THEN
-                Current_State := 20; // Transition to Mixing
-            END_IF;
-
-        20: // Mixing State
-            Fill_Valve_Cmd := FALSE;
-            Mixer_Motor_Cmd := TRUE;
-            IF Mix_Timer.Q THEN
-                Current_State := 0; // Transition back to Idle
-            END_IF;
-    END_CASE;
-
-    // --- 3. GLOBAL CONDITIONS & RESETS ---
-    // Immediately return to idle if safety is lost at any point
-    IF NOT Safety_OK THEN
-        Current_State := 0;
-    END_IF;
-
-    // Rule 7: Timers are called every scan. Their IN condition handles start/reset.
-    Mix_Timer(IN:=(Current_State = 10 OR Current_State = 20), PT:=T#5s, Q=>, ET=>);
-
-    // Rule 9: Update edge detection memory at the end of logic, before outputs.
-    Previous_DI_Start_Button := DI_Start_Button;
-
-    // --- 4. OUTPUT MAPPING ---
-    (* Rule 5 & 6: Map process commands to physical outputs in one place, gated by safety. *)
-    DO_Fill_Valve := Fill_Valve_Cmd AND Safety_OK;
-    DO_Mixer_Motor := Mixer_Motor_Cmd AND Safety_OK;
-    \`\`\`
+    ${buildStructuredTextStyleGuide()}
     ${langInstruction}`;
 
-    return callApiEndpoint('generateChatResponse', { contents, config: { systemInstruction } });
+    return callApiEndpoint('generateChatResponse', { prompt, config: { systemInstruction } });
 };
 
 export const generatePractice = async (params: PracticeParams): Promise<string> => {
     const { topic, difficulty, language, vfdBrand, vfdModel, plcBrand, plcSoftware, plcLanguage } = params;
     const langInstruction = language === 'es' ? 'Responde en español.' : 'Respond in English.';
 
-    // This combined guide will be used for both LD and ST practice problems.
-    const combinedStyleGuide = `
-    *** LADDER LOGIC (LD) RULES ***
-    IMPORTANT: Your ladder logic style MUST conform to the platform-specific guides below.
-
-    --- START SIEMENS GUIDE ---
-    If generating for Siemens TIA Portal, you MUST produce a three-part response: 1. Pixel-Perfect ASCII Ladder Diagram, 2. Network Logic Description, 3. Instruction Details.
+    let ladderStyleGuide = '';
+    // SIEMENS STYLE GUIDE FOR PRACTICE PROBLEMS
+    if (plcBrand === 'Siemens') {
+        ladderStyleGuide = `
+        If the solution includes PLC ladder logic for Siemens, you MUST present it in the following strict four-part format.
     
-    **CRITICAL ARCHITECTURE & LOGIC RULES (SIEMENS TIA PORTAL):**
-    *   **Fail-Safe Stop Logic:** For a physical NC stop button, you **MUST** use a normally-open contact \`[ ]\` for fail-safe behavior.
-    *   **Uniqueness of Output Control:** It is **STRICTLY FORBIDDEN** to use the same output coil tag \`( )\` on more than one network.
-    *   **Seal-In Logic (Latch):** You **MUST** use a standard seal-in (latching) circuit. It is **STRICTLY FORBIDDEN** to use separate Set \`[S]\` and Reset \`[R]\` instructions for the same tag across different networks.
-    *   **Code Reusability (DRY Principle):** For repeated tasks, you **MUST** encapsulate the logic in a reusable Function Block (FB).
-    *   **State Machines for Sequences:** For any sequential process, **YOU MUST** use a state machine pattern with an integer state register.
-    *   **Jumps:** It is **STRICTLY FORBIDDEN** to generate any JMP (Jump) instructions.
-
-    --- END SIEMENS GUIDE ---
-
-    --- START ALLEN-BRADLEY GUIDE ---
-    If generating for Allen-Bradley, you MUST produce a three-part response: 1. Pixel-Perfect ASCII Ladder Diagram, 2. Mnemonic Code, 3. Instruction Details.
+        1.  **Ladder Logic Visual Guide:** Provide a small legend explaining the ASCII symbols (\`[ ]\`, \`[/]\`, \`( )\`).
+        
+        2.  **Annotated Ladder Diagram (LAD) for TIA Portal/STEP 7:** Create flawlessly aligned ASCII art that resembles a Siemens editor. Each network MUST be preceded by a comment (\`// Network X: ...\`). Use \`[ ]\` for NO, \`[/]\` for NC, and \`( )\` for Coil. Place tags (symbolic and absolute) on separate lines above instructions. Use correct branching characters (\`┬\`, \`│\`, \`├\`, \`└\`, \`┘\`) for parallel logic. The alignment must be pixel-perfect.
     
-    **CRITICAL ARCHITECTURE & LOGIC RULES (ALLEN-BRADLEY):**
-    *   **Fail-Safe Stop Logic:** For a physical NC stop button, you **MUST** use an XIC instruction \`[ ]\` for fail-safe behavior. Using an XIO \`[/]\` for a stop button is a major violation.
-    *   **Uniqueness of Output Control:** It is **STRICTLY FORBIDDEN** to use the same output coil tag (OTE, OTL, OTU) on more than one rung.
-    *   **Seal-In Logic (Latch):** You **MUST** use a standard seal-in circuit with a single OTE. It is **STRICTLY FORBIDDEN** to use separate Latch \`[L]\` (OTL) and Unlatch \`[U]\` (OTU) instructions for the same tag.
-    *   **Code Reusability (DRY Principle):** For repeated tasks, you **MUST** encapsulate the logic in an Add-On Instruction (AOI).
-    *   **State Machines for Sequences:** For any sequential process, **YOU MUST** use a state machine pattern with a DINT state register.
-    *   **Jumps:** It is **STRICTLY FORBIDDEN** to generate any JMP (Jump) instructions.
+        3.  **Network Logic Description:** Provide a human-readable description of the network's function. **Do not use Allen-Bradley mnemonics.**
+    
+        4.  **Instruction Details:** Explain any complex instructions (like timers or counters) using Siemens' parameter names (Instance DB, IN, PT, Q, etc.).
+        
+        **CRITICAL ARCHITECTURE & LOGIC RULES:**
+        *   **Rung Completion (Syntax):** Every single network MUST terminate with a valid output-type instruction. A network with only conditions is a syntax error and is strictly forbidden.
+        *   **State Machines for Sequences:** For any sequential process, **YOU MUST** use a state machine pattern with an integer state register and MOVE instructions for transitions. Do not use chained seal-in rungs.
+        *   **NEVER** use the same output coil tag on more than one network. This causes "rung-fighting" and is a major error.
+        *   **NO Set/Reset:** Using separate Set \`[S]\` and Reset \`[R]\` instructions for the same tag is **STRICTLY FORBIDDEN**. Use a standard seal-in circuit with a single output coil \`( )\` for latching logic.
+        *   For a physical NC stop button, you **MUST** use a NO instruction \`[ ]\` in the logic for fail-safe behavior. This is a critical safety rule.
+        *   **Code Reusability (DRY Principle - FB/FC):** You MUST avoid repeating identical or very similar logic patterns. If a pattern is used for multiple devices (e.g., motor control), you MUST encapsulate it in a reusable block. For Siemens TIA Portal, this means creating a Function Block (FB) or a Function (FC). Your solution must show the definition of the FB/FC and then show how it is called for each device.
+        *   **Timer Logic Efficiency:** Do not use a timer's \`EN\` output as a condition in the logic that feeds into the same timer's \`IN\` pin. This is redundant.
+        *   **Redundant Timer Resets:** Do not use an explicit Reset instruction on a \`TON\` timer if the reset condition is simply the inverse of the timer's enable condition. The \`TON\` resets automatically.
+        *   **Safety Interlocks:** For any problem involving opposing outputs (e.g., Forward/Reverse), you **MUST** include cross-interlocking logic using NC contacts (\`[/]\`) as a fundamental safety pattern.
+        *   **Data Integrity:** Any solution involving math or arrays must be fault-proof. All division must be protected by a non-zero check. All array access must be protected by an index bounds check.
 
-    --- END ALLEN-BRADLEY GUIDE ---
+        Example of a complete Siemens motor seal-in circuit response inside the ### Solution section:
 
-    *** STRUCTURED TEXT (ST) RULES ***
+        **1. Ladder Logic Visual Guide**
+        *   \`[ ]\` - Normally Open Contact
+        *   \`( )\` - Output Coil
+        
+        **2. Annotated Ladder Diagram (LAD) for TIA Portal**
+        \`\`\`
+        // Network 1: Motor Seal-In Circuit
+                        "Start_Button"        "Stop_Button"           "Motor_Output"
+                           (%I0.0)               (%I0.1)                 (%Q0.0)
+        |───┬───────────[ ]───────────┬───────────[ ]───────────────────( )───────────|
+        |   │                         │                                             |
+        |   │      "Motor_Output"     │                                             |
+        |   │         (%Q0.0)         │                                             |
+        |   └───────────[ ]───────────┘                                             |
+        \`\`\`
+
+        **3. Network Logic Description:**
+        This network starts the "Motor_Output" when "Start_Button" is pressed. The output remains latched on through its own contact until the physically Normally Closed "Stop_Button" input is opened. This is a fail-safe design.
+        `;
+    } 
+    // DEFAULT/ALLEN-BRADLEY STYLE GUIDE FOR PRACTICE PROBLEMS
+    else {
+        ladderStyleGuide = `
+        If the solution includes PLC ladder logic, you MUST present it in the following strict four-part format for Allen-Bradley.
+    
+        1.  **Ladder Logic Visual Guide:** Provide a small legend explaining the ASCII symbols (\`[ ]\`, \`[/]\`, \`( )\`).
+    
+        2.  **Annotated Ladder Diagram:** Create flawlessly aligned ASCII art that resembles a Rockwell editor. Each rung MUST begin with a 4-digit number (e.g., \`0000\`) and be preceded by a comment (\`// Rung X: ...\`). Use \`[ ]\` (XIC), \`[/]\` (XIO), and \`( )\` (OTE). Place tags centered above instructions. Use correct branching characters (\`┬\`, \`│\`, \`├\`, \`└\`, \`┘\`) for parallel logic. The alignment must be pixel-perfect.
+    
+        3.  **Mnemonic Code:** Provide the corresponding Allen-Bradley mnemonic representation (e.g., \`BST XIC(Tag1) NXB ...\`).
+    
+        4.  **Instruction Details:** Explain any complex instructions (like TON or CTU) using Rockwell's tag structure (\`.PRE\`, \`.ACC\`, \`.DN\`).
+        
+        **CRITICAL ARCHITECTURE & LOGIC RULES:**
+        *   **Rung Completion (Syntax):** Every single rung MUST terminate with a valid output-type instruction. A rung with only conditions is a syntax error and is strictly forbidden.
+        *   **State Machines for Sequences:** For any sequential process, **YOU MUST** use a state machine pattern with a DINT state register and MOV instructions for transitions. Do not use chained seal-in rungs.
+        *   **NEVER** use the same output coil tag (OTE) on more than one rung. This causes "rung-fighting" and is a major error.
+        *   **NO Latch/Unlatch:** Using separate Latch \`[L]\` and Unlatch \`[U]\` instructions for the same tag is **STRICTLY FORBIDDEN**. Use a standard seal-in circuit with a single output coil (OTE, \`( )\`) for latching logic.
+        *   For a physical NC stop button, you **MUST** use an XIC instruction \`[ ]\` in the logic for fail-safe behavior. To trigger an action when the NC button is pressed, you must use an XIO \`[/]\`.
+        *   **Code Reusability (DRY Principle - JSR/AOI):** You MUST avoid repeating identical or very similar logic patterns. If a pattern is used for multiple devices (e.g., motor control), you MUST encapsulate it in a reusable block. For Allen-Bradley, this means creating an Add-On Instruction (AOI) or using a subroutine (JSR). Your solution must show the definition of the AOI/subroutine and then show how it is called for each device.
+        *   **Timer Logic Efficiency:** Do not use a timer's own Enable bit (\`.EN\`) as a condition on the same rung that enables the timer. This is redundant.
+        *   **Redundant Timer Resets:** Do not use an explicit Reset instruction (\`RST\`) on a \`TON\` timer if the reset condition is simply the inverse of the timer's enable condition. The \`TON\` resets automatically.
+        *   **Safety Interlocks:** For any problem involving opposing outputs (e.g., Forward/Reverse), you **MUST** include cross-interlocking logic using NC contacts (XIO) as a fundamental safety pattern.
+        *   **Data Integrity:** Any solution involving math or arrays must be fault-proof. All division must be protected by a non-zero check. All array access must be protected by an index bounds check.
+
+        Example of a complete Allen-Bradley motor seal-in circuit response inside the ### Solution section:
+        
+        **1. Ladder Logic Visual Guide**
+        *   \`[ ]\` - Normally Open Contact (XIC)
+        *   \`( )\` - Output Coil (OTE)
+
+        **2. Annotated Ladder Diagram**
+        \`\`\`
+        // Rung 0: Motor Seal-In Circuit
+                       Start_Button          Stop_Button             Motor
+        0000 |───┬───────────[ ]───────────┬───────────[ ]───────────────────( )───────────|
+             |   │                         │                                             |
+             |   │           Motor         │                                             |
+             |   └───────────[ ]───────────┘                                             |
+        \`\`\`
+        
+        **3. Mnemonic Code:**
+        \`\`\`
+        BST XIC(Start_Button) NXB XIC(Motor) BND XIC(Stop_Button) OTE(Motor)
+        \`\`\`
+        `;
+    }
+
+    const stStyleGuide = (() => {
+        if (plcBrand === 'Siemens') {
+            return `
+    *** IMPORTANT STYLE GUIDE FOR STRUCTURED TEXT (ST) ***
     When generating Structured Text (ST), you MUST follow these critical principles to produce robust, safe, and maintainable code. Your entire response containing ST MUST be a single, complete code block.
 
-    1.  **Complete Declarations:** Every ST code block MUST begin with a complete \`VAR ... END_VAR\` block.
-    2.  **Proper Commenting:** All explanatory text MUST be formatted as a proper ST comment: \`(* ... *)\` or \`//\`.
-    3.  **Fail-Safe Stop Logic:** A physical NC stop button's input is \`TRUE\` when safe. Check with \`IF E_Stop_Healthy THEN ...\`.
-    4.  **Consolidate Safety Conditions (DRY):** Create a single intermediate boolean variable (e.g., \`Safety_OK\`).
-    5.  **Separate Logic from Physical Outputs:** Use intermediate 'command' variables (e.g., \`Valve_Cmd\`). At the end, map commands to physical outputs (\`DO_*\`), gated by safety: \`DO_Valve := Valve_Cmd AND Safety_OK;\`.
-    6.  **Single Output Assignment:** A physical output variable (\`DO_*\`) MUST NEVER be assigned a value using \`:=\` in more than one place.
-    7.  **Correct Timer Usage:** A timer instance (e.g., \`MyTimer(IN:=...)\`) must be called on **every scan** and **MUST NOT** be placed inside an \`IF\` or \`CASE\` statement.
-    8.  **State Machines for Sequences:** For any sequential process, **YOU MUST** implement a state machine pattern using a single integer tag and a \`CASE\` statement.
-    9.  **Edge Detection:** For momentary buttons, you MUST use rising edge detection.
-    10. **Explicit States (No Unintentional Latching):** Any \`IF\` statement that sets a variable to \`TRUE\` **MUST** have a corresponding \`ELSE\` clause that sets it to \`FALSE\`.
+    1.  **Line Numbering (MANDATORY):** Every single line within the ST code block, including comments, declarations, logic, and blank lines, MUST be prefixed with a sequential line number (e.g., \`01\`, \`02\`, ..., \`99\`, \`100\`, \`101\`), followed by a colon and a single space. For numbers less than 10, you MUST pad them with a leading zero.
+
+    2.  **Complete Declarations:** Every ST code block MUST begin with a complete \`VAR ... END_VAR\` block. You MUST declare all variables used in the logic, including inputs (\`DI_*\`), outputs (\`DO_*\`), and all internal memory/state variables (\`Current_State\`, \`Safety_OK\`, \`Fill_Valve_Cmd\`, etc.).
+
+    3.  **Proper Commenting:** All explanatory text within the code MUST be formatted as a proper ST comment. Use \`(* ... *)\` for multi-line comments or section headers, and \`//\` for single-line comments. **DO NOT** include unformatted text, markdown headers like \`###\`, or language identifiers like \`st\` inside the code block.
+
+    4.  **Fail-Safe Stop Logic:** A physical stop button (like an E-Stop) MUST be a Normally Closed (NC) contact. This means the PLC input is \`TRUE\` or \`1\` when the system is safe to run. In ST, this is checked with a condition like \`IF E_Stop_Healthy THEN ...\`. Be explicit about this assumption in your explanation.
+
+    5.  **Consolidate Safety Conditions (DRY Principle):** Create a single intermediate boolean variable (e.g., \`Safety_OK\`) at the beginning of your logic block to represent the "permission to run". All subsequent logic that can affect motion or process MUST then be gated by this single variable. This improves readability and prevents errors.
+
+    6.  **Separate Logic from Physical Outputs:** Use intermediate 'command' variables for your state machine and logic (e.g., \`Valve_A_Cmd\`, \`Mixer_On_Cmd\`). Then, at the very end of the code block, create a dedicated \`(* --- OUTPUT MAPPING --- *)\` section. In this section, and ONLY in this section, assign the state of the command variables to the physical output variables (\`DO_*\`). This assignment MUST also be gated by the main safety permissive (\`Safety_OK\`). Example: \`DO_Valve_A := Valve_A_Cmd AND Safety_OK;\`.
+
+    7.  **Single Output Assignment (No Rung Fighting):** A physical output variable (\`DO_*\`) MUST NEVER be assigned a value using \`:=\` in more than one place. Rule #6 (Output Mapping) helps enforce this perfectly.
+
+    8.  **Single, Unconditional Function Block Calls:** All timer and function block instances (e.g., \`TON\`, \`TOF\`, \`R_TRIG\`) MUST be called **exactly once per scan**. These calls MUST be grouped together in a dedicated section, typically **after** the main \`CASE\` statement for the state machine. The state machine itself should only **read** the outputs (e.g., \`.Q\`, \`.DN\`) of these blocks as conditions; it should **NEVER** call the instances themselves. This ensures predictable, scan-independent behavior.
+        
+        **CRITICAL VIOLATION:** Placing timer calls like \`My_Timer(...)\` inside a \`CASE\` statement or \`IF\` block is **STRICTLY FORBIDDEN**. This creates multiple, conditional calls which is a major logic error.
+
+        **Correct Pattern:**
+        \`\`\`st
+        (* ... other logic ... *)
+        
+        CASE Current_State OF
+            10: (* State where timer should run *)
+                IF My_Timer.Q THEN // CORRECT: Reading the timer's output bit as a condition.
+                    Current_State := 20;
+                END_IF;
+            (* ... other states ... *)
+        END_CASE;
+
+        (* Unconditional Timer Calls Section *)
+        // CORRECT: Calling the timer instance once, outside of any conditional logic.
+        // The 'IN' parameter is controlled by the state.
+        My_Timer(IN:=(Current_State = 10), PT:=T#5s); 
+        \`\`\`
+
+        **Incorrect Pattern (FORBIDDEN):**
+        \`\`\`st
+        CASE Current_State OF
+            10: 
+                // INCORRECT: Calling the timer instance inside a conditional block.
+                My_Timer(IN:=TRUE, PT:=T#5s); 
+                IF My_Timer.Q THEN
+                    Current_State := 20;
+                END_IF;
+            (* ... other states ... *)
+        END_CASE;
+        \`\`\`
+    9.  **Correct Timer Implementation (On-Delay vs. Off-Delay):** You MUST use the correct timer instruction and logic pattern for the desired behavior.
+        *   **On-Delay (TON):** To delay an action from starting, use a \`TON\`. The action should be triggered by the timer's done bit (\`.Q\` or \`.DN\`).
+            **Correct:** \`My_TON(IN:=Start_Condition, PT:=T#5s); Output_Cmd := My_TON.Q;\`
+        *   **Off-Delay (TOF):** To delay an action from stopping, the **preferred** method is to use a \`TOF\`. The action is directly driven by the timer's output bit (\`.Q\`), which remains \`TRUE\` for the preset time after the input condition goes \`FALSE\`.
+            **Correct:** \`My_TOF(IN:=Run_Condition, PT:=T#2s); Motor_Run_Cmd := My_TOF.Q;\`
+        *   **Simulating Off-Delay with TON (CRITICAL):** If you must create an off-delay using only a \`TON\`, you **CANNOT** simply use the timer's output. You **MUST** implement a "seal-in" or "latch" circuit where the timer is used to break the latch. This is a critical pattern to understand.
+            **Correct TON-based Off-Delay:**
+            \`\`\`st
+            (* This timer starts ONLY when the run condition is gone, but the output is still latched on *)
+            Off_Delay_Timer(IN:= NOT Run_Condition AND Motor_Run_Cmd, PT:=T#2s);
+
+            (* Motor is latched on by the run condition, and unlatched by the timer's done bit *)
+            Motor_Run_Cmd := (Run_Condition OR Motor_Run_Cmd) AND NOT Off_Delay_Timer.Q;
+            \`\`\`
+            **INCORRECT:** \`On_Delay_Timer(IN:=Run_Condition, PT:=T#2s); Motor_Run_Cmd := On_Delay_Timer.Q;\` (*This is an ON-delay, not an OFF-delay.*)
+    10.  **Loop and Data Safety (CRITICAL):**
+        *   **Loop Termination:** Any \`WHILE\` loop must have a guaranteed exit condition. If necessary, include an "escape counter" to prevent watchdog faults.
+        *   **Data Integrity:** All division operations MUST be protected by a non-zero check. Any variable used as an array index MUST be validated to be within the array's bounds before access.
+        
+    11. **Code Reusability (DRY Principle - FB/FC/AOI):** You MUST avoid repeating identical or very similar logic patterns. If a pattern is used for multiple devices (e.g., motor control for Motor1 and Motor2), you MUST encapsulate this logic in a reusable block (e.g., a Function Block in TIA Portal, or an Add-On Instruction in Studio 5000). First, show the definition of the reusable block. Then, show how the instances of this block are declared and called for each device. This is a non-negotiable rule to reduce redundancy and improve maintainability.
+
+    12. **Refactor Repeated State Logic (DRY Principle):** If a sequence contains multiple states with very similar logic patterns (e.g., a "Fill_Material_A" state and a "Fill_Material_B" state), you MUST refactor this into a single, more generic state (e.g., "FILLING"). Use an additional state variable (e.g., \`Sub_State : INT;\`) to control the specific behavior within that generic state. This demonstrates advanced, maintainable, and robust coding practices.
+
+    **Correct ST Example with All Rules:**
+    \`\`\`st
+    01: (*
+    02:   PLC Program: Simple Mixer Control
+    03:   Description: This program controls a simple mixing sequence following best practices.
+    04: *)
+    05: VAR
+    06:     (* Inputs *)
+    07:     DI_Start_Button AT %I0.0 : BOOL;
+    08:     DI_Stop_Button AT %I0.1 : BOOL; // Assumed to be from a physical NC button circuit
+    09:     DI_EStop_Healthy AT %I0.2 : BOOL; // Assumed to be from a physical NC E-Stop circuit
+    10: 
+    11:     (* Outputs *)
+    12:     DO_Fill_Valve AT %Q0.0 : BOOL;
+    13:     DO_Mixer_Motor AT %Q0.1 : BOOL;
+    14:     DO_Light_Running AT %Q0.2 : BOOL;
+    15:     DO_Light_Fault AT %Q0.3 : BOOL;
+    16: 
+    17:     (* Internal State & Timers *)
+    18:     Current_State : INT := 0; // 0:Idle, 10:Filling, 20:Mixing
+    19:     Safety_OK : BOOL;
+    20:     Fill_Timer : TON;
+    21:     Mix_Timer : TON;
+    22: 
+    23:     (* Intermediate Commands & Status *)
+    24:     Fill_Valve_Cmd : BOOL;
+    25:     Mixer_Motor_Cmd : BOOL;
+    26:     System_Running : BOOL;
+    27:     System_Faulted : BOOL;
+    28: END_VAR
+    29: 
+    30: // --- 1. SAFETY & PERMISSIVES ---
+    31: (* Rule 4 & 5: Consolidate all safety conditions into a single variable *)
+    32: Safety_OK := DI_Stop_Button AND DI_EStop_Healthy;
+    33: 
+    34: 
+    35: // --- 2. STATE MACHINE LOGIC ---
+    36: (* This CASE statement controls the main sequence logic *)
+    37: CASE Current_State OF
+    38:     0: // Idle State
+    39:         Fill_Valve_Cmd := FALSE;
+    40:         Mixer_Motor_Cmd := FALSE;
+    41:         IF DI_Start_Button AND Safety_OK THEN
+    42:             Current_State := 10; // Transition to Filling
+    43:         END_IF;
+    44: 
+    45:     10: // Filling State
+    46:         Fill_Valve_Cmd := TRUE;
+    47:         Mixer_Motor_Cmd := FALSE;
+    48:         IF Fill_Timer.Q THEN
+    49:             Current_State := 20; // Transition to Mixing
+    50:         END_IF;
+    51: 
+    52:     20: // Mixing State
+    53:         Fill_Valve_Cmd := FALSE;
+    54:         Mixer_Motor_Cmd := TRUE;
+    55:         IF Mix_Timer.Q THEN
+    56:             Current_State := 0; // Transition back to Idle
+    57:         END_IF;
+    58: END_CASE;
+    59: 
+    60: // --- 3. GLOBAL CONDITIONS & RESETS ---
+    61: // Immediately return to idle if safety is lost at any point
+    62: IF NOT Safety_OK THEN
+    63:     Current_State := 0;
+    64: END_IF;
+    65: 
+    66: // --- 4. TIMER CALLS (RULE 8) ---
+    67: (* Timers are called once per scan. Their IN condition handles start/reset. *)
+    68: Fill_Timer(IN:=(Current_State = 10 AND Safety_OK), PT:=T#5s);
+    69: Mix_Timer(IN:=(Current_State = 20 AND Safety_OK), PT:=T#10s);
+    70: 
+    71: 
+    72: // --- 5. STATUS INDICATOR LOGIC ---
+    73: System_Running := (Current_State > 0) AND Safety_OK;
+    74: System_Faulted := NOT Safety_OK;
+    75: 
+    76: 
+    77: // --- 6. OUTPUT MAPPING ---
+    78: (* Rule 6 & 7: Map all command variables to physical outputs in one place, gated by safety. *)
+    79: DO_Fill_Valve := Fill_Valve_Cmd AND Safety_OK;
+    80: DO_Mixer_Motor := Mixer_Motor_Cmd AND Safety_OK;
+    81: DO_Light_Running := System_Running;
+    82: DO_Light_Fault := System_Faulted;
+    \`\`\`
     `;
+        }
+
+        // Default to Allen-Bradley Style
+        return `
+    *** IMPORTANT STYLE GUIDE FOR STRUCTURED TEXT (ST) FOR ALLEN-BRADLEY (STUDIO 5000) ***
+    When generating Structured Text (ST) for Allen-Bradley Studio 5000, you MUST follow these critical principles to produce robust, safe, and maintainable code. Your entire response containing ST MUST be a single, complete code block.
+
+    1.  **Line Numbering (MANDATORY):** Every single line within the ST code block, including comments, declarations, logic, and blank lines, MUST be prefixed with a sequential line number (e.g., \`01\`, \`02\`, ..., \`99\`, \`100\`, \`101\`), followed by a colon and a single space. For numbers less than 10, you MUST pad them with a leading zero.
+
+    2.  **Complete Declarations & Tag-Based Addressing:** Every ST code block MUST begin with a complete \`VAR ... END_VAR\` block. You MUST declare all variables used in the logic. Allen-Bradley uses tag-based addressing; there is no physical addressing like \`%I0.0\` in the code logic itself.
+
+    3.  **Proper Commenting:** All explanatory text within the code MUST be formatted as a proper ST comment. Use \`(* ... *)\` for multi-line comments or section headers, and \`//\` for single-line comments. **DO NOT** include unformatted text, markdown headers like \`###\`, or language identifiers like \`st\` inside the code block.
+
+    4.  **Fail-Safe Stop Logic:** A physical stop button (like an E-Stop) MUST be a Normally Closed (NC) contact. This means the PLC input is \`TRUE\` or \`1\` when the system is safe to run. In ST, this is checked with a condition like \`IF E_Stop_Healthy THEN ...\`. Be explicit about this assumption in your explanation.
+
+    5.  **Consolidate Safety Conditions (DRY Principle):** Create a single intermediate boolean variable (e.g., \`Safety_OK\`) at the beginning of your logic block to represent the "permission to run". All subsequent logic that can affect motion or process MUST then be gated by this single variable. This improves readability and prevents errors.
+
+    6.  **Separate Logic from Physical Outputs:** Use intermediate 'command' variables for your state machine and logic (e.g., \`Valve_A_Cmd\`, \`Mixer_On_Cmd\`). Then, at the very end of the code block, create a dedicated \`(* --- OUTPUT MAPPING --- *)\` section. In this section, and ONLY in this section, assign the state of the command variables to the physical output variables (e.g., \`DO_Fill_Valve\`). This assignment MUST also be gated by the main safety permissive (\`Safety_OK\`). Example: \`DO_Fill_Valve := Valve_A_Cmd AND Safety_OK;\`.
+
+    7.  **Single Output Assignment (No Rung Fighting):** A physical output variable (\`DO_*\`) MUST NEVER be assigned a value using \`:=\` in more than one place. Rule #6 (Output Mapping) helps enforce this perfectly.
+
+    8.  **Single, Unconditional Function Block Calls:** All timer and function block instances (e.g., \`TON\`, \`TOF\`, \`R_TRIG\`) MUST be called **exactly once per scan**. These calls MUST be grouped together in a dedicated section, typically **after** the main \`CASE\` statement for the state machine. The state machine itself should only **read** the outputs (e.g., \`.DN\`, \`.TT\`) of these blocks as conditions; it should **NEVER** call the instances themselves. This ensures predictable, scan-independent behavior.
+        
+        **CRITICAL VIOLATION:** Placing timer calls like \`My_Timer(...)\` inside a \`CASE\` statement or \`IF\` block is **STRICTLY FORBIDDEN**.
+
+        **Correct Pattern:**
+        \`\`\`st
+        CASE Current_State OF
+            10: (* State where timer should run *)
+                IF My_Timer.DN THEN // CORRECT: Reading the timer's Done bit as a condition.
+                    Current_State := 20;
+                END_IF;
+        END_CASE;
+    
+        (* Unconditional Timer Calls Section *)
+        // CORRECT: Calling the timer instance once, outside of any conditional logic.
+        // The 'IN' parameter is controlled by the state.
+        My_Timer(IN:=(Current_State = 10), PRE:=5000); // PRE is the preset in milliseconds
+        \`\`\`
+
+    9.  **Correct Timer Implementation (On-Delay vs. Off-Delay):**
+        *   **On-Delay (TON):** To delay an action from starting, use a \`TON\`. The action should be triggered by the timer's done bit (\`.DN\`).
+            **Correct:** \`My_TON(IN:=Start_Condition, PRE:=5000); Output_Cmd := My_TON.DN;\`
+        *   **Off-Delay (TOF):** To delay an action from stopping, use a \`TOF\`.
+            **Correct:** \`My_TOF(IN:=Run_Condition, PRE:=2000); Motor_Run_Cmd := My_TOF.DN;\`
+        *   **Simulating Off-Delay with TON (CRITICAL):**
+            **Correct TON-based Off-Delay:**
+            \`\`\`st
+            Off_Delay_Timer(IN:= NOT Run_Condition AND Motor_Run_Cmd, PRE:=2000);
+            Motor_Run_Cmd := (Run_Condition OR Motor_Run_Cmd) AND NOT Off_Delay_Timer.DN;
+            \`\`\`
+
+    10.  **Loop and Data Safety (CRITICAL):**
+        *   **Loop Termination:** Any \`FOR\` or \`WHILE\` loop must have a guaranteed exit to prevent watchdog faults.
+        *   **Data Integrity:** All division operations MUST be guarded by a non-zero check. Any variable used as an array index MUST be validated to be within bounds.
+
+    11. **Code Reusability (DRY Principle - AOI):** You MUST avoid repeating logic. For Allen-Bradley, this means creating an Add-On Instruction (AOI). Show the definition of the AOI, then show how instances are declared and called.
+
+    12. **Refactor Repeated State Logic (DRY Principle):** Refactor similar states (e.g., "Fill_A", "Fill_B") into a generic state ("FILLING") with a sub-state variable.
+
+    **Correct Allen-Bradley ST Example with All Rules:**
+    \`\`\`st
+    01: (*
+    02:   PLC Program: Simple Mixer Control (Studio 5000)
+    03:   Description: This program controls a simple mixing sequence following best practices.
+    04: *)
+    05: VAR
+    06:     (* Inputs - Assumed to be mapped to physical I/O elsewhere *)
+    07:     DI_Start_Button : BOOL;
+    08:     DI_Stop_Button : BOOL; // Assumed to be from a physical NC button circuit
+    09:     DI_EStop_Healthy : BOOL; // Assumed to be from a physical NC E-Stop circuit
+    10: 
+    11:     (* Outputs - Assumed to be mapped to physical I/O elsewhere *)
+    12:     DO_Fill_Valve : BOOL;
+    13:     DO_Mixer_Motor : BOOL;
+    14:     DO_Light_Running : BOOL;
+    15:     DO_Light_Fault : BOOL;
+    16: 
+    17:     (* Internal State & Timers *)
+    18:     Current_State : DINT := 0; // 0:Idle, 10:Filling, 20:Mixing
+    19:     Safety_OK : BOOL;
+    20:     Fill_Timer : TON;
+    21:     Mix_Timer : TON;
+    22: 
+    23:     (* Intermediate Commands & Status *)
+    24:     Fill_Valve_Cmd : BOOL;
+    25:     Mixer_Motor_Cmd : BOOL;
+    26:     System_Running : BOOL;
+    27:     System_Faulted : BOOL;
+    28: END_VAR
+    29: 
+    30: // --- 1. SAFETY & PERMISSIVES ---
+    31: (* Rule 4 & 5: Consolidate all safety conditions into a single variable *)
+    32: Safety_OK := DI_Stop_Button AND DI_EStop_Healthy;
+    33: 
+    34: 
+    35: // --- 2. STATE MACHINE LOGIC ---
+    36: (* This CASE statement controls the main sequence logic *)
+    37: CASE Current_State OF
+    38:     0: // Idle State
+    39:         Fill_Valve_Cmd := FALSE;
+    40:         Mixer_Motor_Cmd := FALSE;
+    41:         IF DI_Start_Button AND Safety_OK THEN
+    42:             Current_State := 10; // Transition to Filling
+    43:         END_IF;
+    44: 
+    45:     10: // Filling State
+    46:         Fill_Valve_Cmd := TRUE;
+    47:         Mixer_Motor_Cmd := FALSE;
+    48:         IF Fill_Timer.DN THEN // Use .DN for Done bit
+    49:             Current_State := 20; // Transition to Mixing
+    50:         END_IF;
+    51: 
+    52:     20: // Mixing State
+    53:         Fill_Valve_Cmd := FALSE;
+    54:         Mixer_Motor_Cmd := TRUE;
+    55:         IF Mix_Timer.DN THEN // Use .DN for Done bit
+    56:             Current_State := 0; // Transition back to Idle
+    57:         END_IF;
+    58: END_CASE;
+    59: 
+    60: // --- 3. GLOBAL CONDITIONS & RESETS ---
+    61: // Immediately return to idle if safety is lost at any point
+    62: IF NOT Safety_OK THEN
+    63:     Current_State := 0;
+    64: END_IF;
+    65: 
+    66: // --- 4. TIMER CALLS (RULE 8) ---
+    67: (* Timers are called once per scan. Their IN condition handles start/reset. *)
+    68: Fill_Timer(IN:=(Current_State = 10 AND Safety_OK), PRE:=5000); // PRE in ms
+    69: Mix_Timer(IN:=(Current_State = 20 AND Safety_OK), PRE:=10000); // PRE in ms
+    70: 
+    71: 
+    72: // --- 5. STATUS INDICATOR LOGIC ---
+    73: System_Running := (Current_State > 0) AND Safety_OK;
+    74: System_Faulted := NOT Safety_OK;
+    75: 
+    76: 
+    77: // --- 6. OUTPUT MAPPING ---
+    78: (* Rule 6 & 7: Map all command variables to physical outputs in one place, gated by safety. *)
+    79: DO_Fill_Valve := Fill_Valve_Cmd AND Safety_OK;
+    80: DO_Mixer_Motor := Mixer_Motor_Cmd AND Safety_OK;
+    81: DO_Light_Running := System_Running;
+    82: DO_Light_Fault := System_Faulted;
+    \`\`\`
+    `;
+    })();
 
 
     const prompt = `Generate a practice problem for an industrial automation technician.
@@ -497,12 +1140,14 @@ export const generatePractice = async (params: PracticeParams): Promise<string> 
     ### Solution
     [A step-by-step solution to the problem, including code snippets, parameter settings, or wiring instructions as needed.]
 
-    *** IMPORTANT STYLE GUIDE FOR ALL PLC LOGIC ***
-    ${combinedStyleGuide}
+    *** IMPORTANT STYLE GUIDE FOR LADDER LOGIC ***
+    ${ladderStyleGuide}
+
+    ${stStyleGuide}
 
     ${langInstruction}`;
 
-    return callApiEndpoint('generatePractice', { contents: prompt });
+    return callApiEndpoint('generatePractice', { prompt });
 };
 
 export const generateWiringGuide = async (params: WiringGuideParams): Promise<string> => {
@@ -525,7 +1170,7 @@ export const generateWiringGuide = async (params: WiringGuideParams): Promise<st
     
     ${langInstruction}`;
 
-    return callApiEndpoint('generateWiringGuide', { contents: prompt });
+    return callApiEndpoint('generateWiringGuide', { prompt });
 };
 
 export const generateCommissioningPlan = async (params: CommissioningPlanParams): Promise<string> => {
@@ -545,17 +1190,15 @@ export const generateCommissioningPlan = async (params: CommissioningPlanParams)
     - Load testing and final checks.
 
     ${langInstruction}`;
-    return callApiEndpoint('generateCommissioningPlan', { contents: prompt });
+    return callApiEndpoint('generateCommissioningPlan', { prompt });
 };
 
 export const generateCommissioningChatResponse = async (messages: Message[], language: 'en' | 'es', vfdBrand?: string, vfdModel?: string, application?: string): Promise<string> => {
     const langInstruction = language === 'es' ? 'Responde en español.' : 'Respond in English.';
-    
-    // The Gemini API expects a 'Content' array without the timestamp for chat history.
-    const contents = messages.map(({ role, parts }) => ({
-        role,
-        parts,
-    }));
+    let prompt = "";
+    messages.forEach((m: { role: string; parts: { text: string }[] }) => {
+        prompt += `${m.role}: ${m.parts[0].text}\n\n`;
+    });
     
     let expertKnowledge = '';
     if (vfdBrand === 'ABB' && vfdModel === 'ACS580') {
@@ -607,10 +1250,10 @@ export const generateCommissioningChatResponse = async (messages: Message[], lan
     *** SAFETY FIRST - MOST IMPORTANT RULE ***
     Your VERY FIRST response in this conversation MUST be a detailed safety checklist. DO NOT provide any other information until the safety check is presented.
     The safety checklist must include:
-    - Verifying main power is disconnected and Locked-Out/Tagged-Out (LOTO).
-    - Using a multimeter to confirm 0 volts on input terminals (L1, L2, L3).
-    - Wearing appropriate Personal Protective Equipment (PPE).
-    - Ensuring the motor shaft is free to rotate and disconnected from the load for initial tests.
+    * Verifying main power is disconnected and Locked-Out/Tagged-Out (LOTO).
+    * Using a multimeter to confirm 0 volts on input terminals (L1, L2, L3).
+    * Wearing appropriate Personal Protective Equipment (PPE).
+    * Ensuring the motor shaft is free to rotate and disconnected from the load for initial tests.
     After presenting the checklist, ask the user to confirm they have completed these steps before proceeding.
 
     *** WIRING AND DIAGRAMS ***
@@ -637,7 +1280,7 @@ export const generateCommissioningChatResponse = async (messages: Message[], lan
     ${langInstruction}`;
 
     return callApiEndpoint('generateCommissioningChatResponse', { 
-        contents, 
+        prompt, 
         config: { systemInstruction, temperature: 0.2 } 
     });
 };
@@ -658,7 +1301,8 @@ export const analyzeFaultCode = async (params: { language: 'en' | 'es'; vfdBrand
     } else if (vfdBrand === 'Danfoss' && vfdModel === 'VLT Midi Drive FC 280') {
         expertKnowledge = "Your analysis for this Danfoss VLT FC 280 fault/warning must be precise, based on its official programming guide. List the exact causes and corrective actions described in the manual for this specific alarm code. Differentiate between a Warning (W) and an Alarm (A).";
     } else if (vfdBrand === 'Danfoss' && vfdModel === 'VLT FC 302') {
-        expertKnowledge = "Your analysis for this Danfoss VLT FC 302 fault/warning must be highly specific, based on its programming guide. Differentiate between a Warning (W) and an Alarm (A). List the exact causes and corrective actions from the manual. Reference relevant parameters from groups 14-** (Special Functions) or 1-** (Load/Motor) that may need to be checked.";
+        // FIX: Replaced potentially problematic '*-**' placeholders with 'x-xx' to prevent any possibility of the parser misinterpreting it as an arithmetic operation.
+        expertKnowledge = "Your analysis for this Danfoss VLT FC 302 fault/warning must be highly specific, based on its programming guide. Differentiate between a Warning (W) and an Alarm (A). List the exact causes and corrective actions from the manual. Reference relevant parameters from groups 14-xx (Special Functions) or 1-xx (Load/Motor) that may need to be checked.";
     } else if (vfdBrand === 'Mitsubishi Electric' && vfdModel === 'FR-E800') {
         expertKnowledge = "Your analysis for this Mitsubishi FR-E800 fault must be highly specific, based on its instruction manual. List the exact causes and corrective actions from the manual for this specific error code (e.g., E.OC1, E.OV1).";
     } else if (vfdBrand === 'Mitsubishi Electric' && vfdModel === 'FR-D700') {
@@ -666,7 +1310,7 @@ export const analyzeFaultCode = async (params: { language: 'en' | 'es'; vfdBrand
     } else if (vfdBrand === 'Eaton' && vfdModel === 'PowerXL DG1') {
         expertKnowledge = "Your analysis for this Eaton PowerXL DG1 fault must be highly specific, based on its instruction manual (MN040010). List the exact causes and corrective actions from the manual for this specific error code (e.g., E-01, E-02). Reference relevant parameters from Group P6 (Protection) that might be related.";
     } else if (vfdBrand === 'Siemens' && vfdModel === 'Micromaster 440') {
-        expertKnowledge = "Your analysis for this Siemens Micromaster 440 fault must be highly specific, based on its official manual. List the exact causes and corrective actions for this fault code (e.g., F0001, F0002, F0003, F0004). Reference relevant parameters like P1120 (Accel time), P1121 (Decel time), or motor data parameters (P03xx) that may need to be checked.";
+        expertKnowledge = `Your analysis for this Siemens Micromaster 440 fault must be highly specific, based on its official manual. List the exact causes and corrective actions for this fault code (e.g., F0001, F0002, F0003, F0004). Reference relevant parameters like P1120 (Accel time), P1121 (Decel time), or motor data parameters (P03xx) that may need to be checked.`;
     } else if (vfdBrand === 'Siemens' && vfdModel?.includes('Sinamics G120')) {
         expertKnowledge = `Your analysis for this Siemens Sinamics G120 fault must be highly specific, based on its official list manual. List the exact causes and corrective actions for this fault code (e.g., F07801, F30002). Reference relevant parameters like P1120/P1121 (Ramp times) or motor data parameters (P03xx) that may need to be checked.`;
     }
@@ -683,7 +1327,7 @@ export const analyzeFaultCode = async (params: { language: 'en' | 'es'; vfdBrand
     3.  **Troubleshooting Steps:** A clear, numbered list of steps the technician should take to diagnose and resolve the issue.
 
     ${langInstruction}`;
-    return callApiEndpoint('analyzeFaultCode', { contents: prompt });
+    return callApiEndpoint('analyzeFaultCode', { prompt });
 };
 
 // FIX: Add missing analyzeAsciiFrame function to be exported.
@@ -704,7 +1348,7 @@ export const analyzeAsciiFrame = async (params: { language: 'en' | 'es'; frame: 
     Present the output as a markdown report.
 
     ${langInstruction}`;
-    return callApiEndpoint('analyzeAsciiFrame', { contents: prompt });
+    return callApiEndpoint('analyzeAsciiFrame', { prompt });
 };
 
 export const analyzeScanTime = async (params: { language: 'en' | 'es'; code: string }): Promise<string> => {
@@ -723,7 +1367,7 @@ export const analyzeScanTime = async (params: { language: 'en' | 'es'; code: str
     2.  **Specific Recommendations:** A bulleted list of actionable suggestions to reduce scan time. For each suggestion, explain *why* it helps and provide a "before and after" code snippet if applicable. Examples: reducing complex math, avoiding unconditional jumps, optimizing loops.
 
     ${langInstruction}`;
-    return callApiEndpoint('analyzeScanTime', { contents: prompt });
+    return callApiEndpoint('analyzeScanTime', { prompt });
 };
 
 export const generateEnergyEfficiencyPlan = async (params: { language: 'en' | 'es'; applicationType: string; loadProfile: string }): Promise<string> => {
@@ -739,7 +1383,7 @@ export const generateEnergyEfficiencyPlan = async (params: { language: 'en' | 'e
     3.  **Expected Savings:** Give a qualitative estimate of the potential energy savings (e.g., "significant savings during periods of low demand").
 
     ${langInstruction}`;
-    return callApiEndpoint('generateEnergyEfficiencyPlan', { contents: prompt });
+    return callApiEndpoint('generateEnergyEfficiencyPlan', { prompt });
 };
 
 export const verifyCriticalLogic = async (params: { language: 'en' | 'es'; code: string; rules: string }): Promise<string> => {
@@ -774,134 +1418,106 @@ export const verifyCriticalLogic = async (params: { language: 'en' | 'es'; code:
     ${rules}
 
     Analyze the logic against the rules.
-    - If the code appears to be sound and does not violate the rules, your response must start with the single character ✅ followed by a detailed explanation of why the logic is robust.
-    - If the code could possibly violate a rule, your response must start with the single character ❌ followed by a "counterexample" or scenario that demonstrates how the violation can occur.
-    - If you detect a violation of the fail-safe principle (e.g., an XIO on an E-Stop tag), you MUST treat it as a critical vulnerability and provide a counterexample explaining the danger (e.g., what happens if a wire breaks).
+    * If the code appears to be sound and does not violate the rules, your response must start with the single character ✅ followed by a detailed explanation of why the logic is robust.
+    * If the code could possibly violate a rule, your response must start with the single character ❌ followed by a "counterexample" or scenario that demonstrates how the violation can occur.
+    * If you detect a violation of the fail-safe principle (e.g., an XIO on an E-Stop tag), you MUST treat it as a critical vulnerability and provide a counterexample explaining the danger (e.g., what happens if a wire breaks).
     Your explanation must be rigorous and logical.
 
     **IMPORTANT:** You MUST append the following disclaimer to the end of your entire response, exactly as written:
     ${disclaimer}
     
     ${langInstruction}`;
-    return callApiEndpoint('verifyCriticalLogic', { contents: prompt });
+    return callApiEndpoint('verifyCriticalLogic', { prompt });
 };
 
 export const generateSensorRecommendation = async (params: SensorRecommendationParams): Promise<string> => {
     const { language, details } = params;
     const langInstruction = language === 'es' ? 'Responde en español.' : 'Respond in English.';
 
-    const structure_es = `
-Tu respuesta DEBE estar en markdown y seguir esta estructura exacta:
-
-### Recomendación Principal
-**Tecnología Recomendada:** [Nombre de la tecnología principal, ej. "Radar de Onda Guiada"]
-**Justificación:** [Un párrafo explicando por qué es la mejor opción basada en los datos del formulario. Haz referencia a detalles específicos.]
-
-### Tabla Comparativa de Alternativas
-[Crea una tabla markdown que califique la opción principal y 1-2 alternativas en estos criterios clave: | Tecnología | Precisión | Costo | Robustez | Facilidad de Instalación |. Usa una escala de 1-5 estrellas (ej. ***** para excelente, * para pobre).]
-
-### Modelos y Marcas Sugeridas
-**Modelos Sugeridos:** [Sugiere series o modelos específicos de fabricantes líderes. Ej: "Endress+Hauser Micropilot FMRxx, VEGAFLEX 8x, Krohne Optiflex."]
-**Disclaimer:** [Incluye este texto exacto: "Estas son sugerencias basadas en aplicaciones típicas. Siempre verifique la ficha técnica del fabricante."]
-
-### Consideraciones Críticas de Instalación
-[Proporciona 2-3 puntos con consejos de experto para la tecnología recomendada.]
-
-### ⚠️ Advertencia Crítica de Estándares y Cableado
-[SI Y SOLO SI la variable es Temperatura y la recomendación es un termopar, llena esta sección. Explica el código de colores correcto (ANSI o IEC) basado en la región y advierte sobre la polaridad.]
-
-### Guía Rápida de Implementación
-[Proporciona un fragmento de código de ejemplo en Texto Estructurado (ST) para Rockwell/Studio 5000 para escalar una señal analógica, como se muestra a continuación.]
-
-\`\`\`st
-// Parámetros de Escalado para una señal 4-20mA
-// Asume que el rango del sensor corresponde a 0-100% del rango de medición.
-RawMin := 4000;    // Valor crudo a 4mA (formato Rockwell)
-RawMax := 20000;   // Valor crudo a 20mA (formato Rockwell)
-EngMin := 0.0;     // Unidades de ingeniería al 0%
-EngMax := 100.0;   // Unidades de ingeniería al 100%
-
-// Ejecutar instrucción de escalado (SCP)
-SCP(MyAnalogInput, RawMin, RawMax, EngMin, EngMax, MyScaledValue);
-\`\`\`
-    `;
-
-    const structure_en = `
-Your response MUST be in markdown and follow this exact structure:
-
-### Top Choice Recommendation
-**Recommended Technology:** [Name of the top choice technology, e.g., "Guided Wave Radar"]
-**Justification:** [A paragraph explaining why this is the best option based on the wizard data. Reference specific details.]
-
-### Comparative Table of Alternatives
-[Create a markdown table that rates the top choice and 1-2 alternatives on these key criteria: | Technology | Precision | Cost | Robustness | Ease of Installation |. Use a 1-5 star rating (e.g., ***** for excellent, * for poor).]
-
-### Suggested Models and Brands
-**Suggested Models:** [Suggest specific series or models from leading manufacturers. E.g., "Endress+Hauser Micropilot FMRxx, VEGAFLEX 8x, Krohne Optiflex."]
-**Disclaimer:** [Include this exact text: "These are suggestions based on typical applications. Always verify the manufacturer's data sheet."]
-
-### Critical Installation Considerations
-[Provide 2-3 bullet points with expert tips for the recommended technology.]
-
-### ⚠️ Critical Standards & Wiring Warning
-[IF AND ONLY IF the variable is Temperature and the recommendation is a thermocouple, fill this section. Explain the correct color code (ANSI or IEC) based on the region and warn about polarity.]
-
-### Quick Implementation Guide
-[Provide a sample PLC code snippet in Structured Text (ST) for Rockwell/Studio 5000 for scaling an analog signal, as shown below.]
-
-\`\`\`st
-// Scaling Parameters for a 4-20mA signal
-// Assumes sensor range corresponds to 0-100% of the measurement range.
-RawMin := 4000;    // Raw value at 4mA (Rockwell format)
-RawMax := 20000;   // Raw value at 20mA (Rockwell format)
-EngMin := 0.0;     // Engineering units at 0%
-EngMax := 100.0;   // Engineering units at 100%
-
-// Execute Scale instruction (SCP)
-SCP(MyAnalogInput, RawMin, RawMax, EngMin, EngMax, MyScaledValue);
-\`\`\`
-    `;
-
-    const structure = language === 'es' ? structure_es : structure_en;
-    
     const systemInstruction = `You are a world-class instrumentation and process engineer, synthesizing the expertise from three key texts: Antonio Creus's "Instrumentación Industrial, 8th Edition," Carl Branan's "The Process Engineer's Pocket Handbook," and the VEGA catalog "Tecnología de medición de nivel y presión para el tratamiento de aguas residuales." Your recommendations must be grounded in the detailed technical comparisons from Creus, the practical process considerations from Branan, and the specific application examples from the VEGA catalog.
 
-Your main task is to analyze user-provided application details and give an expert-level sensor recommendation.
+Your main task is to analyze user-provided application details and generate an expert-level sensor recommendation.
 
-When generating the response, you MUST adhere to these principles:
-1.  **Synthesize Knowledge:** Your justification must be robust. Ground your choice in the instrumentation principles from Creus. Support it with process-level insights from Branan. If the application is related to wastewater, water, or similar public works, you MUST also incorporate the specific application knowledge and model series (e.g., VEGAPULS C 21, VEGABAR 82) from the VEGA catalog as prime examples.
-2.  **Comparative Analysis (Creus):** The alternatives you present must be legitimate contenders. The star ratings in your comparative table must reflect the nuanced trade-offs between technologies as detailed in "Instrumentación Industrial".
-3.  **Installation & Practicality (Creus & Branan & VEGA):** Your installation considerations must be practical. Mention instrumentation-specific points from Creus (e.g., need for straight pipe runs), process piping rules of thumb from Branan (e.g., pressure drop considerations), and if relevant (like a pumping station or clarifier), mention any specific installation benefits highlighted in the VEGA document (e.g., non-contact measurement to avoid fouling).
-4.  **Technology & Process Depth (Combined):** Demonstrate a deep understanding of sensor principles from Creus, connect them to the user's project priorities (Cost, Precision, Robustness), and contextualize them with real-world examples from Branan's handbook and the VEGA catalog.
+Your response MUST be a valid JSON object that strictly adheres to the provided schema. The \`justification\` should be detailed and reference the user's specific inputs. Provide 2 to 3 recommendations, with the first one being the top choice.
 
 *** STANDARDS & DIRECTIVES (CRITICAL) ***
-1.  **Standard Override:** If the user provides an "Estándar de Termopar Específico", you MUST use that standard for the wiring warning, ignoring the "País/Región de Instalación" field for color code selection. If this field is not present or is "Autodetect", proceed with the geographic context logic below.
-2.  **Geographic Context:** You must use the "País/Región de Instalación" field to determine the predominant instrumentation standard for thermocouples. This is your primary directive for color codes.
-    *   **North America Region (e.g., Mexico, USA, Canada):** Assume **ANSI MC96.1**.
-    *   **Japan Region (e.g., Japón, Japan):** Assume **JIS C 1602**.
-    *   **Germany Region (e.g., Alemania, Germany):** Assume the current standard is **IEC 60584**, but be aware of the legacy **DIN 43710** standard.
-    *   **Other Regions (Europe, Asia, South America, etc.):** Default to **IEC 60584**.
-3.  **Thermocouple Wiring Warning (IF Variable is Temperature):** If your recommendation includes a thermocouple, you MUST include the "⚠️ Advertencia Crítica de Estándares y Cableado" section and provide the correct color code based on the geographic context.
-    *   **ANSI MC96.1:** State that the rule is **RED is NEGATIVE (-)**. For a Type K, explicitly mention "Yellow is Positive (+), Red is Negative (-)".
-    *   **IEC 60584:** For a Type K, explicitly state: "**GREEN is POSITIVE (+)** and **WHITE is NEGATIVE (-)**. CAUTION! This is the opposite of the ANSI standard."
-    *   **JIS C 1602:** For a Type K, explicitly state: "**RED is POSITIVE (+)** and **WHITE is NEGATIVE (-)**. CAUTION! This is different from both ANSI and IEC standards."
-    *   **Germany Context:** State the current **IEC 60584** standard first. Then, add a warning: "Be aware that older installations in Germany may use the legacy **DIN 43710** standard. For a Type K under DIN, the color code is Red (+) and Green (-). Always verify the standard used in your specific facility to avoid miswiring."
-4.  **Classified Area Validation:** The "Modelos y Marcas Sugeridas" MUST match the requested "Clasificación de Área". This is a separate concept from thermocouple standards. Do not confuse them.
-    *   If "Clase/División" is requested, you must suggest models with **FM, UL, or CSA** approval (e.g., "Cl I, Div 1").
-    *   If "ATEX/IECEx" is requested, you must suggest models with **ATEX/IECEx** approval (e.g., "Ex ia IIC T4 Ga").
-    *   If you detect a conflict (e.g., user is in "Mexico" but requests "ATEX"), you must mention it in your justification: "ATEX models are suggested as requested, though the predominant standard in Mexico is Class/Division. Please verify your plant's specific standards."
+1.  **Standard Override:** If the user provides an "Estándar de Termopar Específico", you MUST use that standard for the wiring warning, ignoring the "País/Región de Instalación" field for color code selection.
+2.  **Geographic Context:** Use the "País/Región de Instalación" field to determine the predominant instrumentation standard for thermocouples.
+    *   **North America (Mexico, USA, Canada):** Assume ANSI MC96.1 (RED is NEGATIVE).
+    *   **Japan:** Assume JIS C 1602.
+    *   **Germany:** State the current IEC 60584 standard, but add a warning about the legacy DIN 43710 standard.
+    *   **Other Regions:** Default to IEC 60584.
+3.  **Thermocouple Wiring Warning:** If your top recommendation is a thermocouple, you MUST populate the "wiringWarning" object with the correct color code details based on the geographic context.
+4.  **Classified Area Validation:** The "suggestedModels" MUST match the requested "Clasificación de Área".
+    *   If "Class/Division" is requested, suggest models with FM, UL, or CSA approval.
+    *   If "ATEX/IECEx" is requested, suggest models with ATEX/IECEx approval.
+    *   Mention any conflicts (e.g., user in "Mexico" requesting "ATEX").
 `;
     
     const prompt = `--- APPLICATION DETAILS ---
 ${details}
 --- END OF DETAILS ---
 
-Now, generate the response following the exact markdown structure provided below.
-${structure}
-    
+Now, generate the JSON response following the schema.
 ${langInstruction}`;
+
+    const config = {
+        responseMimeType: "application/json",
+        responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+                recommendations: {
+                    type: Type.ARRAY,
+                    description: "List of 2-3 sensor recommendations, with the top choice first.",
+                    items: {
+                        type: Type.OBJECT,
+                        properties: {
+                            isTopChoice: { type: Type.BOOLEAN, description: "True if this is the top recommended choice." },
+                            technology: { type: Type.STRING, description: "Name of the sensor technology." },
+                            justification: { type: Type.STRING, description: "Detailed explanation for why this sensor is a good fit, especially for the top choice." },
+                            ratings: {
+                                type: Type.OBJECT,
+                                properties: {
+                                    precision: { type: Type.INTEGER, description: "Rating from 1 to 5 (5 is best)." },
+                                    cost: { type: Type.INTEGER, description: "Rating from 1 to 5 (5 is lowest cost)." },
+                                    robustness: { type: Type.INTEGER, description: "Rating from 1 to 5 (5 is best)." },
+                                    easeOfInstallation: { type: Type.INTEGER, description: "Rating from 1 to 5 (5 is easiest)." }
+                                },
+                                required: ['precision', 'cost', 'robustness', 'easeOfInstallation']
+                            },
+                            suggestedModels: { type: Type.STRING, description: "Example models and brands that fit the application and area classification." },
+                        },
+                        required: ['isTopChoice', 'technology', 'justification', 'ratings', 'suggestedModels']
+                    }
+                },
+                installationConsiderations: {
+                    type: Type.ARRAY,
+                    description: "A bulleted list of 2-3 critical installation tips for the top choice technology.",
+                    items: { type: Type.STRING }
+                },
+                wiringWarning: {
+                    type: Type.OBJECT,
+                    description: "An optional warning about wiring standards, only to be included if the top recommendation is a thermocouple.",
+                    properties: {
+                        title: { type: Type.STRING },
+                        content: { type: Type.STRING }
+                    },
+                    nullable: true
+                },
+                modelsDisclaimer: {
+                    type: Type.STRING,
+                    description: "The standard disclaimer for model suggestions."
+                },
+                implementationGuide: {
+                    type: Type.STRING,
+                    description: "The sample PLC code snippet in Structured Text (ST) for scaling a 4-20mA signal in Rockwell format."
+                }
+            },
+            required: ['recommendations', 'installationConsiderations', 'modelsDisclaimer', 'implementationGuide']
+        }
+    };
     
-    return callApiEndpoint('generateSensorRecommendation', { contents: prompt, config: { systemInstruction } });
+    return callApiEndpoint('generateSensorRecommendation', { prompt, config: { systemInstruction, ...config } });
 };
 
 
@@ -979,7 +1595,7 @@ export const validatePlcLogic = async (params: { language: 'en' | 'es'; code: st
         }
     };
 
-    return callApiEndpoint('validatePlcLogic', { contents: prompt, config });
+    return callApiEndpoint('validatePlcLogic', { prompt, config });
 };
 
 export const suggestPlcLogicFix = async (params: { language: 'en' | 'es'; code: string; issues: LogicIssue[] }): Promise<string> => {
@@ -1004,7 +1620,7 @@ export const suggestPlcLogicFix = async (params: { language: 'en' | 'es'; code: 
     - **IMPORTANT:** If an issue suggests refactoring to a state machine, you MUST perform this refactoring. Replace the chained seal-in rungs with a proper state machine using a single integer tag (e.g., 'Sequence_Step') and explicit state transitions.
 
     ${langInstruction}`;
-    return callApiEndpoint('suggestPlcLogicFix', { contents: prompt });
+    return callApiEndpoint('suggestPlcLogicFix', { prompt });
 };
 
 export const translateLadderToText = async (params: { language: 'en' | 'es'; code: string }): Promise<string> => {
@@ -1047,7 +1663,7 @@ export const translateLadderToText = async (params: { language: 'en' | 'es'; cod
 
     ${langInstruction}`;
 
-    return callApiEndpoint('translateLadderToText', { contents: prompt });
+    return callApiEndpoint('translateLadderToText', { prompt });
 };
 
 export const getNetworkHardwarePlan = async (params: { language: 'en' | 'es'; protocols: string[] }): Promise<string> => {
@@ -1071,5 +1687,5 @@ export const getNetworkHardwarePlan = async (params: { language: 'en' | 'es'; pr
         *   **Cabling:** Specify appropriate cabling (e.g., "Use shielded Cat5e or Cat6 Ethernet cables for industrial environments.").
 
     ${langInstruction}`;
-    return callApiEndpoint('getNetworkHardwarePlan', { contents: prompt });
+    return callApiEndpoint('getNetworkHardwarePlan', { prompt });
 };

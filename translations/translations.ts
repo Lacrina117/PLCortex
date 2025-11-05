@@ -9,6 +9,8 @@ export const translations = {
             commissioning: 'Commissioning',
             reference: 'Reference',
             calculator: 'Calculators',
+            signedInAs: 'Signed in as',
+            logout: 'Logout',
         },
         header_descriptions: {
             solutions: 'Get instant answers and troubleshooting help.',
@@ -47,6 +49,7 @@ export const translations = {
             button: 'Enter',
             error: 'Invalid or inactive code.',
             loading: 'Verifying...',
+            masterUser: 'Master User',
         },
         admin: {
             title: 'Admin Panel - Access Codes',
@@ -65,7 +68,7 @@ export const translations = {
         // Dashboard
         dashboard: {
             title: 'Welcome to PLCortex',
-            subtitle: 'Your AI co-pilot for industrial automation. Select a tool to begin.',
+            subtitle: 'Your expert co-pilot for industrial automation. Select a tool to begin.',
             recentActivity: 'Recent Activity',
         },
         
@@ -259,6 +262,20 @@ export const translations = {
             pdf: 'Export PDF',
         },
         
+        // PDF Export
+        pdf: {
+            sensorReport: {
+                title: 'Sensor Recommendation Report',
+                justification: 'Justification',
+                recommendedTechnologies: 'Recommended Technologies',
+                topChoice: 'Top Choice',
+                easeOfInstallation: 'Ease of Installation',
+                suggestedModels: 'Suggested Models',
+                installationConsiderations: 'Installation Considerations',
+                implementationGuide: 'Implementation Guide',
+            }
+        },
+
         // Reference
         reference: {
             title: 'Quick Reference',
@@ -267,6 +284,39 @@ export const translations = {
             vfdDesc: 'A brief list of some of the most common fault codes for popular VFD brands.',
             plcTitle: 'PLC Data Types',
             plcDesc: 'A reference for common data types used in Allen-Bradley and Siemens PLCs.',
+            plcDataTypes: {
+                allenBradley: {
+                    name: 'Allen-Bradley (Studio 5000)',
+                    types: [
+                        { type: 'BOOL', desc: 'Boolean, 1 bit. Used for on/off states.' },
+                        { type: 'SINT', desc: 'Short Integer, 8 bits signed (-128 to 127).' },
+                        { type: 'INT', desc: 'Integer, 16 bits signed (-32,768 to 32,767).' },
+                        { type: 'DINT', desc: 'Double Integer, 32 bits signed.' },
+                        { type: 'LINT', desc: 'Long Integer, 64 bits signed.' },
+                        { type: 'REAL', desc: 'Floating-point number, 32 bits.' },
+                        { type: 'STRING', desc: 'Character string structure.' },
+                        { type: 'TIMER', desc: 'Timer structure (.PRE, .ACC, .EN, .TT, .DN).' },
+                        { type: 'COUNTER', desc: 'Counter structure (.PRE, .ACC, .CU, .CD, .DN, .OV, .UN).' },
+                    ]
+                },
+                siemens: {
+                    name: 'Siemens (TIA Portal)',
+                    types: [
+                        { type: 'Bool', desc: 'Boolean, 1 bit. Used for on/off states.' },
+                        { type: 'Byte', desc: '8 bits unsigned (0 to 255).' },
+                        { type: 'Word', desc: '16 bits unsigned.' },
+                        { type: 'DWord', desc: '32 bits unsigned.' },
+                        { type: 'SInt', desc: 'Short Integer, 8 bits signed (-128 to 127).' },
+                        { type: 'Int', desc: 'Integer, 16 bits signed (-32,768 to 32,767).' },
+                        { type: 'DInt', desc: 'Double Integer, 32 bits signed.' },
+                        { type: 'LInt', desc: 'Long Integer, 64 bits signed.' },
+                        { type: 'Real', desc: 'Floating-point number, 32 bits.' },
+                        { type: 'LReal', desc: 'Long Real floating-point, 64 bits.' },
+                        { type: 'Time', desc: 'Time duration, 32 bits (e.g., T#5s).' },
+                        { type: 'String', desc: 'Character string.' },
+                    ]
+                }
+            },
             thermocoupleTitle: 'Thermocouple Color Codes',
             thermocoupleDesc: 'Visual reference for international thermocouple wiring standards.',
             thermocoupleTable: {
@@ -777,6 +827,8 @@ export const translations = {
             commissioning: 'Puesta en Marcha',
             reference: 'Referencia',
             calculator: 'Calculadoras',
+            signedInAs: 'Sesión iniciada como',
+            logout: 'Cerrar Sesión',
         },
         header_descriptions: {
             solutions: 'Obtén respuestas instantáneas y ayuda para solucionar problemas.',
@@ -815,6 +867,7 @@ export const translations = {
             button: 'Entrar',
             error: 'Código inválido o inactivo.',
             loading: 'Verificando...',
+            masterUser: 'Usuario Maestro',
         },
         admin: {
             title: 'Panel de Admin - Códigos de Acceso',
@@ -833,7 +886,7 @@ export const translations = {
         // Dashboard
         dashboard: {
             title: 'Bienvenido a PLCortex',
-            subtitle: 'Tu copiloto de IA para la automatización industrial. Selecciona una herramienta para comenzar.',
+            subtitle: 'Tu copiloto experto para la automatización industrial. Selecciona una herramienta para comenzar.',
             recentActivity: 'Actividad Reciente',
         },
 
@@ -1026,6 +1079,20 @@ export const translations = {
         export: {
             pdf: 'Exportar PDF',
         },
+
+        // PDF Export
+        pdf: {
+            sensorReport: {
+                title: 'Reporte de Recomendación de Sensor',
+                justification: 'Justificación',
+                recommendedTechnologies: 'Tecnologías Recomendadas',
+                topChoice: 'Opción Principal',
+                easeOfInstallation: 'Facilidad de Instalación',
+                suggestedModels: 'Modelos Sugeridos',
+                installationConsiderations: 'Consideraciones de Instalación',
+                implementationGuide: 'Guía de Implementación',
+            }
+        },
         
         // Reference
         reference: {
@@ -1035,6 +1102,39 @@ export const translations = {
             vfdDesc: 'Una breve lista de algunos de los códigos de falla más comunes para marcas populares de VFD.',
             plcTitle: 'Tipos de Datos de PLC',
             plcDesc: 'Una referencia para tipos de datos comunes utilizados en PLCs de Allen-Bradley y Siemens.',
+            plcDataTypes: {
+                allenBradley: {
+                    name: 'Allen-Bradley (Studio 5000)',
+                    types: [
+                        { type: 'BOOL', desc: 'Booleano, 1 bit. Usado para estados encendido/apagado.' },
+                        { type: 'SINT', desc: 'Entero Corto, 8 bits con signo (-128 a 127).' },
+                        { type: 'INT', desc: 'Entero, 16 bits con signo (-32,768 a 32,767).' },
+                        { type: 'DINT', desc: 'Entero Doble, 32 bits con signo.' },
+                        { type: 'LINT', desc: 'Entero Largo, 64 bits con signo.' },
+                        { type: 'REAL', desc: 'Número de punto flotante, 32 bits.' },
+                        { type: 'STRING', desc: 'Estructura de cadena de caracteres.' },
+                        { type: 'TIMER', desc: 'Estructura de temporizador (.PRE, .ACC, .EN, .TT, .DN).' },
+                        { type: 'COUNTER', desc: 'Estructura de contador (.PRE, .ACC, .CU, .CD, .DN, .OV, .UN).' },
+                    ]
+                },
+                siemens: {
+                    name: 'Siemens (TIA Portal)',
+                    types: [
+                        { type: 'Bool', desc: 'Booleano, 1 bit. Usado para estados encendido/apagado.' },
+                        { type: 'Byte', desc: '8 bits sin signo (0 a 255).' },
+                        { type: 'Word', desc: '16 bits sin signo.' },
+                        { type: 'DWord', desc: '32 bits sin signo.' },
+                        { type: 'SInt', desc: 'Entero Corto, 8 bits con signo (-128 a 127).' },
+                        { type: 'Int', desc: 'Entero, 16 bits con signo (-32,768 a 32,767).' },
+                        { type: 'DInt', desc: 'Entero Doble, 32 bits con signo.' },
+                        { type: 'LInt', desc: 'Entero Largo, 64 bits con signo.' },
+                        { type: 'Real', desc: 'Número de punto flotante, 32 bits.' },
+                        { type: 'LReal', desc: 'Número de punto flotante largo, 64 bits.' },
+                        { type: 'Time', desc: 'Duración de tiempo, 32 bits (ej. T#5s).' },
+                        { type: 'String', desc: 'Cadena de caracteres.' },
+                    ]
+                }
+            },
             thermocoupleTitle: 'Códigos de Colores de Termopares',
             thermocoupleDesc: 'Referencia visual para estándares internacionales de cableado de termopares.',
             thermocoupleTable: {

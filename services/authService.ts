@@ -30,7 +30,7 @@ export const isUserMasterPassword = (input: string): boolean => {
     return input === USER_MASTER_PASSWORD;
 };
 
-export const validateCode = async (code: string): Promise<void> => {
+export const validateCode = async (code: string): Promise<string> => {
   const response = await fetch('/api/auth', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -41,6 +41,11 @@ export const validateCode = async (code: string): Promise<void> => {
     const errorData = await response.json();
     throw new Error(errorData.error || 'Invalid or inactive code.');
   }
+  
+  const data = await response.json();
+  sessionStorage.setItem('user_token', 'validated');
+  sessionStorage.setItem('user_description', data.description || '');
+  return data.description || '';
 };
 
 export const adminLogin = (password: string): Promise<{ token: string }> => {
@@ -57,8 +62,18 @@ export const adminLogin = (password: string): Promise<{ token: string }> => {
   });
 };
 
-export const adminLogout = (): void => {
+export const logout = (): void => {
     sessionStorage.removeItem('admin_token');
+    sessionStorage.removeItem('user_token');
+    sessionStorage.removeItem('user_description');
+};
+
+export const getUserDescription = (): string | null => {
+    return sessionStorage.getItem('user_description');
+};
+
+export const isUserLoggedIn = (): boolean => {
+    return !!sessionStorage.getItem('user_token');
 };
 
 const getAdminToken = (): string | null => {

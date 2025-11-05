@@ -3,7 +3,7 @@ import { useTranslation } from '../hooks/useTranslation';
 import * as authService from '../services/authService';
 
 interface LoginViewProps {
-  onLoginSuccess: () => void;
+  onLoginSuccess: (description: string) => void;
   onAdminLoginSuccess: () => void;
 }
 
@@ -23,10 +23,13 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess, onAdminLog
         await authService.adminLogin(code);
         onAdminLoginSuccess();
       } else if (authService.isUserMasterPassword(code)) {
-        onLoginSuccess();
+        sessionStorage.setItem('user_token', 'validated');
+        const description = t('login.masterUser');
+        sessionStorage.setItem('user_description', description);
+        onLoginSuccess(description);
       } else {
-        await authService.validateCode(code);
-        onLoginSuccess();
+        const description = await authService.validateCode(code);
+        onLoginSuccess(description);
       }
     } catch (err) {
       setError(t('login.error'));

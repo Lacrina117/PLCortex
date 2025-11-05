@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useTranslation } from '../hooks/useTranslation';
 import { useLanguage } from '../contexts/LanguageContext';
 // FIX: Imported `networkProtocols` instead of the non-existent `networkDevices`.
 import { vfdBrands, vfdModelsByBrand, networkProtocols } from '../constants/automationData';
-import { analyzeFaultCode, analyzeScanTime, generateEnergyEfficiencyPlan, verifyCriticalLogic, validatePlcLogic, suggestPlcLogicFix, LogicIssue, analyzeAsciiFrame, getNetworkHardwarePlan } from '../services/geminiService';
+import { analyzeFaultCode, analyzeScanTime, generateEnergyEfficiencyPlan, verifyCriticalLogic, validatePlcLogic, suggestPlcLogicFix, LogicIssue, analyzeAsciiFrame, getNetworkHardwarePlan, translateLadderToText } from '../services/geminiService';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { ErrorAlert } from '../components/ErrorAlert';
 import { ResultDisplay } from '../components/ResultDisplay';
@@ -85,6 +85,7 @@ export const ToolsView: React.FC = () => {
     const [appType, setAppType] = useState('pump');
     const [loadProfile, setLoadProfile] = useState('');
     const [logicIssues, setLogicIssues] = useState<LogicIssue[]>([]);
+    const [processedCode, setProcessedCode] = useState('');
     const [hexFrame, setHexFrame] = useState('01 03 00 0A 00 01');
     const [asciiFrame, setAsciiFrame] = useState('<STX>+0015.50g<CR><LF>');
     // FIX: Renamed state from `selectedDevices` to `selectedProtocols` for clarity.
@@ -176,21 +177,33 @@ export const ToolsView: React.FC = () => {
                     res = await verifyCriticalLogic({ language, code, rules });
                     break;
                 case 'validator':
-                    res = await validatePlcLogic({ language, code });
-                    try {
-                        let jsonString = res;
-                        const match = res.match(/```json\s*([\s\S]*?)\s*```|(\[[\s\S]*\])/);
-                        if (match) {
-                            jsonString = match[1] || match[2];
+                    {
+                        const isAscii = code.includes('|--') || (code.includes('|') && code.split('\n').length > 1);
+                        let logicToValidate = code;
+    
+                        if (isAscii) {
+                            const translated = await translateLadderToText({ language, code });
+                            logicToValidate = translated.trim();
                         }
-                        const issues = JSON.parse(jsonString);
-                        setLogicIssues(issues);
-                        res = '';
-                    } catch {
-                        console.error("Raw response from API:", res);
-                        throw new Error("Failed to parse validation results. The API may have returned an unexpected format.");
+                        
+                        setProcessedCode(logicToValidate);
+                        
+                        res = await validatePlcLogic({ language, code: logicToValidate });
+                        try {
+                            let jsonString = res;
+                            const match = res.match(/```json\s*([\s\S]*?)\s*```|(\[[\s\S]*\])/);
+                            if (match) {
+                                jsonString = match[1] || match[2];
+                            }
+                            const issues = JSON.parse(jsonString);
+                            setLogicIssues(issues);
+                            res = '';
+                        } catch {
+                            console.error("Raw response from API:", res);
+                            throw new Error("Failed to parse validation results. The API may have returned an unexpected format.");
+                        }
+                        break;
                     }
-                    break;
                 case 'network':
                     switch(activeNetworkTool) {
                         case 'crc':
@@ -240,7 +253,7 @@ export const ToolsView: React.FC = () => {
         setIsLoading(true);
         setError(null);
         try {
-            const fixedCode = await suggestPlcLogicFix({ language, code, issues: logicIssues });
+            const fixedCode = await suggestPlcLogicFix({ language, code: processedCode, issues: logicIssues });
             setResult(fixedCode);
         } catch (err) {
             setError(err instanceof Error ? err.message : t('error.unexpected'));

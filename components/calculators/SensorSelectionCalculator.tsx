@@ -4,7 +4,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { generateSensorRecommendation } from '../../services/geminiService';
 import { LoadingSpinner } from '../LoadingSpinner';
 import { ErrorAlert } from '../ErrorAlert';
-import { ResultDisplay } from '../ResultDisplay';
+import { SensorRecommendationDisplay } from './SensorRecommendationDisplay';
 
 const initialFormData = {
     processVariable: 'level',
@@ -309,7 +309,7 @@ ${formData.mediumType === 'liquid' ? `
 
             {isLoading && <LoadingSpinner message={t('calculator.sensorSelection.generating')} />}
             {error && <ErrorAlert message={error} />}
-            {result && <ResultDisplay resultText={result} />}
+            {result && <SensorRecommendationDisplay recommendationJson={result} />}
         </div>
     );
 };

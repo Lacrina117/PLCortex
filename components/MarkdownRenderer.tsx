@@ -18,20 +18,54 @@ export const MarkdownRenderer: React.FC<{ markdownText: string }> = ({ markdownT
 
         if (line.trim().startsWith('```')) {
             const codeLines = [];
-            const lang = line.trim().substring(3).trim();
+            const langMatch = line.trim().match(/^```(\w*)/);
+            const lang = langMatch ? langMatch[1].trim() : '';
             i++; 
             while (i < lines.length && !lines[i].trim().startsWith('```')) {
                 codeLines.push(lines[i]);
                 i++;
             }
-            elements.push(
-                <div key={elements.length} className="my-4 rounded-lg shadow-inner bg-gray-100 dark:bg-gray-900/50 relative overflow-x-auto">
-                    {lang && <span className="absolute top-2 right-3 text-xs text-gray-500 z-10">{lang}</span>}
-                    <pre className="p-4 text-sm font-mono text-gray-800 dark:text-gray-200 whitespace-pre">
-                        <code>{codeLines.join('\n')}</code>
-                    </pre>
-                </div>
-            );
+
+            // Check if the first line looks like it has our ST line numbers
+            const hasLineNumbers = codeLines.length > 0 && /^\d+:/.test(codeLines[0]);
+
+            if (hasLineNumbers) {
+                elements.push(
+                    <div key={elements.length} className="my-4 rounded-lg shadow-inner bg-gray-100 dark:bg-gray-900/50 relative overflow-x-auto font-mono text-sm">
+                        {lang && <span className="absolute top-2 right-3 text-xs text-gray-500 z-10">{lang}</span>}
+                        {/* Using a table to separate line numbers from code for better copy-paste experience */}
+                        <table className="w-full border-collapse">
+                            <tbody>
+                                {codeLines.map((codeLine, index) => {
+                                    const match = codeLine.match(/^(\d+):(\s?.*)/);
+                                    const number = match ? match[1] : '';
+                                    const code = match ? match[2] : codeLine;
+                                    return (
+                                        <tr key={index}>
+                                            {/* Line number cell - not selectable */}
+                                            <td className="py-0.5 pl-4 pr-3 text-right text-gray-500 select-none">{number}</td>
+                                            {/* Code cell */}
+                                            <td className="py-0.5 pl-2 pr-4 text-gray-800 dark:text-gray-200 whitespace-pre">
+                                                <code>{code}</code>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
+                );
+            } else {
+                // Original rendering for other code blocks (like ladder logic)
+                elements.push(
+                    <div key={elements.length} className="my-4 rounded-lg shadow-inner bg-gray-100 dark:bg-gray-900/50 relative overflow-x-auto">
+                        {lang && <span className="absolute top-2 right-3 text-xs text-gray-500 z-10">{lang}</span>}
+                        <pre className="p-4 text-sm font-mono text-gray-800 dark:text-gray-200 whitespace-pre">
+                            <code>{codeLines.join('\n')}</code>
+                        </pre>
+                    </div>
+                );
+            }
             i++; 
             continue;
         }

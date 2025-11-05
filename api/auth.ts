@@ -20,12 +20,12 @@ export default async function handler(req: Request) {
 
     // Fetch the specific code from the database
     const { rows } = await sql`
-        SELECT is_active FROM access_codes WHERE access_code = ${accessCode};
+        SELECT is_active, description FROM access_codes WHERE access_code = ${accessCode};
     `;
 
     // Check if a row was found and if it's active
     if (rows.length > 0 && rows[0].is_active) {
-      return new Response(JSON.stringify({ message: 'Code validated successfully' }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+      return new Response(JSON.stringify({ message: 'Code validated successfully', description: rows[0].description }), { status: 200, headers: { 'Content-Type': 'application/json' } });
     } else {
       return new Response(JSON.stringify({ error: 'Invalid or inactive code' }), { status: 401, headers: { 'Content-Type': 'application/json' } });
     }

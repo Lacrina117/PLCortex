@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from '../hooks/useTranslation';
 import { ThemeToggle } from './ThemeToggle';
 import { Language, useLanguage } from '../contexts/LanguageContext';
@@ -7,6 +7,8 @@ import { View } from '../App';
 interface HeaderProps {
     currentView: View;
     setView: (view: View) => void;
+    userDescription?: string | null;
+    onLogout?: () => void;
 }
 
 interface LanguageSelectorProps {
@@ -43,9 +45,59 @@ const LanguageSelector: React.FC<LanguageSelectorProps> = ({ isMobile = false })
     );
 };
 
-export const Header: React.FC<HeaderProps> = ({ currentView, setView }) => {
+export const Header: React.FC<HeaderProps> = ({ currentView, setView, userDescription, onLogout }) => {
     const { t } = useTranslation();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+    const UserMenu: React.FC<{ description: string; onLogout: () => void }> = ({ description, onLogout }) => {
+        const [isOpen, setIsOpen] = useState(false);
+        const menuRef = useRef<HTMLDivElement>(null);
+    
+        useEffect(() => {
+            const handleClickOutside = (event: MouseEvent) => {
+                if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+                    setIsOpen(false);
+                }
+            };
+            document.addEventListener('mousedown', handleClickOutside);
+            return () => document.removeEventListener('mousedown', handleClickOutside);
+        }, []);
+    
+        return (
+            <div className="relative" ref={menuRef}>
+                <button
+                    onClick={() => setIsOpen(!isOpen)}
+                    className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                >
+                    <span className="h-8 w-8 rounded-full bg-indigo-100 dark:bg-gray-700 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold">
+                        {description.charAt(0).toUpperCase()}
+                    </span>
+                    <span className="hidden sm:inline text-sm font-medium max-w-[120px] truncate">{description}</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 text-gray-500 transition-transform ${isOpen ? 'rotate-180' : ''}`} viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                    </svg>
+                </button>
+    
+                {isOpen && (
+                    <div className="absolute right-0 mt-2 w-56 origin-top-right bg-white dark:bg-gray-800 rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none animate-fade-in z-50">
+                        <div className="py-1">
+                            <div className="px-4 py-3">
+                                <p className="text-xs text-gray-500 dark:text-gray-400">{t('header.signedInAs')}</p>
+                                <p className="text-sm font-medium text-gray-900 dark:text-gray-200 truncate">{description}</p>
+                            </div>
+                            <div className="border-t border-gray-100 dark:border-gray-700"></div>
+                            <button
+                                onClick={onLogout}
+                                className="w-full text-left block px-4 py-2 text-sm text-red-700 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700"
+                            >
+                                {t('header.logout')}
+                            </button>
+                        </div>
+                    </div>
+                )}
+            </div>
+        );
+    };
 
     const navItems: { key: View, label: string, description: string }[] = [
         { key: 'solutions', label: t('header.solutions'), description: t('header_descriptions.solutions') },
@@ -95,8 +147,14 @@ export const Header: React.FC<HeaderProps> = ({ currentView, setView }) => {
                             ))}
                         </nav>
                         <div className="w-px h-6 bg-gray-200 dark:bg-gray-700"></div>
-                        <LanguageSelector />
-                        <ThemeToggle />
+                        {userDescription && onLogout ? (
+                            <UserMenu description={userDescription} onLogout={onLogout} />
+                        ) : (
+                            <>
+                                <LanguageSelector />
+                                <ThemeToggle />
+                            </>
+                        )}
                     </div>
                     <div className="md:hidden flex items-center">
                         <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 dark:hover:text-gray-300 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500">
@@ -120,7 +178,7 @@ export const Header: React.FC<HeaderProps> = ({ currentView, setView }) => {
                 <div className="md:hidden fixed inset-0 z-30 bg-black/20 backdrop-blur-sm" onClick={() => setIsMenuOpen(false)}></div>
             )}
              <div className={`md:hidden fixed top-0 right-0 h-full w-64 bg-white dark:bg-gray-800 z-40 transform transition-transform duration-300 ease-in-out ${isMenuOpen ? 'translate-x-0' : 'translate-x-full'}`}>
-                <div className="p-5">
+                <div className="p-5 flex flex-col h-full">
                      <div className="flex justify-between items-center mb-6">
                         <span className="text-lg font-bold">Menu</span>
                         <button onClick={() => setIsMenuOpen(false)} className="p-2 rounded-md text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700">
@@ -129,7 +187,7 @@ export const Header: React.FC<HeaderProps> = ({ currentView, setView }) => {
                             </svg>
                         </button>
                     </div>
-                    <nav className="flex flex-col space-y-1">
+                    <nav className="flex flex-col space-y-1 flex-grow">
                         {navItems.map(item => (
                             <button
                                 key={item.key}
@@ -141,9 +199,21 @@ export const Header: React.FC<HeaderProps> = ({ currentView, setView }) => {
                             </button>
                         ))}
                     </nav>
-                    <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between">
-                       <LanguageSelector isMobile={true}/>
-                       <ThemeToggle />
+                    <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                        {userDescription && onLogout ? (
+                             <div>
+                                <p className="px-3 text-xs text-gray-500 dark:text-gray-400">{t('header.signedInAs')}</p>
+                                <p className="px-3 py-1 font-semibold">{userDescription}</p>
+                                <button onClick={onLogout} className="mt-2 w-full text-left px-3 py-2 rounded-md font-medium bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-300">
+                                    {t('header.logout')}
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="flex items-center justify-between">
+                               <LanguageSelector isMobile={true}/>
+                               <ThemeToggle />
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
