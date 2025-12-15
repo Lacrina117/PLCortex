@@ -262,7 +262,7 @@ export const structureLogEntry = async (rawText: string): Promise<LogEntry> => {
             config: {
                 responseMimeType: 'application/json',
                 responseSchema: schema,
-                thinkingConfig: { thinkingBudget: 1024 } // Low thinking budget for simple extraction
+                // REMOVED thinkingConfig as it is not supported by gemini-3-pro-preview
             }
         });
         return JSON.parse(response.text);
@@ -293,7 +293,7 @@ export const generateShiftReport = async (logs: any[], language: 'en' | 'es'): P
         const response = await callApiEndpoint('generateShiftReport', {
             contents: [{ parts: [{ text: prompt }] }],
             config: {
-                thinkingConfig: { thinkingBudget: 2048 }
+                // REMOVED thinkingConfig as it is not supported by gemini-3-pro-preview
             }
         });
         return response.text;

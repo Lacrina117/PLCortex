@@ -36,7 +36,7 @@ export const validateCode = async (code: string): Promise<string> => {
   const data = await response.json();
   sessionStorage.setItem('user_token', 'validated');
   sessionStorage.setItem('user_description', data.description || '');
-  sessionStorage.setItem('user_group', data.groupName || 'General');
+  sessionStorage.setItem('user_group', data.groupName || 'Individual'); // Default to Individual
   sessionStorage.setItem('user_is_leader', data.isLeader ? 'true' : 'false');
   return data.description || '';
 };
@@ -67,7 +67,7 @@ export const getUserDescription = (): string | null => {
 };
 
 export const getUserGroup = (): string => {
-    return sessionStorage.getItem('user_group') || 'General';
+    return sessionStorage.getItem('user_group') || 'Individual';
 };
 
 export const isUserLeader = (): boolean => {
@@ -84,35 +84,53 @@ const getAdminToken = (): string | null => {
 
 export const getCodes = async (): Promise<AccessCode[]> => {
     const token = getAdminToken();
-    if (!token) {
-        throw new Error('Unauthorized');
-    }
+    if (!token) throw new Error('Unauthorized');
     const response = await fetch('/api/admin', {
-        headers: {
-            'Authorization': `Bearer ${token}`,
-        },
+        headers: { 'Authorization': `Bearer ${token}` },
     });
-    if (!response.ok) {
-        throw new Error('Failed to fetch codes.');
-    }
+    if (!response.ok) throw new Error('Failed to fetch codes.');
     return response.json();
+};
+
+export const createCode = async (groupName: string, description: string, isLeader: boolean): Promise<void> => {
+    const token = getAdminToken();
+    if (!token) throw new Error('Unauthorized');
+    const response = await fetch('/api/admin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ groupName, description, isLeader }),
+    });
+    if (!response.ok) throw new Error('Failed to create code.');
 };
 
 export const updateCode = async (id: string, updates: Partial<Pick<AccessCode, 'isActive' | 'description' | 'groupName' | 'isLeader'>>): Promise<AccessCode> => {
     const token = getAdminToken();
-    if (!token) {
-        throw new Error('Unauthorized');
-    }
+    if (!token) throw new Error('Unauthorized');
     const response = await fetch(`/api/admin`, {
         method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-        },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ id, updates }),
     });
-    if (!response.ok) {
-        throw new Error('Failed to update code.');
-    }
+    if (!response.ok) throw new Error('Failed to update code.');
     return response.json();
+};
+
+export const deleteCode = async (id: string): Promise<void> => {
+    const token = getAdminToken();
+    if (!token) throw new Error('Unauthorized');
+    const response = await fetch(`/api/admin?id=${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` },
+    });
+    if (!response.ok) throw new Error('Failed to delete code.');
+};
+
+export const resetDatabase = async (): Promise<void> => {
+    const token = getAdminToken();
+    if (!token) throw new Error('Unauthorized');
+    const response = await fetch(`/api/admin?action=reset_all`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` },
+    });
+    if (!response.ok) throw new Error('Failed to reset database.');
 };
