@@ -1,3 +1,4 @@
+
 import { View } from '../App';
 
 const STORAGE_KEY = 'plcortex_recent_activity';
@@ -14,7 +15,7 @@ export const getRecentActivity = (): View[] => {
             const views = JSON.parse(stored);
             if (Array.isArray(views)) {
                 // Basic validation to ensure stored items are valid views
-                const validViews: View[] = ['solutions', 'practices', 'tools', 'reference', 'calculator'];
+                const validViews: View[] = ['solutions', 'practices', 'tools', 'reference', 'calculator', 'shiftLog'];
                 return views.filter(v => validViews.includes(v));
             }
         }

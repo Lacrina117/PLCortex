@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 
 // Import services
@@ -15,16 +16,16 @@ import { PracticesView } from './views/PracticesView';
 import { ToolsView } from './views/ToolsView';
 import { ReferenceView } from './views/ReferenceView';
 import { CalculatorView } from './views/CalculatorView';
+import { ShiftLogView } from './views/ShiftLogView';
 
-// FIX: Define and export the `View` type. This fixes errors in Header.tsx,
-// DashboardView.tsx, and activityService.ts which were unable to import it.
 export type View =
   | 'dashboard'
   | 'solutions'
   | 'practices'
   | 'tools'
   | 'reference'
-  | 'calculator';
+  | 'calculator'
+  | 'shiftLog';
 
 type AppState = 'landing' | 'login' | 'app' | 'admin';
 
@@ -60,6 +61,8 @@ const App: React.FC = () => {
                 return <ReferenceView />;
             case 'calculator':
                 return <CalculatorView />;
+            case 'shiftLog':
+                return <ShiftLogView />;
             case 'dashboard':
             default:
                 return <DashboardView setView={handleSetView} />;
@@ -91,11 +94,14 @@ const App: React.FC = () => {
             const isFullBleedView = ['solutions'].includes(currentView);
             
             const mainClasses = isFullBleedView
-                ? "flex-grow flex flex-col overflow-hidden"
-                : "flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-8";
+                ? "flex-grow flex flex-col overflow-hidden relative z-10"
+                : "flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-10";
 
             return (
-                <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-300">
+                <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 transition-colors duration-300 relative">
+                    {/* Background Pattern for the App */}
+                    <div className="absolute inset-0 bg-grid-pattern opacity-[0.03] pointer-events-none dark:opacity-[0.05]"></div>
+                    
                     <Header 
                         currentView={currentView} 
                         setView={handleSetView} 
@@ -110,6 +116,4 @@ const App: React.FC = () => {
     }
 };
 
-// FIX: Default export the `App` component. This resolves errors in index.tsx
-// which was unable to find a default export to render.
 export default App;

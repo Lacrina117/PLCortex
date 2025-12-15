@@ -1,26 +1,17 @@
-// FIX: Refactored to use API endpoints instead of mock localStorage database.
-/**
- * =============================================================================
- * PRODUCTION AUTH SERVICE
- * =============================================================================
- * This service now communicates with Vercel Serverless Functions (/api/auth/*)
- * to handle access code validation and management. The serverless functions
- * are responsible for securely interacting with the Vercel KV database.
- * =============================================================================
- */
 
+// FIX: Refactored to use API endpoints instead of mock localStorage database.
 export interface AccessCode {
   id: string;
   accessCode: string;
   createdAt: string;
   isActive: boolean;
   description: string;
+  groupName?: string;
+  isLeader?: boolean;
 }
 
 const ADMIN_PASSWORD = "lacrina117";
 const USER_MASTER_PASSWORD = "150995";
-
-// --- Service Functions (Calling API endpoints) ---
 
 export const isMasterPassword = (input: string): boolean => {
     return input === ADMIN_PASSWORD;
@@ -45,12 +36,13 @@ export const validateCode = async (code: string): Promise<string> => {
   const data = await response.json();
   sessionStorage.setItem('user_token', 'validated');
   sessionStorage.setItem('user_description', data.description || '');
+  sessionStorage.setItem('user_group', data.groupName || 'General');
+  sessionStorage.setItem('user_is_leader', data.isLeader ? 'true' : 'false');
   return data.description || '';
 };
 
 export const adminLogin = (password: string): Promise<{ token: string }> => {
   return new Promise((resolve, reject) => {
-    // Admin login/logout can remain a simple sessionStorage check for this app's purpose.
     setTimeout(() => {
       if (password === ADMIN_PASSWORD) {
         sessionStorage.setItem('admin_token', 'mock-admin-token');
@@ -66,10 +58,20 @@ export const logout = (): void => {
     sessionStorage.removeItem('admin_token');
     sessionStorage.removeItem('user_token');
     sessionStorage.removeItem('user_description');
+    sessionStorage.removeItem('user_group');
+    sessionStorage.removeItem('user_is_leader');
 };
 
 export const getUserDescription = (): string | null => {
     return sessionStorage.getItem('user_description');
+};
+
+export const getUserGroup = (): string => {
+    return sessionStorage.getItem('user_group') || 'General';
+};
+
+export const isUserLeader = (): boolean => {
+    return sessionStorage.getItem('user_is_leader') === 'true';
 };
 
 export const isUserLoggedIn = (): boolean => {
@@ -96,7 +98,7 @@ export const getCodes = async (): Promise<AccessCode[]> => {
     return response.json();
 };
 
-export const updateCode = async (id: string, updates: Partial<Pick<AccessCode, 'isActive' | 'description'>>): Promise<AccessCode> => {
+export const updateCode = async (id: string, updates: Partial<Pick<AccessCode, 'isActive' | 'description' | 'groupName' | 'isLeader'>>): Promise<AccessCode> => {
     const token = getAdminToken();
     if (!token) {
         throw new Error('Unauthorized');

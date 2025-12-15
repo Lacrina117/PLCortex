@@ -1,3 +1,4 @@
+
 import { sql } from '@vercel/postgres';
 import { AccessCode } from '../services/authService';
 
@@ -17,11 +18,11 @@ const STATIC_ACCESS_CODES: string[] = [
 ];
 
 /**
- * Ensures the database table exists and is populated with initial data if empty.
- * This function is idempotent and safe to call on every request.
+ * Ensures the database tables exist and are populated.
+ * Handles schema migration for Groups and Roles.
  */
 async function initializeDatabase() {
-    // Create the table if it doesn't exist
+    // 1. Create main table
     await sql`
         CREATE TABLE IF NOT EXISTS access_codes (
             id TEXT PRIMARY KEY,
@@ -32,33 +33,52 @@ async function initializeDatabase() {
         );
     `;
 
-    // Check if the table is empty
+    // 2. Add columns for Groups and Roles if they don't exist (Manual migration)
+    try {
+        await sql`ALTER TABLE access_codes ADD COLUMN IF NOT EXISTS group_name TEXT DEFAULT 'General'`;
+        await sql`ALTER TABLE access_codes ADD COLUMN IF NOT EXISTS is_leader BOOLEAN DEFAULT FALSE`;
+    } catch (e) {
+        console.log("Columns might already exist or error adding them:", e);
+    }
+
+    // 3. Create Shift Logs table
+    await sql`
+        CREATE TABLE IF NOT EXISTS shift_logs (
+            id SERIAL PRIMARY KEY,
+            group_name TEXT NOT NULL,
+            user_description TEXT,
+            raw_input TEXT,
+            structured_data JSONB,
+            created_at TIMESTAMPTZ DEFAULT NOW()
+        );
+    `;
+
+    // 4. Populate initial codes if empty
     const { rows: countResult } = await sql`SELECT COUNT(*) FROM access_codes;`;
     const count = parseInt(countResult[0].count, 10);
 
-    // If empty, populate with static codes
     if (count === 0) {
         console.log("Initializing 'access_codes' table with static codes...");
         const initialCodes = STATIC_ACCESS_CODES.map((codeStr, i) => ({
             id: `code_${i + 1}`,
             accessCode: codeStr,
             createdAt: new Date().toISOString(),
-            isActive: i < 18, // Disable the last two codes by default
-            description: i === 19 ? 'Example Disabled' : '',
+            isActive: i < 18,
+            description: i === 19 ? 'Example Disabled' : (i === 0 ? 'Plant Manager' : `Technician ${i}`),
+            groupName: i < 5 ? 'Maintenance A' : (i < 10 ? 'Maintenance B' : 'General'),
+            isLeader: i === 0 || i === 5,
         }));
 
-        // Insert each code
         for (const code of initialCodes) {
             await sql`
-                INSERT INTO access_codes (id, access_code, created_at, is_active, description)
-                VALUES (${code.id}, ${code.accessCode}, ${code.createdAt}, ${code.isActive}, ${code.description});
+                INSERT INTO access_codes (id, access_code, created_at, is_active, description, group_name, is_leader)
+                VALUES (${code.id}, ${code.accessCode}, ${code.createdAt}, ${code.isActive}, ${code.description}, ${code.groupName}, ${code.isLeader});
             `;
         }
         console.log("Database initialization complete.");
     }
 }
 
-// Main handler for all /api/admin requests.
 export default async function handler(req: Request) {
     try {
         await initializeDatabase();
@@ -67,7 +87,6 @@ export default async function handler(req: Request) {
         return new Response(JSON.stringify({ error: 'Database connection or setup error.' }), { status: 500, headers: { 'Content-Type': 'application/json' } });
     }
 
-    // In a real app, you'd verify a JWT here to protect the admin endpoint.
     if (req.method === 'GET') {
         return handleGet(req);
     }
@@ -77,17 +96,17 @@ export default async function handler(req: Request) {
     return new Response(JSON.stringify({ error: 'Method not allowed' }), { status: 405, headers: { 'Content-Type': 'application/json' } });
 }
 
-// Handles GET /api/admin
 async function handleGet(req: Request) {
     try {
-        // Fetch and return all codes, aliasing column names to match the frontend's camelCase expectation.
         const { rows } = await sql<AccessCode>`
             SELECT 
                 id, 
                 access_code as "accessCode", 
                 created_at as "createdAt", 
                 is_active as "isActive", 
-                description 
+                description,
+                group_name as "groupName",
+                is_leader as "isLeader"
             FROM access_codes 
             ORDER BY created_at DESC;
         `;
@@ -101,38 +120,35 @@ async function handleGet(req: Request) {
     }
 }
 
-// Handles PUT /api/admin
 async function handlePut(req: Request) {
     try {
         const { id, updates } = await req.json();
 
-        if (!id || !updates || (updates.isActive === undefined && updates.description === undefined)) {
+        if (!id || !updates) {
             return new Response(JSON.stringify({ error: 'Invalid request body' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
         }
 
-        // Fetch the current state of the code to handle partial updates
-        const { rows: currentRows } = await sql`SELECT is_active, description FROM access_codes WHERE id = ${id};`;
+        const { rows: currentRows } = await sql`SELECT is_active, description, group_name, is_leader FROM access_codes WHERE id = ${id};`;
         if (currentRows.length === 0) {
             return new Response(JSON.stringify({ error: 'Code not found' }), { status: 404, headers: { 'Content-Type': 'application/json' } });
         }
         const currentCode = currentRows[0];
         
-        // Merge updates with current state
         const newIsActive = updates.isActive !== undefined ? updates.isActive : currentCode.is_active;
         const newDescription = updates.description !== undefined ? updates.description : currentCode.description;
+        const newGroupName = updates.groupName !== undefined ? updates.groupName : currentCode.group_name;
+        const newIsLeader = updates.isLeader !== undefined ? updates.isLeader : currentCode.is_leader;
 
-        // Perform the update and return the updated row
         const { rows: updatedRows } = await sql`
             UPDATE access_codes
-            SET is_active = ${newIsActive}, description = ${newDescription}
+            SET is_active = ${newIsActive}, 
+                description = ${newDescription},
+                group_name = ${newGroupName},
+                is_leader = ${newIsLeader}
             WHERE id = ${id}
-            RETURNING id, access_code as "accessCode", created_at as "createdAt", is_active as "isActive", description;
+            RETURNING id, access_code as "accessCode", created_at as "createdAt", is_active as "isActive", description, group_name as "groupName", is_leader as "isLeader";
         `;
         
-        if (updatedRows.length === 0) {
-            throw new Error('Update failed, RETURNING clause returned no rows.');
-        }
-
         return new Response(JSON.stringify(updatedRows[0]), {
             status: 200,
             headers: { 'Content-Type': 'application/json' },

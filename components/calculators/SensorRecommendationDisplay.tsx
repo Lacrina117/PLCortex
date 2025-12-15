@@ -1,4 +1,4 @@
-import React, { useMemo, useRef } from 'react';
+import React, { useMemo, useRef, useState, useEffect } from 'react';
 import { useTranslation } from '../../hooks/useTranslation';
 import { ErrorAlert } from '../ErrorAlert';
 import { ExportButton } from '../ExportButton';
@@ -25,7 +25,7 @@ interface RecommendationData {
     content: string;
   };
   modelsDisclaimer: string;
-  implementationGuide: string;
+  implementationGuide: string | Record<string, string>;
 }
 
 // --- HELPER COMPONENTS ---
@@ -81,6 +81,7 @@ export const SensorRecommendationDisplay: React.FC<{ recommendationJson: string 
     const { t } = useTranslation();
     const exportRef = useRef<HTMLDivElement>(null);
     const cardsRef = useRef<HTMLDivElement>(null);
+    const [activeTab, setActiveTab] = useState('');
 
     const data: RecommendationData | null = useMemo(() => {
         try {
@@ -91,6 +92,14 @@ export const SensorRecommendationDisplay: React.FC<{ recommendationJson: string 
             return null;
         }
     }, [recommendationJson]);
+
+    useEffect(() => {
+        if (data && typeof data.implementationGuide === 'object' && data.implementationGuide !== null && Object.keys(data.implementationGuide).length > 0) {
+            if (!activeTab || !data.implementationGuide[activeTab as keyof typeof data.implementationGuide]) {
+                setActiveTab(Object.keys(data.implementationGuide)[0]);
+            }
+        }
+    }, [data, activeTab]);
 
     if (!data) {
         return <ErrorAlert message="Failed to parse the recommendation data from the AI. The format was unexpected." />;
@@ -155,11 +164,34 @@ export const SensorRecommendationDisplay: React.FC<{ recommendationJson: string 
             {/* Implementation Guide */}
              <section>
                 <h3 className="text-xl font-semibold mb-2">Guía Rápida de Implementación</h3>
-                <pre className="p-4 bg-gray-900 text-gray-200 rounded-md text-xs whitespace-pre-wrap">
-                    <code>
-                        {data.implementationGuide}
-                    </code>
-                </pre>
+                {typeof data.implementationGuide === 'object' && data.implementationGuide !== null && Object.keys(data.implementationGuide).length > 0 ? (
+                    <div>
+                        <div className="border-b border-gray-200 dark:border-gray-700">
+                            <nav className="-mb-px flex space-x-4 overflow-x-auto" aria-label="Tabs">
+                                {Object.keys(data.implementationGuide).map(key => (
+                                    <button
+                                        key={key}
+                                        onClick={() => setActiveTab(key)}
+                                        className={`${activeTab === key ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:hover:text-gray-300 dark:hover:border-gray-600'} whitespace-nowrap capitalize py-2 px-3 border-b-2 font-medium text-sm`}
+                                    >
+                                        {key}
+                                    </button>
+                                ))}
+                            </nav>
+                        </div>
+                        <pre className="mt-2 p-4 bg-gray-900 text-gray-200 rounded-md text-xs whitespace-pre-wrap max-h-80 overflow-auto">
+                            <code>
+                                {data.implementationGuide[activeTab as keyof typeof data.implementationGuide]}
+                            </code>
+                        </pre>
+                    </div>
+                ) : (
+                    <pre className="p-4 bg-gray-900 text-gray-200 rounded-md text-xs whitespace-pre-wrap">
+                        <code>
+                            {data.implementationGuide as string}
+                        </code>
+                    </pre>
+                )}
             </section>
 
         </div>

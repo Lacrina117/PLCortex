@@ -25,7 +25,7 @@ interface RecommendationData {
     content: string;
   };
   modelsDisclaimer: string;
-  implementationGuide: string;
+  implementationGuide: string | Record<string, string>;
 }
 
 interface ExportButtonProps {
@@ -165,25 +165,61 @@ const generateSensorPdf = async (doc: jsPDF, data: RecommendationData, t: (key: 
     if (data.implementationGuide) {
         checkY(20);
         drawHeader(t('pdf.sensorReport.implementationGuide'));
-        doc.setFillColor(243, 244, 246); // Light gray
-        const codeLines = doc.splitTextToSize(data.implementationGuide, usableWidth - 10);
-        const codeHeight = codeLines.length * 8 * 1.2 + 10;
-        
-        if (y + codeHeight > doc.internal.pageSize.getHeight() - margin) {
-            doc.addPage();
-            y = margin;
-        }
-        
-        doc.rect(margin, y, usableWidth, codeHeight, 'F');
-        y += 10;
-        
-        doc.setFont('courier', 'normal');
-        doc.setFontSize(8);
-        doc.setTextColor('#111827');
-        
-        for (const line of codeLines) {
-            doc.text(line, margin + 5, y);
-            y += 8 * 1.2;
+
+        if (typeof data.implementationGuide === 'object') {
+            for (const platform in data.implementationGuide) {
+                const code = data.implementationGuide[platform as keyof typeof data.implementationGuide];
+                if (code) {
+                    y += 10;
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(10);
+                    doc.text(platform.charAt(0).toUpperCase() + platform.slice(1), margin, y);
+                    y += 12;
+
+                    doc.setFillColor(243, 244, 246); // Light gray
+                    const codeLines = doc.splitTextToSize(code, usableWidth - 10);
+                    const codeHeight = codeLines.length * 8 * 1.2 + 10;
+                    
+                    if (y + codeHeight > doc.internal.pageSize.getHeight() - margin) {
+                        doc.addPage();
+                        y = margin;
+                    }
+                    
+                    doc.rect(margin, y, usableWidth, codeHeight, 'F');
+                    y += 10;
+                    
+                    doc.setFont('courier', 'normal');
+                    doc.setFontSize(8);
+                    doc.setTextColor('#111827');
+                    
+                    for (const line of codeLines) {
+                        doc.text(line, margin + 5, y);
+                        y += 8 * 1.2;
+                    }
+                    y += 5; // spacing after code block
+                }
+            }
+        } else { // Fallback for string
+            doc.setFillColor(243, 244, 246); // Light gray
+            const codeLines = doc.splitTextToSize(data.implementationGuide, usableWidth - 10);
+            const codeHeight = codeLines.length * 8 * 1.2 + 10;
+            
+            if (y + codeHeight > doc.internal.pageSize.getHeight() - margin) {
+                doc.addPage();
+                y = margin;
+            }
+            
+            doc.rect(margin, y, usableWidth, codeHeight, 'F');
+            y += 10;
+            
+            doc.setFont('courier', 'normal');
+            doc.setFontSize(8);
+            doc.setTextColor('#111827');
+            
+            for (const line of codeLines) {
+                doc.text(line, margin + 5, y);
+                y += 8 * 1.2;
+            }
         }
     }
 };

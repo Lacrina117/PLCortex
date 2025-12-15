@@ -1,15 +1,16 @@
+
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useTranslation } from '../hooks/useTranslation';
 import { useLanguage } from '../contexts/LanguageContext';
 // FIX: Imported `networkProtocols` instead of the non-existent `networkDevices`.
-import { vfdBrands, vfdModelsByBrand, networkProtocols } from '../constants/automationData';
-import { analyzeFaultCode, analyzeScanTime, generateEnergyEfficiencyPlan, verifyCriticalLogic, validatePlcLogic, suggestPlcLogicFix, LogicIssue, analyzeAsciiFrame, getNetworkHardwarePlan, translateLadderToText } from '../services/geminiService';
+import { vfdBrands, vfdModelsByBrand, networkProtocols, plcBrands, plcSoftwareByBrand } from '../constants/automationData';
+import { analyzeFaultCode, analyzeScanTime, generateEnergyEfficiencyPlan, verifyCriticalLogic, validatePlcLogic, suggestPlcLogicFix, LogicIssue, analyzeAsciiFrame, getNetworkHardwarePlan, translateLadderToText, convertPlcCode } from '../services/geminiService';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { ErrorAlert } from '../components/ErrorAlert';
 import { ResultDisplay } from '../components/ResultDisplay';
 import { CommissioningView } from './CommissioningView';
 
-type Tool = 'fault' | 'scan' | 'energy' | 'prover' | 'validator' | 'network' | 'commissioning';
+type Tool = 'fault' | 'scan' | 'energy' | 'prover' | 'validator' | 'network' | 'commissioning' | 'migration';
 type NetworkTool = 'crc' | 'ascii' | 'hardware';
 
 interface CrcResult {
@@ -70,7 +71,7 @@ export const ToolsView: React.FC = () => {
     const { language } = useLanguage();
     const [activeTool, setActiveTool] = useState<Tool>('fault');
     const [activeNetworkTool, setActiveNetworkTool] = useState<NetworkTool>('crc');
-    const [result, setResult] = useState('');
+    const [result, setResult] = useState<string | { text: string; groundingMetadata?: any } | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [showCommissioning, setShowCommissioning] = useState(false);
@@ -91,15 +92,28 @@ export const ToolsView: React.FC = () => {
     // FIX: Renamed state from `selectedDevices` to `selectedProtocols` for clarity.
     const [selectedProtocols, setSelectedProtocols] = useState<string[]>([]);
     const [crcResult, setCrcResult] = useState<CrcResult | null>(null);
+    // NEW: Image state for fault diagnosis
+    const [faultImage, setFaultImage] = useState<string | null>(null);
+    const [faultImageMime, setFaultImageMime] = useState<string | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
     
+    // NEW: Migration Tool States
+    const [sourceBrand, setSourceBrand] = useState('Allen-Bradley');
+    const [sourcePlatform, setSourcePlatform] = useState('Studio 5000');
+    const [targetBrand, setTargetBrand] = useState('Siemens');
+    const [targetPlatform, setTargetPlatform] = useState('TIA Portal');
+
     const commonInputClasses = "w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-150 ease-in-out bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-200 text-sm";
     const commonTextareaClasses = `${commonInputClasses} font-mono text-xs`;
 
     const resetForm = () => {
-        setResult('');
+        setResult(null);
         setError(null);
         setLogicIssues([]);
         setCrcResult(null);
+        setFaultImage(null);
+        setFaultImageMime(null);
+        if (fileInputRef.current) fileInputRef.current.value = '';
     };
 
     const handleToolChange = (tool: Tool) => {
@@ -121,6 +135,27 @@ export const ToolsView: React.FC = () => {
         setSelectedProtocols(prev => 
             prev.includes(protocol) ? prev.filter(p => p !== protocol) : [...prev, protocol]
         );
+    };
+
+    const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            const result = reader.result as string;
+            setFaultImage(result); // This is the data URL for preview
+            setFaultImageMime(file.type);
+        };
+        reader.readAsDataURL(file);
+    };
+
+    const removeImage = () => {
+        setFaultImage(null);
+        setFaultImageMime(null);
+        if (fileInputRef.current) {
+            fileInputRef.current.value = "";
+        }
     };
 
     // --- Checksum Calculation Logic ---
@@ -159,22 +194,36 @@ export const ToolsView: React.FC = () => {
         if (activeTool !== 'network' || activeNetworkTool !== 'crc') {
             setIsLoading(true);
         }
-        resetForm();
+        setResult(null); // Clear previous results, keep form data
+        setError(null);
+        setLogicIssues([]);
         
         try {
-            let res = '';
             switch (activeTool) {
                 case 'fault':
-                    res = await analyzeFaultCode({ language, vfdBrand, vfdModel, faultCode, context });
+                    const imageBase64 = faultImage ? faultImage.split(',')[1] : undefined;
+                    const faultRes = await analyzeFaultCode({ 
+                        language, 
+                        vfdBrand, 
+                        vfdModel, 
+                        faultCode, 
+                        context,
+                        imageBase64,
+                        mimeType: faultImageMime || undefined
+                    });
+                    setResult(faultRes);
                     break;
                 case 'scan':
-                    res = await analyzeScanTime({ language, code });
+                    const scanRes = await analyzeScanTime({ language, code });
+                    setResult(scanRes);
                     break;
                 case 'energy':
-                    res = await generateEnergyEfficiencyPlan({ language, applicationType: appType, loadProfile });
+                    const energyRes = await generateEnergyEfficiencyPlan({ language, applicationType: appType, loadProfile });
+                    setResult(energyRes);
                     break;
                 case 'prover':
-                    res = await verifyCriticalLogic({ language, code, rules });
+                    const proverRes = await verifyCriticalLogic({ language, code, rules });
+                    setResult(proverRes);
                     break;
                 case 'validator':
                     {
@@ -188,22 +237,32 @@ export const ToolsView: React.FC = () => {
                         
                         setProcessedCode(logicToValidate);
                         
-                        res = await validatePlcLogic({ language, code: logicToValidate });
+                        const validationRes = await validatePlcLogic({ language, code: logicToValidate });
                         try {
-                            let jsonString = res;
-                            const match = res.match(/```json\s*([\s\S]*?)\s*```|(\[[\s\S]*\])/);
+                            let jsonString = validationRes;
+                            const match = validationRes.match(/```json\s*([\s\S]*?)\s*```|(\[[\s\S]*\])/);
                             if (match) {
                                 jsonString = match[1] || match[2];
                             }
                             const issues = JSON.parse(jsonString);
                             setLogicIssues(issues);
-                            res = '';
                         } catch {
-                            console.error("Raw response from API:", res);
+                            console.error("Raw response from API:", validationRes);
                             throw new Error("Failed to parse validation results. The API may have returned an unexpected format.");
                         }
                         break;
                     }
+                case 'migration':
+                    const migrationRes = await convertPlcCode({
+                        language,
+                        sourceBrand,
+                        sourcePlatform,
+                        targetBrand,
+                        targetPlatform,
+                        code
+                    });
+                    setResult(migrationRes);
+                    break;
                 case 'network':
                     switch(activeNetworkTool) {
                         case 'crc':
@@ -224,7 +283,8 @@ export const ToolsView: React.FC = () => {
                             return; // No loading state needed
                         case 'ascii':
                             setIsLoading(true);
-                            res = await analyzeAsciiFrame({ language, frame: asciiFrame });
+                            const asciiRes = await analyzeAsciiFrame({ language, frame: asciiFrame });
+                            setResult(asciiRes);
                             break;
                         case 'hardware':
                              // FIX: Check selectedProtocols instead of selectedDevices.
@@ -234,12 +294,12 @@ export const ToolsView: React.FC = () => {
                             }
                             setIsLoading(true);
                             // FIX: Passed `protocols` property instead of `devices` to match the function signature.
-                            res = await getNetworkHardwarePlan({ language, protocols: selectedProtocols });
+                            const hardwareRes = await getNetworkHardwarePlan({ language, protocols: selectedProtocols });
+                            setResult(hardwareRes);
                             break;
                     }
                     break;
             }
-            setResult(res);
         } catch (err) {
             setError(err instanceof Error ? err.message : t('error.unexpected'));
         } finally {
@@ -265,6 +325,7 @@ export const ToolsView: React.FC = () => {
     const tools: { key: Tool; title: string; description: string }[] = [
         { key: 'fault', title: t('tools.faultDiagnosis.title'), description: t('tools.faultDiagnosis.description') },
         { key: 'commissioning', title: t('header.commissioning'), description: t('header_descriptions.commissioning') },
+        { key: 'migration', title: t('tools.migration.title'), description: t('tools.migration.description') },
         { key: 'scan', title: t('tools.scanTime.title'), description: t('tools.scanTime.description') },
         { key: 'energy', title: t('tools.energy.title'), description: t('tools.energy.description') },
         { key: 'prover', title: t('tools.codeProver.title'), description: t('tools.codeProver.description') },
@@ -298,6 +359,42 @@ export const ToolsView: React.FC = () => {
                     <div>
                         <label className="block text-sm font-medium mb-1">{t('tools.faultDiagnosis.context')}</label>
                         <textarea value={context} onChange={e => setContext(e.target.value)} placeholder={t('tools.faultDiagnosis.contextPlaceholder')} rows={4} className={commonTextareaClasses} />
+                    </div>
+                    
+                    {/* NEW: Image Upload for Visual Diagnosis */}
+                    <div className="mt-2">
+                        <label className="block text-sm font-medium mb-1">Visual Context (Optional)</label>
+                        <div className="flex items-center gap-2">
+                            <input
+                                type="file"
+                                ref={fileInputRef}
+                                onChange={handleImageUpload}
+                                className="hidden"
+                                accept="image/*"
+                            />
+                            <button
+                                type="button"
+                                onClick={() => fileInputRef.current?.click()}
+                                className="px-3 py-2 bg-gray-200 dark:bg-gray-700 text-sm rounded hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors flex items-center gap-2"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                                Upload Photo of Fault/Screen
+                            </button>
+                        </div>
+                        {faultImage && (
+                            <div className="mt-2 relative inline-block">
+                                <img src={faultImage} alt="Fault Context" className="h-32 w-auto rounded border border-gray-300 dark:border-gray-600 object-cover" />
+                                <button
+                                    type="button"
+                                    onClick={removeImage}
+                                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                                    title="Remove image"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
+                                </button>
+                            </div>
+                        )}
+                        <p className="text-xs text-gray-500 mt-1">Upload a photo of the VFD screen showing the fault code, or the motor nameplate for better context.</p>
                     </div>
                 </div>
             );
@@ -339,6 +436,50 @@ export const ToolsView: React.FC = () => {
                 <div>
                     <label className="block text-sm font-medium mb-1">{t('tools.logicValidator.codeLabel')}</label>
                     <textarea value={code} onChange={e => setCode(e.target.value)} placeholder={t('tools.logicValidator.codePlaceholder')} rows={10} className={commonTextareaClasses} />
+                </div>
+            );
+            case 'migration': return (
+                <div className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <fieldset className="border border-gray-200 dark:border-gray-700 p-3 rounded-lg">
+                            <legend className="text-sm font-semibold px-2">{t('tools.migration.sourceGroup')}</legend>
+                            <div className="space-y-3">
+                                <div>
+                                    <label className="block text-xs font-medium mb-1">{t('formPlcBrand')}</label>
+                                    <select value={sourceBrand} onChange={e => setSourceBrand(e.target.value)} className={commonInputClasses}>
+                                        {plcBrands.filter(b => b !== 'General').map(b => <option key={b} value={b}>{b}</option>)}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-medium mb-1">{t('formPlcSoftware')}</label>
+                                    <select value={sourcePlatform} onChange={e => setSourcePlatform(e.target.value)} className={commonInputClasses}>
+                                        {(plcSoftwareByBrand[sourceBrand] || []).map(s => <option key={s} value={s}>{s}</option>)}
+                                    </select>
+                                </div>
+                            </div>
+                        </fieldset>
+                        <fieldset className="border border-gray-200 dark:border-gray-700 p-3 rounded-lg">
+                            <legend className="text-sm font-semibold px-2">{t('tools.migration.targetGroup')}</legend>
+                            <div className="space-y-3">
+                                <div>
+                                    <label className="block text-xs font-medium mb-1">{t('formPlcBrand')}</label>
+                                    <select value={targetBrand} onChange={e => setTargetBrand(e.target.value)} className={commonInputClasses}>
+                                        {plcBrands.filter(b => b !== 'General').map(b => <option key={b} value={b}>{b}</option>)}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-medium mb-1">{t('formPlcSoftware')}</label>
+                                    <select value={targetPlatform} onChange={e => setTargetPlatform(e.target.value)} className={commonInputClasses}>
+                                        {(plcSoftwareByBrand[targetBrand] || []).map(s => <option key={s} value={s}>{s}</option>)}
+                                    </select>
+                                </div>
+                            </div>
+                        </fieldset>
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium mb-1">{t('tools.migration.codePlaceholder')}</label>
+                        <textarea value={code} onChange={e => setCode(e.target.value)} placeholder={t('tools.migration.codePlaceholder')} rows={8} className={commonTextareaClasses} />
+                    </div>
                 </div>
             );
             case 'network': return (
@@ -408,9 +549,11 @@ export const ToolsView: React.FC = () => {
     const getSubmitButtonText = () => {
         if (isLoading) {
             if (activeTool === 'validator') return t('tools.logicValidator.analyzing');
+            if (activeTool === 'migration') return t('tools.migration.converting');
             return t('formGeneratingButton');
         }
         if (activeTool === 'validator') return t('tools.logicValidator.analyzeButton');
+        if (activeTool === 'migration') return t('tools.migration.convertButton');
         if (activeTool === 'network' && activeNetworkTool === 'crc') return t('tools.network.calculateButton');
         return t('tools.generateButton');
     };
@@ -481,13 +624,13 @@ export const ToolsView: React.FC = () => {
                 </div>
             )}
             
-            {activeTool === 'validator' && !isLoading && logicIssues.length === 0 && result === '' && !error && (
+            {activeTool === 'validator' && !isLoading && logicIssues.length === 0 && !result && !error && (
                 <div className="mt-8 bg-white dark:bg-gray-800 p-6 sm:p-8 rounded-xl shadow-lg border border-green-400 dark:border-green-600">
                     <p>{t('tools.logicValidator.noIssues')}</p>
                 </div>
             )}
 
-            {result && <ResultDisplay resultText={result} />}
+            {result && <ResultDisplay result={result} />}
         </div>
     );
 };

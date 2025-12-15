@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from '../hooks/useTranslation';
 import * as authService from '../services/authService';
@@ -78,13 +79,15 @@ export const AdminView: React.FC<AdminViewProps> = ({ onLogout }) => {
     };
     
     const handleDescriptionChange = (id: string, newDescription: string) => {
-        // Update local state immediately for a responsive UI
         setCodes(prev => prev.map(c => c.id === id ? { ...c, description: newDescription } : c));
     };
 
-    const handleDescriptionBlur = (id: string, description: string) => {
-        // Save to the "backend" on blur
-        handleUpdateCode(id, { description });
+    const handleGroupNameChange = (id: string, newGroup: string) => {
+        setCodes(prev => prev.map(c => c.id === id ? { ...c, groupName: newGroup } : c));
+    };
+
+    const handleFieldBlur = (id: string, field: 'description' | 'groupName', value: string) => {
+        handleUpdateCode(id, { [field]: value });
     };
 
     return (
@@ -109,6 +112,8 @@ export const AdminView: React.FC<AdminViewProps> = ({ onLogout }) => {
                                     <tr>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('admin.table.code')}</th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('admin.table.description')}</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('admin.table.group')}</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('admin.table.role')}</th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('admin.table.active')}</th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('admin.table.created')}</th>
                                     </tr>
@@ -127,10 +132,30 @@ export const AdminView: React.FC<AdminViewProps> = ({ onLogout }) => {
                                                     type="text"
                                                     value={code.description}
                                                     onChange={(e) => handleDescriptionChange(code.id, e.target.value)}
-                                                    onBlur={(e) => handleDescriptionBlur(code.id, e.target.value)}
+                                                    onBlur={(e) => handleFieldBlur(code.id, 'description', e.target.value)}
                                                     placeholder={t('admin.descriptionPlaceholder')}
                                                     className="w-full min-w-[150px] p-1.5 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-700 focus:ring-1 focus:ring-indigo-500"
                                                 />
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <input
+                                                    type="text"
+                                                    value={code.groupName || 'General'}
+                                                    onChange={(e) => handleGroupNameChange(code.id, e.target.value)}
+                                                    onBlur={(e) => handleFieldBlur(code.id, 'groupName', e.target.value)}
+                                                    placeholder={t('admin.groupPlaceholder')}
+                                                    className="w-full min-w-[120px] p-1.5 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-700 focus:ring-1 focus:ring-indigo-500"
+                                                />
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <select 
+                                                    value={code.isLeader ? 'leader' : 'member'} 
+                                                    onChange={(e) => handleUpdateCode(code.id, { isLeader: e.target.value === 'leader' })}
+                                                    className="p-1.5 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-700 focus:ring-1 focus:ring-indigo-500"
+                                                >
+                                                    <option value="member">{t('admin.table.member')}</option>
+                                                    <option value="leader">{t('admin.table.leader')}</option>
+                                                </select>
                                             </td>
                                              <td className="px-6 py-4 whitespace-nowrap">
                                                 <ToggleSwitch checked={code.isActive} onChange={(isChecked) => handleUpdateCode(code.id, { isActive: isChecked })} />

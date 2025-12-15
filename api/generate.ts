@@ -1,3 +1,4 @@
+
 // FIX: Corrected import from '@google/genai'. `GenerateContentRequest` is deprecated and was replaced with `GenerateContentParameters` which is the correct type. Since this file intelligently switches between API calls, this type is aliased to `GenerateContentRequest` to maintain consistency with the existing code structure.
 import { GoogleGenAI, GenerateContentParameters as GenerateContentRequest } from "@google/genai";
 
@@ -7,7 +8,7 @@ if (!process.env.API_KEY) {
     throw new Error("API_KEY environment variable not set in Vercel project settings.");
 }
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-const model = 'gemini-2.5-flash';
+const model = 'gemini-3-pro-preview';
 
 export const config = {
   runtime: 'edge',
@@ -27,12 +28,12 @@ export default async function handler(req: Request) {
 
     let request: GenerateContentRequest = { model, contents: '' };
 
-    // All current tasks use the same structure: a prompt and an optional config.
-    // The client-side service will be responsible for creating the final prompt string.
-    if (params.prompt) {
-        request.contents = params.prompt;
+    // All current tasks use the same structure: a contents object and an optional config.
+    // The client-side service will be responsible for creating the final contents.
+    if (params.contents) {
+        request.contents = params.contents;
     } else {
-        return new Response(JSON.stringify({ error: 'Missing prompt in params' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
+        return new Response(JSON.stringify({ error: 'Missing contents in params' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
     }
 
     if (params.config) {
@@ -42,7 +43,7 @@ export default async function handler(req: Request) {
     const response = await ai.models.generateContent(request);
     const text = response.text;
 
-    return new Response(JSON.stringify({ text }), {
+    return new Response(JSON.stringify({ text, groundingMetadata: response.candidates?.[0]?.groundingMetadata }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
     });
