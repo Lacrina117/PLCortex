@@ -269,4 +269,6 @@ const ResultCard: React.FC<{ label: string; value: string; sublabel?: string }> 
     <div className="bg-gray-50 dark:bg-gray-900/50 p-4 rounded-lg">
         <p className="text-sm font-semibold text-gray-600 dark:text-gray-400">{label}</p>
         <p className="text-xl font-bold font-mono text-indigo-600 dark:text-indigo-400 mt-1">{value}</p>
-        {sublabel && <p className="text-xs text-gray-500">{sublabel}</p
+        {sublabel && <p className="text-xs text-gray-500">{sublabel}</p>}
+    </div>
+);
