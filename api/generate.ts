@@ -8,7 +8,6 @@ if (!process.env.API_KEY) {
     throw new Error("API_KEY environment variable not set in Vercel project settings.");
 }
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-const model = 'gemini-3-pro-preview';
 
 export const config = {
   runtime: 'edge',
@@ -20,13 +19,16 @@ export default async function handler(req: Request) {
   }
 
   try {
-    const { task, params } = await req.json();
+    const { task, params, model } = await req.json();
 
     if (!task || !params) {
         return new Response(JSON.stringify({ error: 'Missing task or params' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
     }
 
-    let request: GenerateContentRequest = { model, contents: '' };
+    // Default to gemini-3-pro-preview if no model is specified, but allow override (e.g. for gemini-2.5-flash)
+    const selectedModel = model || 'gemini-3-pro-preview';
+
+    let request: GenerateContentRequest = { model: selectedModel, contents: '' };
 
     // All current tasks use the same structure: a contents object and an optional config.
     // The client-side service will be responsible for creating the final contents.

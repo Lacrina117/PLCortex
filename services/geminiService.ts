@@ -21,9 +21,9 @@ if (useDirectClientCall) {
     }
 }
 
-const callApiEndpoint = async (task: string, params: any): Promise<{ text: string; groundingMetadata?: any }> => {
-    // FORCE: Use gemini-3-pro-preview specifically for all tasks to ensure maximum robustness
-    const model = 'gemini-3-pro-preview';
+const callApiEndpoint = async (task: string, params: any, modelOverride?: string): Promise<{ text: string; groundingMetadata?: any }> => {
+    // Default to gemini-3-pro-preview for complex reasoning, but allow override for simple/structured tasks
+    const model = modelOverride || 'gemini-3-pro-preview';
     
     if (useDirectClientCall && ai) {
         try {
@@ -44,7 +44,7 @@ const callApiEndpoint = async (task: string, params: any): Promise<{ text: strin
             const response = await fetch('/api/generate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ task, params }),
+                body: JSON.stringify({ task, params, model }),
             });
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({ error: "Unknown API error" }));
@@ -257,14 +257,14 @@ export const structureLogEntry = async (rawText: string): Promise<LogEntry> => {
     };
 
     try {
+        // Use gemini-2.5-flash for structured data extraction as it is more reliable for JSON schema adherence.
         const response = await callApiEndpoint('structureLog', {
             contents: [{ parts: [{ text: prompt }] }],
             config: {
                 responseMimeType: 'application/json',
                 responseSchema: schema,
-                // REMOVED thinkingConfig as it is not supported by gemini-3-pro-preview
             }
-        });
+        }, 'gemini-2.5-flash');
         return JSON.parse(response.text);
     } catch (error) {
         console.error('Error structuring log:', error);
@@ -290,12 +290,13 @@ export const generateShiftReport = async (logs: any[], language: 'en' | 'es'): P
     `;
 
     try {
+        // Use gemini-2.5-flash for summarization tasks.
         const response = await callApiEndpoint('generateShiftReport', {
             contents: [{ parts: [{ text: prompt }] }],
             config: {
                 // REMOVED thinkingConfig as it is not supported by gemini-3-pro-preview
             }
-        });
+        }, 'gemini-2.5-flash');
         return response.text;
     } catch (error) {
         console.error('Error generating report:', error);

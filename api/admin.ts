@@ -43,6 +43,15 @@ async function initializeDatabase() {
             created_at TIMESTAMPTZ DEFAULT NOW()
         );
     `;
+
+    await sql`
+        CREATE TABLE IF NOT EXISTS shift_reports (
+            id SERIAL PRIMARY KEY,
+            group_name TEXT NOT NULL,
+            report_content TEXT NOT NULL,
+            created_at TIMESTAMPTZ DEFAULT NOW()
+        );
+    `;
 }
 
 export default async function handler(req: Request) {
@@ -164,6 +173,7 @@ async function handleDelete(req: Request) {
         if (action === 'reset_all') {
             await sql`DELETE FROM access_codes;`; // Wipe codes
             await sql`DELETE FROM shift_logs;`;   // Wipe logs
+            await sql`DELETE FROM shift_reports;`; // Wipe reports
             return new Response(JSON.stringify({ success: true, message: 'Database reset.' }), { status: 200, headers: { 'Content-Type': 'application/json' } });
         }
 
