@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useTranslation } from '../hooks/useTranslation';
 import { ThermalLoadCalculator } from '../components/calculators/ThermalLoadCalculator';
@@ -7,14 +8,16 @@ import { VoltageDropCalculator } from '../components/calculators/VoltageDropCalc
 import { DcPowerSupplyCalculator } from '../components/calculators/DcPowerSupplyCalculator';
 import { EncoderMotionCalculator } from '../components/calculators/EncoderMotionCalculator';
 import { SensorSelectionCalculator } from '../components/calculators/SensorSelectionCalculator';
+import { OhmsLawCalculator } from '../components/calculators/OhmsLawCalculator';
 
-type CalculatorType = 'thermal' | 'motor' | 'scaling' | 'voltageDrop' | 'dcPower' | 'encoderMotion' | 'sensorSelection';
+type CalculatorType = 'ohmsLaw' | 'thermal' | 'motor' | 'scaling' | 'voltageDrop' | 'dcPower' | 'encoderMotion' | 'sensorSelection';
 
 export const CalculatorView: React.FC = () => {
     const { t } = useTranslation();
     const [activeCalc, setActiveCalc] = useState<CalculatorType>('sensorSelection');
 
     const calculators = [
+        { key: 'ohmsLaw', title: t('calculator.ohmsLaw.tabTitle'), Component: OhmsLawCalculator },
         { key: 'thermal', title: t('calculator.thermal.tabTitle'), Component: ThermalLoadCalculator },
         { key: 'motor', title: t('calculator.motorControl.tabTitle'), Component: MotorControlCalculator },
         { key: 'scaling', title: t('calculator.plcScaling.tabTitle'), Component: PlcScalingCalculator },

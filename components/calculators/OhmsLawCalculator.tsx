@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { useTranslation } from '../../hooks/useTranslation';
 
@@ -65,10 +66,6 @@ export const OhmsLawCalculator: React.FC = () => {
     const [values, setValues] = useState<Values>({ voltage: '', current: '', resistance: '', power: '' });
     const [userInputFields, setUserInputFields] = useState<OhmsValue[]>([]);
     const [formulaUsed, setFormulaUsed] = useState('');
-
-    const filledFields = useMemo(() => {
-        return (Object.keys(values) as OhmsValue[]).filter(key => values[key] !== '' && !isNaN(parseFloat(values[key])));
-    }, [values]);
     
     const resultFields = useMemo(() => {
         if (userInputFields.length < 2) return [];
@@ -111,9 +108,22 @@ export const OhmsLawCalculator: React.FC = () => {
             formula = 'V=sqrt(P*R),I=sqrt(P/R)';
         }
 
-        setValues(prev => ({ ...prev, ...newValues }));
-        setFormulaUsed(formula);
-    }, [userInputFields, values]);
+        // Only update state if values have actually changed to prevent infinite loops/flickering
+        let needsUpdate = false;
+        (Object.keys(newValues) as OhmsValue[]).forEach(key => {
+            if (values[key] !== newValues[key]) {
+                needsUpdate = true;
+            }
+        });
+
+        if (needsUpdate) {
+            setValues(prev => ({ ...prev, ...newValues }));
+        }
+        
+        if (formulaUsed !== formula) {
+            setFormulaUsed(formula);
+        }
+    }, [userInputFields, values, formulaUsed]);
 
     const handleChange = (field: OhmsValue, value: string) => {
         const newValues = { ...values, [field]: value };
@@ -137,7 +147,7 @@ export const OhmsLawCalculator: React.FC = () => {
         
         setUserInputFields(newUserInputs);
 
-        // Clear all non-input fields
+        // Clear all non-input fields immediately for better UX
         (Object.keys(newValues) as OhmsValue[]).forEach(key => {
             if (!newUserInputs.includes(key)) {
                 newValues[key] = '';
@@ -148,11 +158,19 @@ export const OhmsLawCalculator: React.FC = () => {
     };
 
     useEffect(() => {
-        if (userInputFields.length === 2 && filledFields.length === 2) {
+        // We only calculate if we have exactly 2 valid inputs.
+        // We do NOT check filledFields.length, because after calculation it will be 4, 
+        // which caused the infinite loop/blinking in the previous version.
+        const inputsReady = userInputFields.length === 2 && 
+                            userInputFields.every(field => values[field] !== '' && !isNaN(parseFloat(values[field])));
+
+        if (inputsReady) {
             calculate();
         } else {
-            setFormulaUsed('');
-            // Clear any lingering calculated values if inputs are incomplete
+            if (formulaUsed !== '') setFormulaUsed('');
+            
+            // If inputs are not ready (e.g. user cleared one), ensure calculated fields are cleared.
+            // This is a safety check, usually handled by handleChange.
              const clearedValues = { ...values };
              let changed = false;
              (Object.keys(clearedValues) as OhmsValue[]).forEach(key => {
@@ -165,7 +183,7 @@ export const OhmsLawCalculator: React.FC = () => {
              });
              if(changed) setValues(clearedValues);
         }
-    }, [userInputFields, filledFields, calculate, values]);
+    }, [userInputFields, calculate, values, formulaUsed]);
 
     const handleReset = () => {
         setValues({ voltage: '', current: '', resistance: '', power: '' });

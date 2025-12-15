@@ -4,6 +4,7 @@ import { useTranslation } from '../hooks/useTranslation';
 import { ThemeToggle } from './ThemeToggle';
 import { Language, useLanguage } from '../contexts/LanguageContext';
 import { View } from '../App';
+import { getUserGroup } from '../services/authService';
 
 interface HeaderProps {
     currentView: View;
@@ -49,6 +50,10 @@ const LanguageSelector: React.FC<LanguageSelectorProps> = ({ isMobile = false })
 export const Header: React.FC<HeaderProps> = ({ currentView, setView, userDescription, onLogout }) => {
     const { t } = useTranslation();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    
+    // Check if user belongs to an enterprise group
+    const userGroup = getUserGroup();
+    const isEnterprise = userGroup !== 'Individual';
 
     const UserMenu: React.FC<{ description: string; onLogout: () => void }> = ({ description, onLogout }) => {
         const [isOpen, setIsOpen] = useState(false);
@@ -102,7 +107,9 @@ export const Header: React.FC<HeaderProps> = ({ currentView, setView, userDescri
 
     const navItems: { key: View, label: string, description: string }[] = [
         { key: 'solutions', label: t('header.solutions'), description: t('header_descriptions.solutions') },
-        { key: 'shiftLog', label: t('header.shiftLog'), description: t('header_descriptions.shiftLog') },
+        // Only include Shift Log if user is in an enterprise group
+        ...(isEnterprise ? [{ key: 'shiftLog' as View, label: t('header.shiftLog'), description: t('header_descriptions.shiftLog') }] : []),
+        { key: 'practices', label: t('header.practices'), description: t('header_descriptions.practices') },
         { key: 'tools', label: t('header.tools'), description: t('header_descriptions.tools') },
         { key: 'calculator', label: t('header.calculator'), description: t('header_descriptions.calculator') },
         { key: 'reference', label: t('header.reference'), description: t('header_descriptions.reference') },

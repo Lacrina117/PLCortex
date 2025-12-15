@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useTranslation } from '../hooks/useTranslation';
 import { useLanguage, Language } from '../contexts/LanguageContext';
@@ -59,13 +60,6 @@ export const LandingView: React.FC<LandingViewProps> = ({ onEnter }) => {
       <main className="container mx-auto px-6 pt-16 pb-24 relative z-10">
         {/* Hero Section */}
         <div className="flex flex-col items-center text-center max-w-4xl mx-auto">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-900/30 border border-indigo-500/30 text-indigo-300 text-xs font-medium mb-8 animate-fade-in">
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
-                </span>
-                AI-Powered Engineering Assistant v2.0
-            </div>
             
             <h1 className="text-5xl md:text-7xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-white via-indigo-200 to-indigo-400 tracking-tight mb-6 animate-fade-in-up">
                 {t('landing.heroTitle')}
