@@ -1,8 +1,6 @@
 
-// FIX: Implemented the translations object. This provides the necessary UI text in English and Spanish, resolving the module resolution error in the useTranslation hook.
 export const translations = {
     en: {
-        // Header & Descriptions
         header: {
             solutions: 'Solutions',
             practices: 'Practices',
@@ -23,84 +21,361 @@ export const translations = {
             calculator: 'Perform common industrial calculations.',
             shiftLog: 'Track shift events and generate AI reports.',
         },
-        tooltips: {
-            toggleTheme: 'Toggle theme',
-        },
-
-        // Landing Page
-        landing: {
-            heroTitle: 'The Assistant for Industrial Automation',
-            heroSubtitle: 'PLCortex provides specialized solutions for PLC programming, VFD configuration, and troubleshooting.',
-            heroDescription: 'From generating control philosophies to providing step-by-step commissioning guides, get expert-level assistance instantly.',
-            heroCta: 'Enter PLCortex',
-            specializationTitle: 'Our Specializations',
-            plcTitle: 'Programmable Logic Controllers (PLCs)',
-            plcDescription: 'Generate ladder logic, analyze scan times, and verify critical safety logic for Siemens, Allen-Bradley, and more.',
-            plcTags: 'Ladder Logic, Structured Text, FBD, Logic Verification',
-            vfdTitle: 'Variable Frequency Drives (VFDs)',
-            vfdDescription: 'Create wiring guides, commissioning plans, diagnose fault codes, and get parameter recommendations for major brands.',
-            vfdTags: 'Wiring, Commissioning, Fault Diagnosis, Energy Savings',
-            creator: 'Created by Ing. Jesús Jiménez',
-        },
-        footerText: 'PLCortex © 2024. All rights reserved. This is a portfolio project and not a commercial product.',
-        
-        // Login & Admin
-        login: {
-            title: 'Welcome to PLCortex',
-            subtitle: 'Please enter your access code.',
-            placeholder: 'Access Code',
-            button: 'Enter',
-            error: 'Invalid or inactive code.',
-            loading: 'Verifying...',
-            masterUser: 'Master User',
-        },
-        admin: {
-            title: 'Admin Panel - Access Codes',
-            logout: 'Logout',
-            descriptionPlaceholder: 'Assign to a user...',
-            groupPlaceholder: 'Group Name (e.g. Area 1)',
-            table: {
-                code: 'Access Code',
-                description: 'Description',
-                group: 'Group / Area',
-                role: 'Role',
-                active: 'Active',
-                created: 'Date Created',
-                copy: 'Copy',
-                copied: 'Copied!',
-                leader: 'Leader',
-                member: 'Member',
-            },
-        },
-
-        // Dashboard
         dashboard: {
             title: 'Welcome to PLCortex',
             subtitle: 'Your expert co-pilot for industrial automation. Select a tool to begin.',
             recentActivity: 'Recent Activity',
+            toolsSection: 'Engineering Suite'
         },
-        
-        // Chat / Solutions
+        login: {
+            title: 'Access Control',
+            subtitle: 'Enter your access code to continue',
+            placeholder: 'Enter Code (XXXX-XXXX)',
+            button: 'Verify Access',
+            loading: 'Verifying...',
+            error: 'Invalid or expired access code.',
+            masterUser: 'Master Engineering User'
+        },
+        landing: {
+            heroTitle: 'Industrial Automation Powered by AI',
+            heroDescription: 'The ultimate toolkit for PLC programming, VFD commissioning, and electrical engineering.',
+            heroCta: 'Access Platform',
+            plcTitle: 'PLC Engineering',
+            plcDescription: 'Structured text, ladder logic optimization, and protocol migration help.',
+            plcTags: 'Siemens, Rockwell, Schneider, Code Migration',
+            vfdTitle: 'Motion Control',
+            vfdDescription: 'Step-by-step commissioning guides and visual terminal diagnosis.',
+            vfdTags: 'PowerFlex, Sinamics, Altivar, ACS880',
+            creator: 'Developed by specialized automation engineers.'
+        },
         chat: {
-            welcomeTitle: 'Automation Solutions Chat',
-            welcomeMessage: 'Ask anything about PLCs or VFDs. Start a new chat to begin, and remember to set the context for more accurate answers.',
-            startNewChat: 'Start New Chat',
-            newChatTitle: 'New Chat',
-            historyTitle: 'Chat History',
-            placeholder: 'Ask a question about your VFD or PLC...',
-            thinking: 'Thinking...',
-            contextTitle: 'Chat Context',
+            newChat: 'New Session',
+            historyTitle: 'Recent Sessions',
+            welcomeTitle: 'Engineering Assistant',
+            welcomeMessage: 'I am ready to help with your {brand} {topic} tasks. Select a quick action or type your query.',
+            placeholder: 'Type your technical question here...',
+            thinking: 'Analyzing system context...',
+            finishConversation: 'Finish Session',
+            contextTitle: 'System Context',
             contextLocked: 'Locked',
             contextEditable: 'Editable',
-            finishConversation: 'Finish',
-            newChat: 'New'
+            newChatTitle: 'New Technical Consultation',
+            startNewChat: 'Start New Chat',
+            copyText: 'Copy Text',
+            copied: 'Copied!',
+            suggestions: {
+                plc_st: 'Generate Structured Text for a PID loop',
+                plc_ladder: 'Create Ladder Logic for a Motor Starter',
+                plc_comms: 'How to setup Modbus TCP communication?',
+                vfd_param: 'List parameters for 2-Wire Control',
+                vfd_fault: 'Troubleshoot Overcurrent Fault',
+                vfd_wiring: 'Show control terminal wiring'
+            }
         },
-
-        // Shift Log
+        practices: {
+            title: 'Skill Development',
+            description: 'Select your focus area to generate a realistic industrial scenario.',
+            selectTopic: 'Select Topic',
+            selectDifficulty: 'Difficulty Level',
+            generateBtn: 'Generate Scenario',
+            randomChallenge: 'Random Challenge',
+            generating: 'Designing Scenario...',
+            plcLabel: 'Logic & Programming',
+            vfdLabel: 'Drives & Motion',
+            hintButton: 'Need a Hint?',
+            hideHint: 'Hide Hint',
+            revealSolution: 'Reveal Expert Solution',
+            hideSolution: 'Hide Solution'
+        },
+        practice: {
+            title: 'Practice Case',
+            showSolution: 'View Recommended Solution',
+            hideSolution: 'Hide Solution',
+            solutionTitle: 'Expert Resolution'
+        },
+        wiring: {
+            title: 'Wiring Assistant',
+            description: 'Generate connection diagrams and wiring guides for motors and control systems.',
+            vfdDetails: 'VFD Specifications',
+            controlDetails: 'Control Logic',
+            controlMethod: 'Control Method',
+            controlMethod2Wire: '2-Wire Control',
+            controlMethod3Wire: '3-Wire Control',
+            configSoftware: 'Configuration Software',
+            motorDetails: 'Motor Specifications',
+            motorHP: 'Horsepower (HP)',
+            motorVoltage: 'Voltage (V)',
+            motorFLA: 'FLA (Amps)',
+            application: 'Application Context',
+            applicationPlaceholder: 'e.g. A conveyor belt that needs to start smoothly...',
+            generateButton: 'Generate Wiring Guide',
+            generatingButton: 'Generating Guide...'
+        },
+        commissioning: {
+            title: 'Interactive Commissioning',
+            historyTitle: 'Session History',
+            newChat: 'New Guide',
+            selectTitle: 'VFD Commissioning Guide',
+            selectDescription: 'Choose a device to start an interactive commissioning session with visual terminal support.',
+            brandLabel: 'VFD Brand',
+            modelLabel: 'VFD Model',
+            applicationLabel: 'Application Type',
+            startButton: 'Start Commissioning',
+            placeholder: 'Ask about parameters, wiring, or tuning...',
+            initialPrompt: 'I need to commission this VFD for a {application}. Please provide a step-by-step guide focusing on this hardware.',
+            terminalQuery: 'Explain the function and typical wiring for terminal {label} ({func}).',
+            diagramNotAvailable: 'Diagram Not Available',
+            diagramNotAvailableDesc: 'We are currently adding the visual map for this specific model.',
+            appConveyor: 'Conveyor Belt',
+            appFan: 'Fan / Centrifugal',
+            appPumpPID: 'Pump (PID Control)',
+            appGeneral: 'General Purpose',
+        },
+        tools: {
+            title: 'Analysis Tools',
+            description: 'Advanced diagnostic and validation modules for industrial systems.',
+            backToTools: 'Back to Tools',
+            generateButton: 'Run Analysis',
+            faultDiagnosis: {
+                title: 'VFD Fault Diagnosis',
+                description: 'Expert analysis of VFD fault codes with visual context support.',
+                vfdBrand: 'VFD Brand',
+                vfdModel: 'VFD Model',
+                faultCode: 'Fault Code',
+                faultCodePlaceholder: 'e.g. F0001 or 0x01',
+                context: 'Environmental Context',
+                contextPlaceholder: 'Describe what happened (e.g. machine was accelerating...)'
+            },
+            logicValidator: {
+                title: 'Logic Validator',
+                description: 'Analyze PLC code for potential conflicts, performance issues, or safety risks.',
+                codeLabel: 'PLC Code',
+                codePlaceholder: 'Paste code here...',
+                analyzeButton: 'Validate Logic',
+                analyzing: 'Scanning Logic...',
+                analysisResults: 'Detected Logic Issues',
+                suggestButton: 'Propose Code Correction',
+                suggesting: 'Generating optimized code...',
+                noIssues: '✅ No significant logic issues detected.'
+            },
+            migration: {
+                title: 'Code Migration',
+                description: 'Translate logic between different industrial platforms.',
+                sourceGroup: 'Source Platform',
+                targetGroup: 'Target Platform',
+                convertButton: 'Migrate Code',
+                converting: 'Translating Logic...',
+                codePlaceholder: 'Paste code to migrate...'
+            },
+            scanTime: {
+                title: 'Performance Analysis',
+                description: 'Estimate execution impact and scan time overhead.',
+                codeLabel: 'Logic Segment',
+                codePlaceholder: 'Paste code to analyze...'
+            },
+            energy: {
+                title: 'Energy Efficiency',
+                description: 'Generate VFD optimization plans to reduce power consumption.',
+                appType: 'Application Type',
+                appTypes: { pump: 'Pump', fan: 'Fan', conveyor: 'Conveyor', compressor: 'Compressor' },
+                loadProfile: 'Load Profile',
+                loadProfilePlaceholder: 'Describe operating hours and speeds...'
+            },
+            codeProver: {
+                title: 'Safety Verifier',
+                description: 'Verify if logic adheres to specific safety rules and interlocks.',
+                rulesLabel: 'Safety Rules',
+                rulesPlaceholder: 'e.g. Valve A and Pump B must never run together.'
+            },
+            network: {
+                title: 'Network & Comms',
+                description: 'Protocol tools, frame analysis, and hardware planning.',
+                calculateButton: 'Calculate Checksum',
+                protocolsLabel: 'Interconnect Protocols',
+                checksum: {
+                    title: 'Checksum/CRC',
+                    description: 'Verify integrity of Modbus or Serial frames.',
+                    frameLabel: 'Hex Frame',
+                    framePlaceholder: 'e.g. 01 03 00 0A',
+                    resultsTitle: 'Integrity Results',
+                    crc16: 'CRC-16 (Modbus)',
+                    lrc: 'LRC (ASCII)',
+                    checksum: 'Simple Checksum (8-bit)',
+                    order_lf: 'Low Byte First',
+                    order_hf: 'High Byte First'
+                },
+                ascii: {
+                    title: 'Serial Decoder',
+                    description: 'Decode complex ASCII frames from field devices.',
+                    frameLabel: 'ASCII Stream',
+                    framePlaceholder: 'e.g. <STX>+0015.50g<CR><LF>'
+                },
+                hardware: {
+                    title: 'Network Planner',
+                    description: 'Determine required hardware to bridge different protocols.'
+                }
+            }
+        },
+        calculator: {
+            title: 'Engineering Calculators',
+            description: 'Precise mathematical tools for industrial design and commissioning.',
+            ohmsLaw: { tabTitle: 'Ohms Law', title: 'Ohm\'s Law & Power', description: 'Enter any two values to calculate the others.', voltage: 'Voltage (V)', current: 'Current (A)', resistance: 'Resistance (Ω)', power: 'Power (W)', reset: 'Reset' },
+            thermal: { tabTitle: 'Thermal Load', title: 'Panel Thermal Analysis', description: 'Calculate required cooling based on internal heat dissipation.', components: 'Internal Components', addComponent: 'Add to Panel', addedComponents: 'Panel Content', panelDimensions: 'Enclosure Dimensions (in)', height: 'Height', width: 'Width', depth: 'Depth', temperatures: 'Target Temperatures (°F)', internal: 'Max Internal', external: 'Max Ambient', calculateButton: 'Calculate BTU/hr', resultsTitle: 'Thermal Results', totalHeat: 'Total Heat Load', watts: 'Watts', panelArea: 'Surface Area', sqft: 'Sq. Ft.', tempDifference: 'Temp. Delta', coolingCapacity: 'Enclosure Dissipation', btu: 'BTU/hr', coolingRequired: 'Required Cooling Capacity', noCooling: 'No active cooling needed.' },
+            motorControl: { tabTitle: 'Motor Sizing', title: 'NEC Motor Control Sizing', description: 'Dimension breakers, contactors, and wires according to NEC standards.', motorDetails: 'Standard Motor Search', horsepower: 'HP', voltage: 'Voltage', phase: 'Phase', phaseThree: '3-Phase', phaseSingle: '1nd-Phase', nameplateData: 'Actual Nameplate Data', nominalCurrent: 'Nominal Amps (In)', serviceFactor: 'Service Factor (SF)', serviceFactorCurrent: 'Max Operating Current', analyzeNameplate: 'Scan Plate (AI)', analyzing: 'Analyzing...', resultsTitle: 'NEC Sizing Results', fla: 'Standard FLA', overload: 'Overload Setting', overloadRange: 'Recommended Max', contactor: 'Contactor Size', breaker: 'Circuit Breaker', wire: 'Wire Gauge', disclaimer: 'Calculations based on NEC tables.', removeImage: 'Remove' },
+            plcScaling: { tabTitle: 'PLC Scaling', title: 'Analog Signal Scaling', description: 'Calculate the linear equation for PLC analog inputs/outputs.', inputRange: 'Raw Signal (PLC)', outputRange: 'Engineering Units', min: 'Min', max: 'Max', options: 'Options', clamping: 'Enable Limit Clamping', resultsTitle: 'Scaling Results', formula: 'Linear Equation', codeSample: 'PLC Implementation Code', codeLang: { st: 'Structured Text', ld: 'Ladder (Math)', fbd: 'Function Block' }, rawSignal: 'Raw Test Value', engUnits: 'Result Value', interactiveTester: 'Interactive Simulator', alarmCalculator: 'Alarm Level Thresholds', alarmHH: 'HH Alarm', alarmH: 'H Alarm', alarmL: 'L Alarm', alarmLL: 'LL Alarm', alarmDesc: 'Set alarms in Engineering Units to get corresponding RAW values.', units: { custom: 'Custom Range', raw_4_20ma: 'Standard 4-20mA', raw_0_10v: 'Standard 0-10V', raw_rockwell_4_20ma: 'Rockwell 4-20mA', raw_siemens_4_20ma: 'Siemens 4-20mA', raw_unsigned_12: 'Unsigned 12-bit', raw_unsigned_14: 'Unsigned 14-bit', raw_unsigned_16: 'Unsigned 16-bit', raw_signed_15: 'Signed 15-bit', raw_rockwell_10v: 'Rockwell +/- 10V', raw_siemens_10v: 'Siemens +/- 10V', eng_percent: 'Percentage (%)', eng_freq_60hz: 'Frequency (60Hz)', eng_speed_1800rpm: 'Speed (1800 RPM)', eng_torque_300: 'Torque (300%)', eng_psi_150: 'Pressure (150 PSI)', eng_celsius_100: 'Temp (100°C)', eng_fahrenheit_212: 'Temp (212°F)', eng_gpm_500: 'Flow (500 GPM)', eng_liters_1000: 'Flow (1000 L/m)' }, codeComments: { declarations: 'Declarations', rawValue: 'Raw value from AI module', scaledValue: 'Calculated engineering value', scalingConstants: 'Scaling Constants', tempVar: 'Temporary conversion variable', logic: 'Scaling Logic', convertToReal: '1. Convert raw INT to REAL', applyFormula: '2. Apply Linear Formula', clamp: '3. Clamping (Optional)' } },
+            voltageDrop: { tabTitle: 'Voltage Drop', title: 'Voltage Drop Analysis', description: 'Calculate drop for power runs to remote motors or panels.', electricalSystem: 'System Specs', voltage: 'Nominal Voltage', phase: 'Phase', phaseThree: '3-Phase', phaseSingle: '1-Phase', load: 'Load Specs', current: 'Amperage (A)', conductor: 'Conductor Specs', material: 'Material', copper: 'Copper', aluminum: 'Aluminum', wireGauge: 'Wire Size', distance: 'One-way Distance', feet: 'Feet', meters: 'Meters', calculateButton: 'Calculate Drop', resultsTitle: 'Drop Analysis Results', voltageDropV: 'Voltage Drop', voltageDropPercent: 'Percentage Drop', voltageAtLoad: 'Voltage at Load', acceptable: '✅ Acceptable (<3%)', caution: '⚠️ Caution (3-5%)', unacceptable: '❌ Unacceptable (>5%)', suggestion: 'Suggested wire size for <3% drop: {gauge} AWG', formula: 'Formula Used' },
+            dcPowerSupply: { tabTitle: '24VDC Sizing', title: 'DC Power Supply Sizing', description: 'Calculate the required 24VDC supply size for a control panel.', loadList: 'Panel Load Profile', addDevice: 'Add Custom Device', addFromTemplate: 'Add from Library', deviceDescription: 'Device Name', quantity: 'Qty', nominalConsumption: 'Nominal (mA)', inrushConsumption: 'Inrush (mA)', designParameters: 'Design Safety Factors', safetyFactor: 'Load Safety Factor', safetyFactorTooltip: 'Standard 25% buffer.', futureGrowth: 'Future Growth %', futureGrowthTooltip: 'Reserve capacity.', calculateButton: 'Analyze Power Requirements', resultsTitle: 'Sizing Analysis Results', consumptionSummary: 'Demand Summary', totalNominal: 'Total Steady State', peakInrush: 'Calculated Peak Start', requiredAmperage: 'Minimum Design Current', recommendationTitle: 'Recommended Hardware', recommendedSupply: '{amps}A Power Supply', expertNotesTitle: 'Technical Considerations', expertNote1: 'A {recAmps}A supply provides enough headroom.', expertNote2: 'The peak inrush is {peakAmps}A.', expertNote3: 'Consider splitting critical loads.' },
+            encoderMotion: { tabTitle: 'Motion/Encoder', title: 'Motion & Encoder Scaling', description: 'Calculate scaling factors and frequency viability.', encoderParams: 'Encoder Specifications', ppr: 'PPR', pprTooltip: 'Pulses per revolution.', plcMode: 'PLC Input Mode', plcMode1x: 'X1 (Single)', plcMode4x: 'X4 (Quadrature)', plcMode1xTooltip: 'Counts rising edges.', plcMode4xTooltip: 'Counts all edges.', transmissionParams: 'Transmission Mechanics', mechanism: 'Mechanism Type', mechanismDirect: 'Direct Drive', mechanismGearbox: 'Gearbox', mechanismLeadscrew: 'Lead Screw', mechanismPulley: 'Pulley', mechanismRack: 'Rack & Pinion', gearboxIn: 'Input Revs', gearboxOut: 'Output Revs', leadscrewPitch: 'Screw Pitch', mm_rev: 'mm / rev', in_rev: 'in / rev', diameter: 'Diameter', mm: 'mm', in: 'in', viabilityAnalysis: 'Dynamic Viability', maxSpeed: 'Target Max Speed', mm_s: 'mm / s', m_s: 'm / s', rpm: 'RPM', resultsTitle: 'Motion Constants', systemResolution: 'System Resolution', resolutionUnit: 'mm / count', resolutionUnitAngle: 'deg / count', scaleFactor: 'PLC Scale Factor', scaleFactorUnit: 'counts / mm', scaleFactorUnitAngle: 'counts / deg', interactiveTester: 'Scale Tester', moveToTravel: 'Target Travel:', needsPulses: 'needs pulses', pulseCountIs: 'PLC Count:', travelledDist: 'travelled', pulses: 'pulses', hardwareDiagnosis: 'High-Speed IO Diagnosis', requiredFrequency: 'Input Frequency', hz: 'Hz', khz: 'kHz', mhz: 'MHz', analysisOk: '✅ Viable.', analysisCaution: '⚠️ High Frequency.', analysisCritical: '❌ Too high.' },
+            sensorSelection: { tabTitle: 'Sensor AI Wizard', title: 'Sensor Recommendation', description: 'Use AI to select the perfect sensor technology.', wizardTitle: 'Sensor Selection Wizard', wizardDescription: 'Provide process parameters for a professional recommendation.', processVariable: 'Process Variable', vars: { level: 'Level', flow: 'Flow', pressure: 'Pressure', temperature: 'Temperature', analytical: 'Analytical' }, mediumType: 'Medium Type', types: { liquid: 'Liquid', solid: 'Solid / Powder' }, mediumCharacteristics: 'Medium Characteristics', liquidType: 'Liquid Description', liquidProperties: 'Specific Properties', props: { corrosive: 'Corrosive', abrasive: 'Abrasive', viscous: 'High Viscosity', foaming: 'Heavy Foaming', cip: 'CIP/Hygienic' }, solidType: 'Solid Type', solidTypes: { powder: 'Powder', granular: 'Granular', rock: 'Large Rocks', sticky: 'Sticky/Paste' }, angleRepo: 'Angle of Repose', solidProps: { suspendedDust: 'Heavy Dust', abrasive: 'Abrasive' }, operatingConditions: 'Process Limits', tempRange: 'Temp Range (°C)', pressureRange: 'Pressure Range (bar)', from: 'Min', to: 'Max', environmentalConditions: 'Environmental', location: 'Installation Location', locs: { indoor: 'Indoor', outdoor: 'Outdoor', vibration: 'High Vibration', washdown: 'Frequent Washdown' }, installationRegion: 'Region', installationRegionTooltip: 'Helps suggest local brands.', thermocoupleStandard: 'Color Code', thermocoupleStandardTooltip: 'Defines wire colors.', thermocoupleStandards: { autodetect: 'Global (IEC/ANSI)', ansi: 'ANSI', iec: 'IEC', din: 'DIN', jis: 'JIS' }, areaClassification: 'Area Classification', areas: { general_safe: 'General Purpose', class1div1: 'Hazardous (Div 1)', class1div2: 'Hazardous (Div 2)' }, outputRequirements: 'Integration', signals: { '4-20mA': '4-20mA Analog', '4-20mA_HART': 'HART Protocol', '0-10V': '0-10V Analog', PNP_NPN: 'Digital (PNP/NPN)', Relay: 'Relay Output', 'IO-Link': 'IO-Link', Profinet_EtherNetIP: 'Fieldbus' }, projectPriorities: 'Project Priorities', priorities: { lowCost: 'Low Cost', highPrecision: 'High Precision', maxRobustness: 'Robustness' }, generating: 'Selecting technologies...', generateButton: 'Generate Recommendation Report' }
+        },
+        reference: {
+            title: 'Engineering Reference',
+            description: 'Quick lookup for industrial standards, fault codes, and data types.',
+            thermocoupleTitle: 'Thermocouple Colors',
+            thermocoupleDesc: 'Universal color standards for identification.',
+            vfdTitle: 'VFD Fault Codes',
+            vfdDesc: 'Common fault libraries for major drives.',
+            plcTitle: 'PLC Data Types',
+            plcDesc: 'Standard data architectures.',
+            brands: { siemens: 'Siemens', allenBradley: 'Rockwell / AB', abb: 'ABB', schneider: 'Schneider', danfoss: 'Danfoss', yaskawa: 'Yaskawa', mitsubishi: 'Mitsubishi', eaton: 'Eaton' },
+            faults: {
+                code: 'Code', name: 'Fault Name', description: 'Meaning/Action',
+                siemens: [
+                    { code: 'F0001', name: 'Overcurrent', description: 'Motor current exceeds limit. Check motor/cable short circuit or load.' },
+                    { code: 'F0002', name: 'Overvoltage', description: 'DC link voltage too high. Check supply voltage or braking.' },
+                    { code: 'F0003', name: 'Undervoltage', description: 'Power supply failed or dropped below limit.' },
+                    { code: 'F0700', name: 'CB Parameter Error', description: 'Parameter setting error during startup.' }
+                ],
+                allenBradley: [
+                    { code: 'F004', name: 'UnderVoltage', description: 'DC bus voltage fell below minimum value.' },
+                    { code: 'F005', name: 'OverVoltage', description: 'DC bus voltage exceeded maximum value.' },
+                    { code: 'F012', name: 'HW OverCurrent', description: 'Instantaneous overcurrent detected.' },
+                    { code: 'F013', name: 'Ground Fault', description: 'Current path to earth ground greater than 25% of drive rating.' }
+                ],
+                abb: [
+                    { code: '0001', name: 'Overcurrent', description: 'Output current has exceeded trip level.' },
+                    { code: '0002', name: 'DC Overvolt', description: 'Excessive DC link voltage. Check deceleration time.' },
+                    { code: '0016', name: 'Earth Fault', description: 'Earth fault detected in motor or motor cable.' },
+                    { code: '7121', name: 'Motor Stall', description: 'Motor is operating in the stall region.' }
+                ],
+                schneider: [
+                    { code: 'InF1', name: 'Internal Fault', description: 'Power stage fault. Check drive health.' },
+                    { code: 'OCF', name: 'Overcurrent', description: 'Overcurrent. Check inertia, load, or mechanical lock.' },
+                    { code: 'SCF', name: 'Short Circuit', description: 'Short circuit or grounding at drive output.' },
+                    { code: 'OHF', name: 'Drive Overheat', description: 'Drive temperature too high. Check ventilation.' }
+                ],
+                danfoss: [
+                    { code: 'W8', name: 'DC Under Volt', description: 'DC link voltage is low.' },
+                    { code: 'A13', name: 'Over Current', description: 'Inverter peak current limit exceeded.' },
+                    { code: 'A14', name: 'Earth Fault', description: 'Discharge from output phases to ground.' },
+                    { code: 'A16', name: 'Short Circuit', description: 'Short-circuit in motor or motor cable.' }
+                ],
+                yaskawa: [
+                    { code: 'oC', name: 'Overcurrent', description: 'Drive output current exceeded instantaneous level.' },
+                    { code: 'oV', name: 'Overvoltage', description: 'DC bus voltage exceeded trip level.' },
+                    { code: 'Uv1', name: 'DC Bus Undervolt', description: 'DC bus voltage below level. Check fuses/power.' },
+                    { code: 'oL1', name: 'Motor Overload', description: 'Motor overload protection tripped (electronic thermal).' }
+                ],
+                mitsubishi: [
+                    { code: 'E.OC1', name: 'Overcurrent Accel', description: 'Overcurrent during acceleration.' },
+                    { code: 'E.OC2', name: 'Overcurrent Const', description: 'Overcurrent during constant speed.' },
+                    { code: 'E.OC3', name: 'Overcurrent Decel', description: 'Overcurrent during deceleration.' },
+                    { code: 'E.UVT', name: 'Undervoltage', description: 'Inverter supply voltage dropped.' }
+                ],
+                eaton: [
+                    { code: 'F1', name: 'Overcurrent', description: 'Hardware detected excessive current.' },
+                    { code: 'F2', name: 'Overvoltage', description: 'DC link overvoltage.' },
+                    { code: 'F3', name: 'Undervoltage', description: 'DC link undervoltage.' },
+                    { code: 'F5', name: 'Overtemp', description: 'Heatsink temperature too high.' }
+                ]
+            },
+            thermocoupleTable: { type: 'Type', positive: 'Positive (+)', negative: 'Negative (-)', jacket: 'Jacket' },
+            colorCodes: {
+                ansi: {
+                    name: 'ANSI (United States)',
+                    note: 'Red is ALWAYS negative in ANSI.',
+                    codes: [
+                        { type: 'J', positive: 'White', negative: 'Red', jacket: 'Black' },
+                        { type: 'K', positive: 'Yellow', negative: 'Red', jacket: 'Yellow' },
+                        { type: 'T', positive: 'Blue', negative: 'Red', jacket: 'Blue' },
+                        { type: 'E', positive: 'Purple', negative: 'Red', jacket: 'Purple' },
+                        { type: 'N', positive: 'Orange', negative: 'Red', jacket: 'Orange' },
+                        { type: 'R/S', positive: 'Black', negative: 'Red', jacket: 'Green' },
+                        { type: 'B', positive: 'Gray', negative: 'Red', jacket: 'Gray' }
+                    ]
+                },
+                iec: {
+                    name: 'IEC 60584-3 (Europe/Global)',
+                    note: 'Common standard for new installations.',
+                    codes: [
+                        { type: 'J', positive: 'Black', negative: 'White', jacket: 'Black' },
+                        { type: 'K', positive: 'Green', negative: 'White', jacket: 'Green' },
+                        { type: 'T', positive: 'Brown', negative: 'White', jacket: 'Brown' },
+                        { type: 'E', positive: 'Violet', negative: 'White', jacket: 'Violet' },
+                        { type: 'N', positive: 'Pink', negative: 'White', jacket: 'Pink' },
+                        { type: 'R/S', positive: 'Orange', negative: 'White', jacket: 'Orange' },
+                        { type: 'B', positive: 'Gray', negative: 'White', jacket: 'Gray' }
+                    ]
+                },
+                din: {
+                    name: 'DIN 43710 (German - Obsolete)',
+                    note: 'Legacy systems only.',
+                    codes: [
+                        { type: 'J', positive: 'Red', negative: 'Blue', jacket: 'Blue' },
+                        { type: 'K', positive: 'Red', negative: 'Green', jacket: 'Green' },
+                        { type: 'T', positive: 'Red', negative: 'Brown', jacket: 'Brown' },
+                        { type: 'E', positive: 'Red', negative: 'Black', jacket: 'Black' }
+                    ]
+                },
+                jis: {
+                    name: 'JIS C 1610 (Japan - Pre-1995)',
+                    note: 'Replaced by IEC colors in 1995, but common in older machines.',
+                    codes: [
+                        { type: 'J', positive: 'Red', negative: 'White', jacket: 'Yellow' },
+                        { type: 'K', positive: 'Red', negative: 'White', jacket: 'Blue' },
+                        { type: 'T', positive: 'Red', negative: 'White', jacket: 'Brown' },
+                        { type: 'E', positive: 'Red', negative: 'White', jacket: 'Violet' }
+                    ]
+                }
+            },
+            plcDataTypes: {
+                allenBradley: {
+                    name: 'Rockwell / Allen-Bradley (Logix)',
+                    types: [
+                        { type: 'BOOL', desc: '1-bit boolean (0 or 1)' },
+                        { type: 'SINT', desc: '8-bit signed integer (-128 to 127)' },
+                        { type: 'INT', desc: '16-bit signed integer (-32,768 to 32,767)' },
+                        { type: 'DINT', desc: '32-bit signed integer (-2.14B to 2.14B)' },
+                        { type: 'LINT', desc: '64-bit signed integer (huge range)' },
+                        { type: 'REAL', desc: '32-bit floating point (IEEE 754)' },
+                        { type: 'LREAL', desc: '64-bit floating point (Double Precision)' },
+                        { type: 'TIMER', desc: 'Structure (PRE, ACC, EN, TT, DN)' },
+                        { type: 'COUNTER', desc: 'Structure (PRE, ACC, CU, CD, DN, OV, UN)' },
+                        { type: 'STRING', desc: 'ASCII String structure (LEN, DATA[])' }
+                    ]
+                },
+                siemens: {
+                    name: 'Siemens (TIA Portal / S7)',
+                    types: [
+                        { type: 'Bool', desc: '1-bit binary value' },
+                        { type: 'Byte', desc: '8-bit unsigned (0 to 255) or hex' },
+                        { type: 'Int', desc: '16-bit signed integer' },
+                        { type: 'DInt', desc: '32-bit signed integer' },
+                        { type: 'Word', desc: '16-bit unsigned / bitmask' },
+                        { type: 'DWord', desc: '32-bit unsigned / bitmask' },
+                        { type: 'Real', desc: '32-bit floating point' },
+                        { type: 'LReal', desc: '64-bit floating point' },
+                        { type: 'Time', desc: '32-bit time value (ms resolution)' },
+                        { type: 'S5Time', desc: '16-bit legacy BCD time' },
+                        { type: 'Char', desc: '8-bit ASCII character' }
+                    ]
+                }
+            }
+        },
         shiftLog: {
             title: 'Intelligent Shift Log',
-            description: 'Record events informally. The AI structures the data and generates the handover report.',
-            inputPlaceholder: 'Example: "Pump 2 was vibrating. I tightened the bolts and it normalized."',
+            description: 'Record events informally. The AI structures data and generates reports.',
+            inputPlaceholder: 'Example: "Pump 2 was vibrating. I tightened the bolts."',
             submitButton: 'Record Event',
             processing: 'Structuring Data...',
             recentLogs: 'Shift Events (Current Group)',
@@ -108,16 +383,8 @@ export const translations = {
             generatingReport: 'Writing Report...',
             reportTitle: 'Shift Handover Report',
             noLogs: 'No events recorded in the last 12 hours.',
-            fields: {
-                equipment: 'Equipment',
-                failure: 'Failure',
-                action: 'Action',
-                criticality: 'Criticality',
-                status: 'Status',
-            }
+            fields: { equipment: 'Equipment', failure: 'Failure', action: 'Action', criticality: 'Criticality', status: 'Status' }
         },
-
-        // Forms
         formTopic: 'Topic',
         formDifficulty: 'Difficulty',
         formDifficultyBeginner: 'Beginner',
@@ -126,533 +393,16 @@ export const translations = {
         formVfdBrand: 'VFD Brand',
         formVfdModel: 'VFD Model',
         formPlcBrand: 'PLC Brand',
-        formPlcSoftware: 'PLC Software',
-        formPlcLanguage: 'PLC Language',
+        formPlcSoftware: 'Configuration Software',
+        formPlcLanguage: 'Programming Language',
         formGeneralOption: 'General',
         formGeneratingButton: 'Generating...',
         formGenerateButton: 'Generate',
-        
-        // Practices
-        practices: {
-            title: 'Generate a Practice Problem',
-            description: 'Select a topic and difficulty to create a custom practice scenario.',
-        },
-        practice: {
-            title: 'Practice Problem',
-            solutionTitle: 'Solution',
-            showSolution: 'Show Solution',
-            hideSolution: 'Hide Solution',
-        },
-        
-        // Spinners & Alerts
+        errorAlertTitle: 'An Error Occurred',
         spinnerLoading: 'Loading...',
         spinnerWait: 'Please wait a moment.',
-        errorAlertTitle: 'An Error Occurred',
-        error: {
-            unexpected: 'An unexpected error occurred. Please try again.',
-        },
-        
-        // Commissioning
-        commissioning: {
-            selectTitle: 'VFD Commissioning Assistant',
-            selectDescription: 'Select a VFD model to begin an interactive, step-by-step commissioning guide.',
-            brandLabel: 'Select VFD Brand',
-            modelLabel: 'Select VFD Model',
-            applicationLabel: 'Select Application',
-            appConveyor: 'Simple Conveyor',
-            appFan: 'Fan / Blower Control',
-            appPumpPID: 'Constant Pressure Pump (PID)',
-            appGeneral: 'General Purpose',
-            startButton: 'Start Commissioning',
-            initialPrompt: 'Hello, I\'m ready to commission my VFD for a {application} application. What is the first step?',
-            terminalQuery: 'I have a question about the diagram. What is the purpose of terminal "{label}" ({func}) and what parameters are associated with it?',
-            placeholder: 'Ask a question or confirm completion...',
-            historyTitle: 'Sessions',
-            newChat: 'New',
-            diagramNotAvailable: 'Diagram Not Available',
-            diagramNotAvailableDesc: 'A visual diagram for this model has not been implemented yet.',
-        },
-        
-        // Tools
-        tools: {
-            title: 'Automation Tools',
-            description: 'A suite of specialized utilities to analyze, verify, and optimize your automation systems.',
-            generateButton: 'Analyze',
-            backToTools: 'Back to Tools',
-            faultDiagnosis: {
-                title: 'VFD Fault Diagnosis',
-                description: 'Analyze a VFD fault code with context to get likely causes and troubleshooting steps.',
-                vfdBrand: 'VFD Brand',
-                vfdModel: 'VFD Model',
-                faultCode: 'Fault Code',
-                faultCodePlaceholder: 'e.g., F0001 or oC',
-                context: 'Operating Context',
-                contextPlaceholder: 'e.g., "Fault occurs immediately upon start command" or "Happens randomly during run"',
-            },
-            scanTime: {
-                title: 'PLC Scan Time Analyzer',
-                description: 'Paste PLC code (any text format) to get recommendations for optimizing its execution time.',
-                codeLabel: 'PLC Code',
-                codePlaceholder: 'Paste your ladder logic, structured text, etc. here.',
-            },
-            energy: {
-                title: 'VFD Energy Efficiency',
-                description: 'Get a plan with parameter recommendations to maximize energy savings for a specific application.',
-                appType: 'Application Type',
-                appTypes: {
-                    pump: 'Centrifugal Pump',
-                    fan: 'Fan / Blower',
-                    conveyor: 'Conveyor',
-                    compressor: 'Compressor',
-                    other: 'Other',
-                },
-                loadProfile: 'Load Profile',
-                loadProfilePlaceholder: 'e.g., "Runs 24/7 but demand is low at night" or "Variable speed based on pressure sensor"',
-            },
-            codeProver: {
-                title: 'Safety Logic Analyzer',
-                description: 'Analyzes safety code for common patterns, deviations from best practices (e.g., IEC 61131, ISO 13849), and potential logical vulnerabilities.',
-                rulesLabel: 'Immutable Rules',
-                rulesPlaceholder: 'Example: "Rule 1: The Main_Valve and Drain_Valve can NEVER be open at the same time."',
-            },
-            logicValidator: {
-                title: 'Logic Validator',
-                description: 'Check PLC logic (text format) to detect errors such as duplicate outputs or dead code.',
-                codeLabel: 'PLC Logic (Text Format)',
-                codePlaceholder: 'Example:\nXIC(Start) XIO(Stop) OTE(Motor)\nXIC(Motor) OTE(Motor_Running_Light)',
-                analyzeButton: 'Validate Logic',
-                analyzing: 'Validating...',
-                analysisResults: 'Validation Results',
-                noIssues: 'No issues found in the logic.',
-                suggestButton: 'Suggest a Fix',
-                suggesting: 'Generating fix...',
-            },
-            migration: {
-                title: 'Code Migration Assistant',
-                description: 'Translate logic between different PLC brands and platforms (e.g., Rockwell to Siemens).',
-                sourceGroup: 'Source Platform',
-                targetGroup: 'Target Platform',
-                convertButton: 'Convert Code',
-                converting: 'Converting...',
-                resultTitle: 'Migration Result',
-                notesTitle: 'Migration Notes & Warnings',
-                codePlaceholder: 'Paste source code here (e.g., Rung ASCII or Structured Text)...',
-            },
-            network: {
-                title: 'Networking & Protocols',
-                description: 'Calculators and assistants for industrial communication.',
-                calculateButton: 'Calculate',
-                checksum: {
-                    title: 'Checksum & CRC Calculator',
-                    description: 'For serial protocols (ASCII) and Modbus RTU.',
-                    frameLabel: 'Data Frame',
-                    framePlaceholder: 'e.g., 0103000A0001 or ABC',
-                    inputType: 'Input Type',
-                    inputHex: 'Hexadecimal',
-                    inputAscii: 'ASCII',
-                    resultsTitle: 'Checksum Results',
-                    crc16modbus: 'CRC-16 (Modbus)',
-                    crc16ccitt: 'CRC-16 (CCITT/XModem)',
-                    crc32: 'CRC-32 (Ethernet)',
-                    lrc: 'LRC (Modbus ASCII)',
-                    checksum8: 'Checksum (8-bit Sum)',
-                    checksum16: 'Checksum (16-bit Sum)',
-                    order_lf: 'Low Byte First',
-                    order_hf: 'High Byte First',
-                    decimalValue: 'Decimal',
-                    fullFrame: 'Full Frame (with CRC)',
-                    copy: 'Copy',
-                },
-                ascii: {
-                    title: 'Hex Frame Decoder',
-                    description: 'Decode a hex string to visualize non-printable ASCII characters.',
-                    frameLabel: 'Hex Frame',
-                    framePlaceholder: 'e.g., 02 30 30 31 35 2E 35 30 67 0D 0A',
-                    decodedFrame: 'Decoded Frame',
-                    analysis: 'Analysis',
-                    sendToCRC: 'Calculate Checksum for this frame',
-                },
-                hardware: {
-                    title: 'Network Hardware Assistant',
-                    description: 'Select protocols to get a compatibility report and hardware recommendations.',
-                    protocolsLabel: 'Select Protocols to Interconnect',
-                },
-                subnet: {
-                    title: 'Subnet Calculator',
-                    description: 'Verify if two devices can communicate on the same network.',
-                    device1: 'Device 1 IP',
-                    device2: 'Device 2 IP',
-                    subnetMask: 'Subnet Mask',
-                    resultTitle: 'Subnet Analysis',
-                    status: 'Status',
-                    statusOk: 'Success! Devices are on the same subnet.',
-                    statusFail: 'Subnet Mismatch! Devices cannot communicate directly.',
-                    netAddress: 'Network Address',
-                    broadcastAddress: 'Broadcast Address',
-                    validRange: 'Valid Host Range',
-                },
-            },
-        },
-        
-        // Wiring
-        wiring: {
-            title: 'Wiring Guide Generator',
-            description: 'Create a custom wiring guide based on your specific components.',
-            vfdDetails: 'VFD Details',
-            controlDetails: 'Control Configuration',
-            motorDetails: 'Motor Data',
-            controlMethod: 'Control Method',
-            controlMethod2Wire: '2-Wire Control',
-            controlMethod3Wire: '3-Wire Control',
-            configSoftware: 'Configuration Software',
-            motorHP: 'Motor HP',
-            motorVoltage: 'Motor Voltage',
-            motorFLA: 'Motor FLA',
-            application: 'Application Description',
-            applicationPlaceholder: 'Describe how the motor will be used (e.g., "Conveyor with smooth start")',
-            generatingButton: 'Generating Guide...',
-            generateButton: 'Generate Guide',
-        },
-
-        // Calculators
-        calculator: {
-            title: 'Industrial Calculators',
-            description: 'Essential tools for electrical and automation engineering.',
-            ohmsLaw: {
-                tabTitle: "Ohm's Law",
-                title: "Ohm's Law Calculator",
-                description: 'Calculate Voltage, Current, Resistance, or Power.',
-                voltage: 'Voltage (V)',
-                current: 'Current (I)',
-                resistance: 'Resistance (R)',
-                power: 'Power (P)',
-                reset: 'Reset',
-            },
-            thermal: {
-                tabTitle: 'Thermal Load',
-                title: 'Enclosure Thermal Load Calculator',
-                description: 'Calculate the heat dissipation required for an electrical enclosure.',
-                components: 'Internal Components',
-                addComponent: 'Add Component',
-                addedComponents: 'Added Components',
-                panelDimensions: 'Enclosure Dimensions (inches)',
-                height: 'Height',
-                width: 'Width',
-                depth: 'Depth',
-                temperatures: 'Temperatures (°F)',
-                internal: 'Max Internal Temp',
-                external: 'Max Ambient Temp',
-                calculateButton: 'Calculate Cooling Requirement',
-                resultsTitle: 'Thermal Analysis Results',
-                totalHeat: 'Total Internal Heat',
-                watts: 'Watts',
-                panelArea: 'Effective Surface Area',
-                sqft: 'ft²',
-                tempDifference: 'Temperature Delta',
-                coolingCapacity: 'Passive Dissipation',
-                btu: 'BTU/hr',
-                coolingRequired: 'Active Cooling Required',
-                noCooling: 'No active cooling required (Fans/AC not needed).',
-            },
-            motorControl: {
-                tabTitle: 'Motor Control',
-                title: 'Motor Control Circuit Sizing',
-                description: 'Size breakers, contactors, and overloads based on NEC standards.',
-                motorDetails: 'Motor Specifications',
-                horsepower: 'Horsepower',
-                voltage: 'Voltage',
-                phase: 'Phase',
-                phaseThree: '3-Phase',
-                phaseSingle: '1-Phase',
-                nameplateData: 'Nameplate Data (Optional)',
-                analyzeNameplate: 'Scan Nameplate',
-                analyzing: 'Analyzing...',
-                nominalCurrent: 'Nominal Current (FLA)',
-                serviceFactor: 'Service Factor',
-                serviceFactorCurrent: 'Service Factor Amps',
-                calculateButton: 'Size Components',
-                resultsTitle: 'Recommended Components',
-                fla: 'Motor FLA',
-                overload: 'Overload Setting',
-                overloadRange: 'Max setting per NEC 430.32',
-                contactor: 'Contactor Size',
-                breaker: 'Breaker (MCP)',
-                wire: 'Wire Size (75°C)',
-                disclaimer: 'Calculations based on NEC tables. Always verify with local codes and engineering specifications.',
-                analysisError: 'Could not read nameplate.',
-                removeImage: 'Remove Image',
-            },
-            plcScaling: {
-                tabTitle: 'PLC Scaling',
-                title: 'PLC Analog Scaling Calculator',
-                description: 'Calculate scaling parameters and generate code for analog inputs/outputs.',
-                inputRange: 'Input Range (Raw)',
-                outputRange: 'Output Range (Engineering)',
-                options: 'Logic Options',
-                clamping: 'Clamp Output Logic',
-                min: 'Min',
-                max: 'Max',
-                units: {
-                    custom: 'Custom',
-                    raw_4_20ma: '4-20mA (Standard)',
-                    raw_0_10v: '0-10V (Standard)',
-                    raw_rockwell_4_20ma: 'Rockwell 4-20mA',
-                    raw_siemens_4_20ma: 'Siemens 4-20mA',
-                    raw_unsigned_12: '12-bit Unsigned',
-                    raw_unsigned_14: '14-bit Unsigned',
-                    raw_unsigned_16: '16-bit Unsigned',
-                    raw_signed_15: '15-bit Signed',
-                    raw_rockwell_10v: 'Rockwell 0-10V',
-                    raw_siemens_10v: 'Siemens 0-10V',
-                    eng_percent: 'Percentage (%)',
-                    eng_freq_60hz: 'Frequency (0-60Hz)',
-                    eng_speed_1800rpm: 'Speed (0-1800 RPM)',
-                    eng_torque_300: 'Torque (0-300%)',
-                    eng_psi_150: 'Pressure (0-150 PSI)',
-                    eng_celsius_100: 'Temp (0-100 °C)',
-                    eng_fahrenheit_212: 'Temp (32-212 °F)',
-                    eng_gpm_500: 'Flow (0-500 GPM)',
-                    eng_liters_1000: 'Volume (0-1000 L)',
-                },
-                resultsTitle: 'Scaling Results',
-                formula: 'Linear Equation',
-                codeSample: 'Generated Code',
-                codeLang: {
-                    st: 'Structured Text (ST)',
-                    ld: 'Ladder Diagram (Logic)',
-                    fbd: 'Function Block (Plan)',
-                },
-                codeComments: {
-                    declarations: 'Variable Declarations',
-                    rawValue: 'Input from Analog Card',
-                    scaledValue: 'Result in Engineering Units',
-                    scalingConstants: 'Scaling Parameters',
-                    tempVar: 'Temporary Conversion Variable',
-                    logic: 'Scaling Logic',
-                    convertToReal: 'Convert Integer to Real for precision',
-                    applyFormula: 'Apply Linear Equation: y = mx + b',
-                    clamp: 'Limit output to defined range',
-                },
-                interactiveTester: 'Interactive Signal Tester',
-                rawSignal: 'Raw Input Signal',
-                engUnits: 'Engineering Units',
-                alarmCalculator: 'Alarm Setpoint Calculator',
-                alarmDesc: 'Calculate raw values for alarm setpoints.',
-                alarmHH: 'High-High (HH)',
-                alarmH: 'High (H)',
-                alarmL: 'Low (L)',
-                alarmLL: 'Low-Low (LL)',
-            },
-            voltageDrop: {
-                tabTitle: 'Voltage Drop',
-                title: 'Voltage Drop Calculator',
-                description: 'Calculate voltage drop for long cable runs based on NEC Chapter 9.',
-                electricalSystem: 'System Parameters',
-                voltage: 'System Voltage',
-                phase: 'Phase',
-                phaseThree: '3-Phase',
-                phaseSingle: '1-Phase',
-                load: 'Load Parameters',
-                current: 'Load Current (Amps)',
-                conductor: 'Conductor',
-                material: 'Material',
-                copper: 'Copper',
-                aluminum: 'Aluminum',
-                wireGauge: 'Wire Size (AWG)',
-                distance: 'Run Length (One Way)',
-                feet: 'Feet',
-                meters: 'Meters',
-                calculateButton: 'Calculate Drop',
-                resultsTitle: 'Calculation Results',
-                voltageDropV: 'Voltage Drop',
-                voltageDropPercent: 'Drop Percentage',
-                voltageAtLoad: 'Voltage at Load',
-                acceptable: 'Acceptable (<3%)',
-                caution: 'Caution (3-5%)',
-                unacceptable: 'Unacceptable (>5%)',
-                suggestion: 'Suggested Wire Size: {gauge} AWG',
-                formula: 'Calculation Formula',
-            },
-            dcPowerSupply: {
-                tabTitle: 'DC Power Supply',
-                title: '24VDC Power Supply Sizing',
-                description: 'Calculate the required amperage for a 24VDC power supply based on connected loads.',
-                loadList: 'Connected Loads',
-                deviceDescription: 'Device Description',
-                quantity: 'Qty',
-                nominalConsumption: 'Nominal (mA)',
-                inrushConsumption: 'Inrush (mA)',
-                addDevice: 'Add Device',
-                addFromTemplate: 'Add from Template',
-                designParameters: 'Design Factors',
-                safetyFactor: 'Safety Margin (%)',
-                safetyFactorTooltip: 'Extra capacity buffer for reliability (Standard: 25%)',
-                futureGrowth: 'Future Growth (%)',
-                futureGrowthTooltip: 'Reserved capacity for future additions (Standard: 20%)',
-                calculateButton: 'Calculate Requirements',
-                resultsTitle: 'Sizing Analysis',
-                consumptionSummary: 'Consumption Summary',
-                totalNominal: 'Total Nominal Load',
-                peakInrush: 'Peak Inrush Load',
-                requiredAmperage: 'Required Capacity (w/ Factors)',
-                recommendationTitle: 'Recommended Power Supply',
-                recommendedSupply: '{amps} Amps',
-                expertNotesTitle: 'Engineering Notes',
-                expertNote1: 'A {recAmps}A supply provides sufficient headroom for the calculated {nominalAmps}A nominal load, including {safetyFactor}% safety and {growthFactor}% growth factors.',
-                expertNote2: 'The selected supply should handle the peak inrush of {peakAmps}A. Verify the supply\'s overload capability (typically 150% for 5s).',
-                expertNote3: 'Ensure wire sizing is adequate for the full output current of the power supply.',
-            },
-            encoderMotion: {
-                tabTitle: 'Encoder Motion',
-                title: 'Encoder & Motion Calculator',
-                description: 'Calculate resolution, travel distance, and pulse frequency for motion control.',
-                encoderParams: 'Encoder Parameters',
-                ppr: 'Encoder PPR',
-                pprTooltip: 'Pulses Per Revolution (Physical slits on disc)',
-                plcMode: 'PLC Counter Mode',
-                plcMode1x: '1x (X1)',
-                plcMode4x: '4x (Quadrature)',
-                plcMode1xTooltip: 'Counts rising edges of A only',
-                plcMode4xTooltip: 'Counts rising and falling edges of A and B (Highest Resolution)',
-                transmissionParams: 'Mechanical Transmission',
-                mechanism: 'Mechanism Type',
-                mechanismDirect: 'Direct Drive / Motor Shaft',
-                mechanismGearbox: 'Gearbox / Rotary Table',
-                mechanismLeadscrew: 'Lead Screw / Ball Screw',
-                mechanismPulley: 'Belt & Pulley / Conveyor',
-                mechanismRack: 'Rack & Pinion',
-                gearboxIn: 'Gearbox Input',
-                gearboxOut: 'Gearbox Output',
-                leadscrewPitch: 'Screw Pitch',
-                mm_rev: 'mm/rev',
-                in_rev: 'in/rev',
-                diameter: 'Diameter',
-                mm: 'mm',
-                in: 'in',
-                viabilityAnalysis: 'Speed & Frequency Analysis',
-                maxSpeed: 'Target Linear Speed',
-                mm_s: 'mm/s',
-                m_s: 'm/s',
-                rpm: 'RPM',
-                resultsTitle: 'Motion Constants',
-                systemResolution: 'System Resolution',
-                resolutionUnit: 'mm / pulse',
-                resolutionUnitAngle: 'deg / pulse',
-                scaleFactor: 'Scale Factor',
-                scaleFactorUnit: 'pulses / mm',
-                scaleFactorUnitAngle: 'pulses / deg',
-                interactiveTester: 'Interactive Positioning Tester',
-                moveToTravel: 'Move to travel',
-                needsPulses: 'needs pulses',
-                pulseCountIs: 'Pulse count of',
-                travelledDist: 'travels',
-                hardwareDiagnosis: 'Hardware Viability',
-                requiredFrequency: 'Required Encoder Frequency',
-                mhz: 'MHz',
-                khz: 'kHz',
-                hz: 'Hz',
-                analysisOk: 'OK. Most PLC high-speed counters can handle this frequency.',
-                analysisCaution: 'Caution. Verify your PLC input frequency limit (typically 100kHz-200kHz).',
-                analysisCritical: 'Critical. This frequency is very high. Requires specialized high-speed counter modules or lower resolution.',
-            },
-            sensorSelection: {
-                tabTitle: 'Sensor Selection',
-                wizardTitle: 'Sensor Selection Wizard',
-                wizardDescription: 'Answer a few questions to get an AI-recommended sensor technology and implementation guide.',
-                processVariable: 'Process Variable',
-                mediumType: 'Medium State',
-                mediumCharacteristics: 'Medium Characteristics',
-                liquidType: 'Liquid Name',
-                liquidProperties: 'Liquid Properties',
-                solidType: 'Solid Type',
-                angleRepo: 'Angle of Repose (approx)',
-                solidProperties: 'Solid Properties',
-                operatingConditions: 'Operating Conditions',
-                tempRange: 'Temperature Range (°C)',
-                pressureRange: 'Pressure Range (bar)',
-                from: 'From',
-                to: 'To',
-                environmentalConditions: 'Environment',
-                location: 'Installation Location',
-                installationRegion: 'Installation Country/Region',
-                installationRegionTooltip: 'Used to determine available standards and common brands.',
-                thermocoupleStandard: 'Thermocouple Color Standard',
-                thermocoupleStandardTooltip: 'If you have existing wiring, select the standard to match colors.',
-                areaClassification: 'Area Classification',
-                outputRequirements: 'Output Signal',
-                projectPriorities: 'Project Priorities',
-                priorities: {
-                    lowCost: 'Low Cost',
-                    highPrecision: 'High Precision',
-                    maxRobustness: 'Max Robustness',
-                },
-                generating: 'Analyzing Requirements...',
-                generateButton: 'Find Best Sensor',
-                vars: {
-                    level: 'Level',
-                    flow: 'Flow',
-                    pressure: 'Pressure',
-                    temperature: 'Temperature',
-                    position: 'Position / Presence',
-                },
-                types: {
-                    liquid: 'Liquid',
-                    solid: 'Solid / Powder',
-                    gas: 'Gas',
-                },
-                solidTypes: {
-                    powder: 'Fine Powder',
-                    granule: 'Granules',
-                    chunk: 'Large Chunks',
-                },
-                props: {
-                    corrosive: 'Corrosive',
-                    abrasive: 'Abrasive',
-                    viscous: 'Viscous / Sticky',
-                    foaming: 'Foaming',
-                    cip: 'Sanitary / CIP',
-                },
-                solidProps: {
-                    suspendedDust: 'Suspended Dust',
-                    abrasive: 'Abrasive',
-                },
-                locs: {
-                    indoor: 'Indoor',
-                    outdoor: 'Outdoor',
-                    vibration: 'High Vibration',
-                    washdown: 'Washdown (IP69K)',
-                },
-                areas: {
-                    general_safe: 'General Purpose (Safe)',
-                    hazardous_gas: 'Explosive Gas (Zone 0/1/2)',
-                    hazardous_dust: 'Explosive Dust (Zone 20/21/22)',
-                },
-                thermocoupleStandards: {
-                    autodetect: 'Auto-detect / Standard',
-                    ansi: 'ANSI (USA - Yellow/Red)',
-                    iec: 'IEC (Europe - Green/White)',
-                },
-                signals: {
-                    '4-20mA': 'Analog 4-20mA',
-                    '4-20mA_HART': '4-20mA + HART',
-                    '0-10V': 'Analog 0-10V',
-                    'PNP_NPN': 'Switch (PNP/NPN)',
-                    'Relay': 'Relay Contact',
-                    'IO-Link': 'IO-Link',
-                    'Profinet_EtherNetIP': 'Ethernet (Profinet/IP)',
-                },
-            },
-        },
-        
-        // Results
-        result: {
-            title: 'Analysis Result',
-        },
-        export: {
-            pdf: 'Export PDF',
-        },
-        
-        // PDF Export
+        result: { title: 'Analysis Result' },
+        export: { pdf: 'Export PDF' },
         pdf: {
             sensorReport: {
                 title: 'Sensor Recommendation Report',
@@ -664,164 +414,9 @@ export const translations = {
                 installationConsiderations: 'Installation Considerations',
                 implementationGuide: 'Implementation Guide',
             }
-        },
-
-        // Reference
-        reference: {
-            title: 'Quick Reference',
-            description: 'Commonly needed information at your fingertips. This is a sample, not an exhaustive list.',
-            vfdTitle: 'VFD Common Fault Codes',
-            vfdDesc: 'A brief list of some of the most common fault codes for popular VFD brands.',
-            plcTitle: 'PLC Data Types',
-            plcDesc: 'A reference for common data types used in Allen-Bradley and Siemens PLCs.',
-            thermocoupleTitle: 'Thermocouple Color Codes',
-            thermocoupleDesc: 'Identify thermocouple types by their wire jacket colors.',
-            
-            brands: {
-                siemens: 'Siemens',
-                allenBradley: 'Allen-Bradley',
-                abb: 'ABB',
-                schneider: 'Schneider Electric',
-                danfoss: 'Danfoss',
-                yaskawa: 'Yaskawa',
-                mitsubishi: 'Mitsubishi Electric',
-                eaton: 'Eaton'
-            },
-            
-            faults: {
-                code: 'Code',
-                name: 'Name',
-                description: 'Description',
-                siemens: [
-                    { code: 'F0001', name: 'Overcurrent', description: 'Motor current exceeds limit.' },
-                    { code: 'F0002', name: 'Overvoltage', description: 'DC link voltage too high.' },
-                    { code: 'F0003', name: 'Undervoltage', description: 'Supply voltage too low.' },
-                    { code: 'F0011', name: 'Motor Overtemperature', description: 'Motor thermal overload (I2t).' }
-                ],
-                allenBradley: [
-                    { code: 'F12', name: 'Hardware Overcurrent', description: 'Output current exceeded hardware limit.' },
-                    { code: 'F05', name: 'OverVoltage', description: 'DC Bus voltage exceeded maximum.' },
-                    { code: 'F04', name: 'UnderVoltage', description: 'DC Bus voltage fell below minimum.' },
-                    { code: 'F13', name: 'Ground Fault', description: 'Current path to earth ground detected.' }
-                ],
-                abb: [
-                    { code: '2310', name: 'Overcurrent', description: 'Output current too high.' },
-                    { code: '3210', name: 'DC Link Overvoltage', description: 'DC voltage limit exceeded.' },
-                    { code: '2330', name: 'Earth Leakage', description: 'Earth fault detected in motor cable or motor.' },
-                    { code: '3130', name: 'Supply Phase Loss', description: 'Intermediate circuit DC voltage is oscillating.' }
-                ],
-                schneider: [
-                    { code: 'OCF', name: 'Overcurrent', description: 'Overcurrent.' },
-                    { code: 'OSF', name: 'Mains Overvoltage', description: 'Supply mains voltage is too high.' },
-                    { code: 'SCF', name: 'Motor Short Circuit', description: 'Short-circuit or grounding at the drive output.' },
-                    { code: 'OHF', name: 'Drive Overheat', description: 'Drive temperature too high.' }
-                ],
-                danfoss: [
-                    { code: 'Alarm 14', name: 'Ground Fault', description: 'Discharge from output phases to ground.' },
-                    { code: 'Alarm 7', name: 'Overvoltage', description: 'DC link voltage is too high.' },
-                    { code: 'Alarm 13', name: 'Overcurrent', description: 'Inverter peak current limit exceeded.' },
-                    { code: 'Alarm 8', name: 'Undervoltage', description: 'DC link voltage is too low.' }
-                ],
-                yaskawa: [
-                    { code: 'oC', name: 'Overcurrent', description: 'Output current exceeded trip level.' },
-                    { code: 'ov', name: 'Overvoltage', description: 'DC bus voltage exceeded trip level.' },
-                    { code: 'UV1', name: 'Undervoltage', description: 'DC bus voltage below trip level.' },
-                    { code: 'oL1', name: 'Motor Overload', description: 'Motor thermal overload protection tripped.' }
-                ],
-                mitsubishi: [
-                    { code: 'E.OC1', name: 'Overcurrent (Accel)', description: 'Overcurrent during acceleration.' },
-                    { code: 'E.OC2', name: 'Overcurrent (Const)', description: 'Overcurrent during constant speed.' },
-                    { code: 'E.OV1', name: 'Regen. Overvoltage', description: 'Overvoltage during acceleration.' },
-                    { code: 'E.THM', name: 'Motor Overload', description: 'Motor thermal relay trip.' }
-                ],
-                eaton: [
-                    { code: 'F1', name: 'Overcurrent', description: 'Output current exceeded limit.' },
-                    { code: 'F2', name: 'Overvoltage', description: 'DC Bus voltage too high.' },
-                    { code: 'F3', name: 'Ground Fault', description: 'Ground fault detected.' },
-                    { code: 'F5', name: 'Overtemperature', description: 'Heatsink temperature too high.' }
-                ]
-            },
-            
-            colorCodes: {
-                ansi: {
-                    name: 'ANSI (USA)',
-                    note: 'American National Standards Institute',
-                    codes: [
-                        { type: 'Type K', positive: 'Yellow', negative: 'Red', jacket: 'Yellow' },
-                        { type: 'Type J', positive: 'White', negative: 'Red', jacket: 'Black' },
-                        { type: 'Type T', positive: 'Blue', negative: 'Red', jacket: 'Blue' },
-                        { type: 'Type E', positive: 'Purple', negative: 'Red', jacket: 'Purple' }
-                    ]
-                },
-                iec: {
-                    name: 'IEC (International)',
-                    note: 'International Electrotechnical Commission',
-                    codes: [
-                        { type: 'Type K', positive: 'Green', negative: 'White', jacket: 'Green' },
-                        { type: 'Type J', positive: 'Black', negative: 'White', jacket: 'Black' },
-                        { type: 'Type T', positive: 'Brown', negative: 'White', jacket: 'Brown' },
-                        { type: 'Type E', positive: 'Purple', negative: 'White', jacket: 'Purple' }
-                    ]
-                },
-                din: {
-                    name: 'DIN (Germany - Old)',
-                    note: 'Deutsches Institut für Normung',
-                    codes: [
-                        { type: 'Type K', positive: 'Red', negative: 'Green', jacket: 'Green' },
-                        { type: 'Type J', positive: 'Red', negative: 'Blue', jacket: 'Blue' },
-                        { type: 'Type T', positive: 'Red', negative: 'Brown', jacket: 'Brown' },
-                        { type: 'Type E', positive: 'Red', negative: 'Black', jacket: 'Black' }
-                    ]
-                },
-                jis: {
-                    name: 'JIS (Japan)',
-                    note: 'Japanese Industrial Standards',
-                    codes: [
-                        { type: 'Type K', positive: 'Red', negative: 'White', jacket: 'Blue' },
-                        { type: 'Type J', positive: 'Red', negative: 'White', jacket: 'Yellow' },
-                        { type: 'Type T', positive: 'Red', negative: 'White', jacket: 'Brown' },
-                        { type: 'Type E', positive: 'Red', negative: 'White', jacket: 'Violet' }
-                    ]
-                }
-            },
-            
-            plcDataTypes: {
-                allenBradley: {
-                    name: 'Allen-Bradley (Logix)',
-                    types: [
-                        { type: 'BOOL', desc: '1 bit (0 or 1)' },
-                        { type: 'SINT', desc: '8-bit signed integer (-128 to 127)' },
-                        { type: 'INT', desc: '16-bit signed integer (-32,768 to 32,767)' },
-                        { type: 'DINT', desc: '32-bit signed integer' },
-                        { type: 'REAL', desc: '32-bit floating point' },
-                        { type: 'LINT', desc: '64-bit signed integer' },
-                        { type: 'STRING', desc: 'ASCII string (LEN + Data array)' }
-                    ]
-                },
-                siemens: {
-                    name: 'Siemens (S7)',
-                    types: [
-                        { type: 'Bool', desc: '1 bit' },
-                        { type: 'Byte', desc: '8-bit unsigned' },
-                        { type: 'Word', desc: '16-bit unsigned' },
-                        { type: 'DWord', desc: '32-bit unsigned' },
-                        { type: 'Int', desc: '16-bit signed' },
-                        { type: 'DInt', desc: '32-bit signed' },
-                        { type: 'Real', desc: '32-bit floating point' }
-                    ]
-                }
-            },
-            
-            thermocoupleTable: {
-                type: 'Type',
-                positive: 'Positive (+)',
-                negative: 'Negative (-)',
-                jacket: 'Jacket'
-            }
-        },
+        }
     },
     es: {
-        // Header & Descriptions
         header: {
             solutions: 'Soluciones',
             practices: 'Prácticas',
@@ -834,7 +429,7 @@ export const translations = {
             logout: 'Cerrar Sesión',
         },
         header_descriptions: {
-            solutions: 'Obtén respuestas instantáneas y ayuda para solucionar problemas.',
+            solutions: 'Obtén respuestas instantáneas y ayuda técnica.',
             practices: 'Genera problemas de práctica para mejorar tus habilidades.',
             tools: 'Usa herramientas especializadas para análisis y verificación.',
             commissioning: 'Sigue guías interactivas para la puesta en marcha de VFDs.',
@@ -842,636 +437,388 @@ export const translations = {
             calculator: 'Realiza cálculos industriales comunes.',
             shiftLog: 'Registra eventos del turno y genera reportes con IA.',
         },
-        tooltips: {
-            toggleTheme: 'Cambiar tema',
-        },
-
-        // Landing Page
-        landing: {
-            heroTitle: 'El Asistente para Automatización Industrial',
-            heroSubtitle: 'PLCortex proporciona soluciones especializadas para programación de PLC, configuración de VFD y solución de problemas.',
-            heroDescription: 'Desde la generación de filosofías de control hasta la provisión de guías de puesta en marcha paso a paso, obtenga asistencia de nivel experto al instante.',
-            heroCta: 'Entrar a PLCortex',
-            specializationTitle: 'Nuestras Especializaciones',
-            plcTitle: 'Controladores Lógicos Programables (PLCs)',
-            plcDescription: 'Genera lógica de escalera, analiza tiempos de scan y verifica lógica de seguridad crítica para Siemens, Allen-Bradley y más.',
-            plcTags: 'Lógica de Escalera, Texto Estructurado, FBD, Verificación de Lógica',
-            vfdTitle: 'Variadores de Frecuencia (VFDs)',
-            vfdDescription: 'Crea guías de cableado, planes de puesta en marcha, diagnostica códigos de falla y obtén recomendaciones de parámetros para las principales marcas.',
-            vfdTags: 'Cableado, Puesta en Marcha, Diagnóstico de Fallas, Ahorro de Energía',
-            creator: 'Creado por Ing. Jesús Jiménez',
-        },
-        footerText: 'PLCortex © 2024. Todos los derechos reservados. Este es un proyecto de portafolio y no un producto comercial.',
-        
-        // Login & Admin
-        login: {
-            title: 'Bienvenido a PLCortex',
-            subtitle: 'Por favor, introduce tu código de acceso.',
-            placeholder: 'Código de Acceso',
-            button: 'Entrar',
-            error: 'Código inválido o inactivo.',
-            loading: 'Verificando...',
-            masterUser: 'Usuario Maestro',
-        },
-        admin: {
-            title: 'Panel de Admin - Códigos de Acceso',
-            logout: 'Cerrar Sesión',
-            descriptionPlaceholder: 'Asignar a un usuario...',
-            groupPlaceholder: 'Nombre de Grupo (ej. Area 1)',
-            table: {
-                code: 'Código de Acceso',
-                description: 'Descripción',
-                group: 'Grupo / Área',
-                role: 'Rol',
-                active: 'Activo',
-                created: 'Fecha de Creación',
-                copy: 'Copiar',
-                copied: '¡Copiado!',
-                leader: 'Líder',
-                member: 'Miembro',
-            },
-        },
-
-        // Dashboard
         dashboard: {
             title: 'Bienvenido a PLCortex',
-            subtitle: 'Tu copiloto experto para la automatización industrial. Selecciona una herramienta para comenzar.',
+            subtitle: 'Tu copiloto experto para la automatización industrial. Selecciona una herramienta.',
             recentActivity: 'Actividad Reciente',
+            toolsSection: 'Suite de Ingeniería'
         },
-
-        // Chat / Solutions
+        login: {
+            title: 'Control de Acceso',
+            subtitle: 'Ingresa tu código para continuar',
+            placeholder: 'Código (XXXX-XXXX)',
+            button: 'Verificar Acceso',
+            loading: 'Verificando...',
+            error: 'Código inválido o expirado.',
+            masterUser: 'Usuario Maestro de Ingeniería'
+        },
+        landing: {
+            heroTitle: 'Automatización Industrial con IA',
+            heroDescription: 'El kit de herramientas definitivo para programación de PLC, variadores e ingeniería eléctrica.',
+            heroCta: 'Acceder a la Plataforma',
+            plcTitle: 'Ingeniería de PLC',
+            plcDescription: 'Ayuda con texto estructurado, optimización de lógica y migración.',
+            plcTags: 'Siemens, Rockwell, Schneider, Migración de Código',
+            vfdTitle: 'Control de Movimiento',
+            vfdDescription: 'Guías de puesta en marcha y diagnóstico visual de terminales.',
+            vfdTags: 'PowerFlex, Sinamics, Altivar, ACS880',
+            creator: 'Desarrollado por ingenieros especialistas en automatización.'
+        },
         chat: {
-            welcomeTitle: 'Chat de Soluciones de Automatización',
-            welcomeMessage: 'Pregunta lo que sea sobre PLCs o VFDs. Inicia un nuevo chat para comenzar y recuerda establecer el contexto para respuestas más precisas.',
-            startNewChat: 'Iniciar Nuevo Chat',
-            newChatTitle: 'Nuevo Chat',
-            historyTitle: 'Historial de Chats',
-            placeholder: 'Haz una pregunta sobre tu VFD o PLC...',
-            thinking: 'Pensando...',
-            contextTitle: 'Contexto del Chat',
+            newChat: 'Nueva Sesión',
+            historyTitle: 'Sesiones Recientes',
+            welcomeTitle: 'Asistente de Ingeniería',
+            welcomeMessage: 'Estoy listo para ayudarte con tus tareas de {brand} {topic}. Selecciona una acción rápida o escribe tu consulta.',
+            placeholder: 'Escribe tu pregunta técnica aquí...',
+            thinking: 'Analizando contexto del sistema...',
+            finishConversation: 'Finalizar Sesión',
+            contextTitle: 'Contexto del Sistema',
             contextLocked: 'Bloqueado',
             contextEditable: 'Editable',
-            finishConversation: 'Finalizar',
-            newChat: 'Nuevo'
-        },
-
-        // Shift Log
-        shiftLog: {
-            title: 'Bitácora de Turno Inteligente',
-            description: 'Registra eventos informalmente. La IA estructura los datos y genera el reporte de entrega.',
-            inputPlaceholder: 'Ejemplo: "La bomba 2 vibraba mucho. Apreté los pernos y se normalizó."',
-            submitButton: 'Registrar Evento',
-            processing: 'Estructurando Datos...',
-            recentLogs: 'Eventos del Turno (Grupo Actual)',
-            generateReport: 'Generar Reporte de Turno',
-            generatingReport: 'Redactando Reporte...',
-            reportTitle: 'Reporte de Entrega de Turno',
-            noLogs: 'No hay eventos registrados en las últimas 12 horas.',
-            fields: {
-                equipment: 'Equipo',
-                failure: 'Falla',
-                action: 'Acción',
-                criticality: 'Criticidad',
-                status: 'Estado',
+            newChatTitle: 'Nueva Consulta Técnica',
+            startNewChat: 'Iniciar Nuevo Chat',
+            copyText: 'Copiar Texto',
+            copied: '¡Copiado!',
+            suggestions: {
+                plc_st: 'Generar Texto Estructurado para lazo PID',
+                plc_ladder: 'Crear Lógica de Escalera para Arrancador',
+                plc_comms: '¿Cómo configurar comunicación Modbus TCP?',
+                vfd_param: 'Listar parámetros para Control 2-Hilos',
+                vfd_fault: 'Solucionar Falla de Sobrecorriente',
+                vfd_wiring: 'Mostrar diagrama de terminales de control'
             }
         },
-
-        // Forms
+        practices: {
+            title: 'Desarrollo de Habilidades',
+            description: 'Selecciona tu área de enfoque para generar un escenario industrial realista.',
+            selectTopic: 'Selecciona Tema',
+            selectDifficulty: 'Nivel de Dificultad',
+            generateBtn: 'Generar Escenario',
+            randomChallenge: 'Desafío Aleatorio',
+            generating: 'Diseñando Escenario...',
+            plcLabel: 'Lógica y Programación',
+            vfdLabel: 'Variadores y Movimiento',
+            hintButton: '¿Necesitas una pista?',
+            hideHint: 'Ocultar Pista',
+            revealSolution: 'Revelar Solución Experta',
+            hideSolution: 'Ocultar Solución'
+        },
+        practice: {
+            title: 'Caso de Práctica',
+            showSolution: 'Ver Solución Recomendada',
+            hideSolution: 'Ocultar Solución',
+            solutionTitle: 'Resolución Experta'
+        },
+        wiring: {
+            title: 'Asistente de Cableado',
+            description: 'Genera diagramas de conexión y guías de cableado para motores y sistemas de control.',
+            vfdDetails: 'Especificaciones del VFD',
+            controlDetails: 'Lógica de Control',
+            controlMethod: 'Método de Control',
+            controlMethod2Wire: 'Control a 2 Hilos',
+            controlMethod3Wire: 'Control a 3 Hilos',
+            configSoftware: 'Software de Configuración',
+            motorDetails: 'Especificaciones del Motor',
+            motorHP: 'Caballos de Fuerza (HP)',
+            motorVoltage: 'Voltaje (V)',
+            motorFLA: 'FLA (Amps)',
+            application: 'Contexto de Aplicación',
+            applicationPlaceholder: 'ej. Una banda transportadora que necesita arranque suave...',
+            generateButton: 'Generar Guía de Cableado',
+            generatingButton: 'Generando Guía...'
+        },
+        commissioning: {
+            title: 'Puesta en Marcha Interactiva',
+            historyTitle: 'Historial de Sesiones',
+            newChat: 'Nueva Guía',
+            selectTitle: 'Guía de Puesta en Marcha VFD',
+            selectDescription: 'Selecciona un equipo para iniciar una sesión interactiva con soporte visual de terminales.',
+            brandLabel: 'Marca del VFD',
+            modelLabel: 'Modelo del VFD',
+            applicationLabel: 'Tipo de Aplicación',
+            startButton: 'Iniciar Puesta en Marcha',
+            placeholder: 'Pregunta sobre parámetros, cableado o ajuste...',
+            initialPrompt: 'Necesito poner en marcha este variador para una aplicación de {application}. Por favor, proporcione una guía paso a paso centrada en este hardware.',
+            terminalQuery: 'Explique la función y el cableado típico para la terminal {label} ({func}).',
+            diagramNotAvailable: 'Diagrama No Disponible',
+            diagramNotAvailableDesc: 'Estamos trabajando para añadir el mapa visual de este modelo específico.',
+            appConveyor: 'Banda Transportadora',
+            appFan: 'Ventilador / Centrifugadora',
+            appPumpPID: 'Bomba (Control PID)',
+            appGeneral: 'Propósito General',
+        },
+        tools: {
+            title: 'Herramientas de Análisis',
+            description: 'Módulos avanzados de diagnóstico y validación para sistemas industriales.',
+            backToTools: 'Volver a Herramientas',
+            generateButton: 'Ejecutar Análisis',
+            faultDiagnosis: {
+                title: 'Diagnóstico de Fallas VFD',
+                description: 'Análisis experto de códigos de falla con soporte visual.',
+                vfdBrand: 'Marca del VFD',
+                vfdModel: 'Modelo del VFD',
+                faultCode: 'Código de Falla',
+                faultCodePlaceholder: 'ej. F0001 o 0x01',
+                context: 'Contexto Ambiental',
+                contextPlaceholder: 'Describe qué pasó...'
+            },
+            logicValidator: {
+                title: 'Validador de Lógica',
+                description: 'Analiza código PLC en busca de conflictos o riesgos de seguridad.',
+                codeLabel: 'Código PLC',
+                codePlaceholder: 'Pega tu lógica aquí...',
+                analyzeButton: 'Validar Lógica',
+                analyzing: 'Escaneando Lógica...',
+                analysisResults: 'Problemas Detectados',
+                suggestButton: 'Proponer Corrección',
+                suggesting: 'Generando código optimizado...',
+                noIssues: '✅ No se detectaron problemas lógicos.'
+            },
+            migration: {
+                title: 'Migración de Código',
+                description: 'Traduce lógica entre diferentes plataformas industriales.',
+                sourceGroup: 'Plataforma Origen',
+                targetGroup: 'Plataforma Destino',
+                convertButton: 'Migrar Código',
+                converting: 'Traduciendo Lógica...',
+                codePlaceholder: 'Pega el código a migrar...'
+            },
+            scanTime: {
+                title: 'Análisis de Rendimiento',
+                description: 'Estima el impacto en el tiempo de ciclo del PLC.',
+                codeLabel: 'Segmento de Lógica',
+                codePlaceholder: 'Pega el código a analizar...'
+            },
+            energy: {
+                title: 'Eficiencia Energética',
+                description: 'Planes de optimización de variadores para reducir consumo.',
+                appType: 'Tipo de Aplicación',
+                appTypes: { pump: 'Bomba', fan: 'Ventilador', conveyor: 'Transportador', compressor: 'Compresor' },
+                loadProfile: 'Perfil de Carga',
+                loadProfilePlaceholder: 'Describe horas de operación y velocidades...'
+            },
+            codeProver: {
+                title: 'Verificador de Seguridad',
+                description: 'Verifica si la lógica cumple con interbloqueos de seguridad.',
+                rulesLabel: 'Reglas de Seguridad',
+                rulesPlaceholder: 'ej. La Válvula A y la Bomba B nunca deben operar juntas.'
+            },
+            network: {
+                title: 'Redes y Comms',
+                description: 'Herramientas de protocolo, análisis de tramas y planeación.',
+                calculateButton: 'Calcular Checksum',
+                protocolsLabel: 'Protocolos a Interconectar',
+                checksum: {
+                    title: 'Checksum/CRC',
+                    description: 'Verifica la integridad de tramas Modbus o Seriales.',
+                    frameLabel: 'Trama Hex',
+                    framePlaceholder: 'ej. 01 03 00 0A',
+                    resultsTitle: 'Resultados',
+                    crc16: 'CRC-16 (Modbus)',
+                    lrc: 'LRC (ASCII)',
+                    checksum: 'Checksum Simple',
+                    order_lf: 'Byte Bajo Primero',
+                    order_hf: 'Byte Alto Primero'
+                },
+                ascii: {
+                    title: 'Decodificador Serial',
+                    description: 'Decodifica tramas ASCII complejas.',
+                    frameLabel: 'Cadena ASCII',
+                    framePlaceholder: 'ej. <STX>+0015.50g<CR><LF>'
+                },
+                hardware: {
+                    title: 'Planeador de Red',
+                    description: 'Determina el hardware necesario para unir protocolos.'
+                }
+            }
+        },
+        calculator: {
+            title: 'Calculadoras de Ingeniería',
+            description: 'Herramientas matemáticas precisas para diseño industrial.',
+            ohmsLaw: { tabTitle: 'Ley de Ohm', title: 'Ley de Ohm y Potencia', description: 'Ingresa dos valores para calcular los demás.', voltage: 'Voltaje (V)', current: 'Corriente (A)', resistance: 'Resistencia (Ω)', power: 'Potencia (W)', reset: 'Reiniciar' },
+            thermal: { tabTitle: 'Carga Térmica', title: 'Análisis Térmico de Tablero', description: 'Calcula el enfriamiento necesario para el gabinete.', components: 'Componentes Internos', addComponent: 'Agregar al Panel', addedComponents: 'Contenido', panelDimensions: 'Dimensiones (pulg)', height: 'Alto', width: 'Ancho', depth: 'Fondo', temperatures: 'Temperaturas (°F)', internal: 'Máx Interna', external: 'Máx Ambiente', calculateButton: 'Calcular BTU/hr', resultsTitle: 'Resultados Térmicos', totalHeat: 'Carga Térmica Total', watts: 'Watts', panelArea: 'Área Superficial', sqft: 'Pies Cuadrados', tempDifference: 'Delta de Temp', coolingCapacity: 'Disipación Natural', btu: 'BTU/hr', coolingRequired: 'Capacidad Requerida', noCooling: 'No requiere enfriamiento activo.' },
+            motorControl: { tabTitle: 'Motores', title: 'Dimensionamiento NEC', description: 'Dimensiona interruptores, contactores y cables según NEC.', motorDetails: 'Búsqueda de Motor', horsepower: 'HP', voltage: 'Voltaje', phase: 'Fases', phaseThree: 'Trifásico', phaseSingle: 'Monofásico', nameplateData: 'Datos de Placa', nominalCurrent: 'Corriente (In)', serviceFactor: 'Factor de Servicio (SF)', serviceFactorCurrent: 'Corriente Máx', analyzeNameplate: 'Escanear Placa (IA)', analyzing: 'Analizando...', resultsTitle: 'Resultados NEC', fla: 'FLA Estándar', overload: 'Ajuste Sobrecarga', overloadRange: 'Máx Recomendado', contactor: 'Contactor', breaker: 'Interruptor', wire: 'Calibre', disclaimer: 'Cálculos basados en tablas NEC.', removeImage: 'Eliminar' },
+            plcScaling: { tabTitle: 'Escalamiento', title: 'Escalamiento Analógico', description: 'Calcula la ecuación lineal para entradas/salidas de PLC.', inputRange: 'Señal RAW (PLC)', outputRange: 'Unidades de Ingeniería', min: 'Mín', max: 'Máx', options: 'Opciones', clamping: 'Habilitar Clamping', resultsTitle: 'Resultados', formula: 'Ecuación Lineal', codeSample: 'Código PLC', codeLang: { st: 'Texto Estructurado', ld: 'Escalera', fbd: 'Bloques' }, rawSignal: 'Valor RAW de Prueba', engUnits: 'Valor Resultante', interactiveTester: 'Simulador Interactivo', alarmCalculator: 'Umbrales de Alarmas', alarmHH: 'Alarma HH', alarmH: 'Alarma H', alarmL: 'Alarma L', alarmLL: 'Alarma LL', alarmDesc: 'Define alarmas en Unidades Ing. para obtener valores RAW.', units: { custom: 'Personalizado', raw_4_20ma: 'Estándar 4-20mA', raw_0_10v: 'Estándar 0-10V', raw_rockwell_4_20ma: 'Rockwell 4-20mA', raw_siemens_4_20ma: 'Siemens 4-20mA', raw_unsigned_12: 'Unsigned 12-bit', raw_unsigned_14: 'Unsigned 14-bit', raw_unsigned_16: 'Unsigned 16-bit', raw_signed_15: 'Signed 15-bit', raw_rockwell_10v: 'Rockwell +/- 10V', raw_siemens_10v: 'Siemens +/- 10V', eng_percent: 'Porcentaje (%)', eng_freq_60hz: 'Frecuencia (60Hz)', eng_speed_1800rpm: 'Velocidad (1800 RPM)', eng_torque_300: 'Torque (300%)', eng_psi_150: 'Presión (150 PSI)', eng_celsius_100: 'Temp (100°C)', eng_fahrenheit_212: 'Temp (212°F)', eng_gpm_500: 'Flujo (500 GPM)', eng_liters_1000: 'Flujo (1000 L/m)' }, codeComments: { declarations: 'Declaraciones', rawValue: 'Valor RAW del módulo', scaledValue: 'Valor ingeniería', scalingConstants: 'Constantes', tempVar: 'Variable temporal', logic: 'Lógica', convertToReal: '1. Convertir a REAL', applyFormula: '2. Aplicar Fórmula', clamp: '3. Clamping (Opcional)' } },
+            voltageDrop: { tabTitle: 'Caída Voltaje', title: 'Análisis de Caída', description: 'Calcula la caída para tiradas largas de cable.', electricalSystem: 'Sistema', voltage: 'Voltaje Nominal', phase: 'Fases', phaseThree: 'Trifásico', phaseSingle: 'Monofásico', load: 'Carga', current: 'Amperaje (A)', conductor: 'Conductor', material: 'Material', copper: 'Cobre', aluminum: 'Aluminio', wireGauge: 'Calibre', distance: 'Distancia (un sentido)', feet: 'Pies', meters: 'Metros', calculateButton: 'Calcular Caída', resultsTitle: 'Resultados', voltageDropV: 'Caída de Voltaje', voltageDropPercent: 'Porcentaje', voltageAtLoad: 'Voltaje en Carga', acceptable: '✅ Aceptable (<3%)', caution: '⚠️ Precaución (3-5%)', unacceptable: '❌ Inaceptable (>5%)', suggestion: 'Sugerencia para <3%: {gauge} AWG', formula: 'Fórmula Usada' },
+            dcPowerSupply: { tabTitle: 'Fuentes 24V', title: 'Dimensionamiento Fuente DC', description: 'Calcula la fuente de 24VDC necesaria para el tablero.', loadList: 'Perfil de Carga', addDevice: 'Agregar Dispositivo', addFromTemplate: 'Librería', deviceDescription: 'Nombre', quantity: 'Cant', nominalConsumption: 'Nominal (mA)', inrushConsumption: 'Arranque (mA)', designParameters: 'Factores de Seguridad', safetyFactor: 'Seguridad Carga', safetyFactorTooltip: 'Buffer del 25%.', futureGrowth: 'Crecimiento %', futureGrowthTooltip: 'Reserva futura.', calculateButton: 'Analizar Requerimientos', resultsTitle: 'Resultados', consumptionSummary: 'Resumen', totalNominal: 'Estado Estable', peakInrush: 'Pico de Arranque', requiredAmperage: 'Corriente Mínima', recommendationTitle: 'Hardware Sugerido', recommendedSupply: 'Fuente de {amps}A', expertNotesTitle: 'Consideraciones Técnicas', expertNote1: 'Una fuente de {recAmps}A es suficiente.', expertNote2: 'El pico de arranque es {peakAmps}A.', expertNote3: 'Considera separar cargas críticas.' },
+            encoderMotion: { tabTitle: 'Movimiento', title: 'Escalamiento Movimiento', description: 'Calcula factores de escala y viabilidad de frecuencia.', encoderParams: 'Encoder', ppr: 'PPR', pprTooltip: 'Pulsos por revolución.', plcMode: 'Modo PLC', plcMode1x: 'X1 (Simple)', plcMode4x: 'X4 (Cuadratura)', plcMode1xTooltip: 'Cuenta flancos subida.', plcMode4xTooltip: 'Cuenta todos los flancos.', transmissionParams: 'Mecánica', mechanism: 'Tipo', mechanismDirect: 'Directo', mechanismGearbox: 'Reductor', mechanismLeadscrew: 'Tornillo', mechanismPulley: 'Polea', mechanismRack: 'Piñón y Cremallera', gearboxIn: 'Vueltas Entrada', gearboxOut: 'Vueltas Salida', leadscrewPitch: 'Paso Tornillo', mm_rev: 'mm / rev', in_rev: 'in / rev', diameter: 'Diámetro', mm: 'mm', in: 'in', viabilityAnalysis: 'Viabilidad Dinámica', maxSpeed: 'Velocidad Máxima', mm_s: 'mm / s', m_s: 'm / s', rpm: 'RPM', resultsTitle: 'Constantes', systemResolution: 'Resolución', resolutionUnit: 'mm / pulso', resolutionUnitAngle: 'grados / pulso', scaleFactor: 'Factor de Escala', scaleFactorUnit: 'pulsos / mm', scaleFactorUnitAngle: 'pulsos / grado', interactiveTester: 'Probador', moveToTravel: 'Distancia:', needsPulses: 'necesita pulsos', pulseCountIs: 'Conteo PLC:', travelledDist: 'recorridos', pulses: 'pulsos', hardwareDiagnosis: 'Diagnóstico IO Rápida', requiredFrequency: 'Frecuencia Entrada', hz: 'Hz', khz: 'kHz', mhz: 'MHz', analysisOk: '✅ Viable.', analysisCaution: '⚠️ Frecuencia Alta.', analysisCritical: '❌ Muy alta.' },
+            sensorSelection: { tabTitle: 'Asistente de Sensores', title: 'Recomendación de Sensores', description: 'Usa IA para seleccionar la tecnología de sensor perfecta.', wizardTitle: 'Asistente de Sensores', wizardDescription: 'Proporciona parámetros para una recomendación profesional.', processVariable: 'Variable', vars: { level: 'Nivel', flow: 'Flujo', pressure: 'Presión', temperature: 'Temperatura', analytical: 'Analítica' }, mediumType: 'Medio', types: { liquid: 'Líquido', solid: 'Sólido / Polvo' }, mediumCharacteristics: 'Características', liquidType: 'Descripción Líquido', liquidProperties: 'Propiedades', props: { corrosive: 'Corrosivo', abrasive: 'Abrasivo', viscous: 'Alta Viscosidad', foaming: 'Mucha Espuma', cip: 'Alimenticio/CIP' }, solidType: 'Tipo Sólido', solidTypes: { powder: 'Polvo', granular: 'Granulado', rock: 'Roca Grande', sticky: 'Pegajoso' }, angleRepo: 'Ángulo de Reposo', solidProps: { suspendedDust: 'Mucho Polvo', abrasive: 'Abrasivo' }, operatingConditions: 'Límites', tempRange: 'Rango Temp (°C)', pressureRange: 'Presión (bar)', from: 'Mín', to: 'Máx', environmentalConditions: 'Ambientales', location: 'Ubicación', locs: { indoor: 'Interior', outdoor: 'Exterior', vibration: 'Vibración', washdown: 'Lavado Frecuente' }, installationRegion: 'Región', installationRegionTooltip: 'Para sugerir marcas locales.', thermocoupleStandard: 'Código Color', thermocoupleStandardTooltip: 'Define colores de cables.', thermocoupleStandards: { autodetect: 'Global (IEC/ANSI)', ansi: 'ANSI', iec: 'IEC', din: 'DIN', jis: 'JIS' }, areaClassification: 'Clasificación Área', areas: { general_safe: 'Propósito General', class1div1: 'Explosiva (Div 1)', class1div2: 'Explosiva (Div 2)' }, outputRequirements: 'Integración', signals: { '4-20mA': '4-20mA Analógica', '4-20mA_HART': 'Protocolo HART', '0-10V': '0-10V Analógica', PNP_NPN: 'Digital (PNP/NPN)', Relay: 'Relat de Salida', 'IO-Link': 'IO-Link', Profinet_EtherNetIP: 'Bus de Campo' }, projectPriorities: 'Prioridades', priorities: { lowCost: 'Bajo Costo', highPrecision: 'Alta Precisión', maxRobustness: 'Robustez' }, generating: 'Seleccionando tecnologías...', generateButton: 'Generar Reporte de Recomendación' }
+        },
+        reference: {
+            title: 'Referencia de Ingeniería',
+            description: 'Consulta rápida de estándares, fallas y tipos de datos.',
+            thermocoupleTitle: 'Colores de Termopares',
+            thermocoupleDesc: 'Estándares universales de identificación.',
+            vfdTitle: 'Fallas de Variadores',
+            vfdDesc: 'Librerías de fallas de marcas principales.',
+            plcTitle: 'Tipos de Datos PLC',
+            plcDesc: 'Arquitecturas de datos estándar.',
+            brands: { siemens: 'Siemens', allenBradley: 'Rockwell / AB', abb: 'ABB', schneider: 'Schneider', danfoss: 'Danfoss', yaskawa: 'Yaskawa', mitsubishi: 'Mitsubishi', eaton: 'Eaton' },
+            faults: {
+                code: 'Código', name: 'Falla', description: 'Acción/Significado',
+                siemens: [
+                    { code: 'F0001', name: 'Sobrecorriente', description: 'Corriente de motor excesiva. Revisar cortocircuitos o carga.' },
+                    { code: 'F0002', name: 'Sobrevoltaje', description: 'Voltaje de bus DC muy alto. Revisar voltaje de entrada o frenado.' },
+                    { code: 'F0003', name: 'Bajo Voltaje', description: 'Falla de suministro eléctrico o caída por debajo del límite.' },
+                    { code: 'F0700', name: 'Error Param CB', description: 'Error de configuración de parámetros al inicio.' }
+                ],
+                allenBradley: [
+                    { code: 'F004', name: 'Bajo Voltaje', description: 'Bus DC cayó por debajo del valor mínimo.' },
+                    { code: 'F005', name: 'Sobrevoltaje', description: 'Bus DC excedió el valor máximo.' },
+                    { code: 'F012', name: 'Sobrecorriente HW', description: 'Sobrecorriente instantánea detectada.' },
+                    { code: 'F013', name: 'Falla Tierra', description: 'Corriente a tierra mayor al 25% del valor nominal.' }
+                ],
+                abb: [
+                    { code: '0001', name: 'Sobrecorriente', description: 'Corriente de salida excedió nivel de disparo.' },
+                    { code: '0002', name: 'Sobrevoltaje DC', description: 'Voltaje de enlace DC excesivo. Revisar tiempo desaceleración.' },
+                    { code: '0016', name: 'Falla Tierra', description: 'Falla a tierra detectada en motor o cable.' },
+                    { code: '7121', name: 'Stall Motor', description: 'Motor operando en región de pérdida (stall).' }
+                ],
+                schneider: [
+                    { code: 'InF1', name: 'Falla Interna', description: 'Falla etapa potencia. Revisar estado del drive.' },
+                    { code: 'OCF', name: 'Sobrecorriente', description: 'Sobrecorriente. Revisar inercia, carga o bloqueo mecánico.' },
+                    { code: 'SCF', name: 'Cortocircuito', description: 'Cortocircuito o tierra en salida del drive.' },
+                    { code: 'OHF', name: 'Sobrecalentamiento', description: 'Temp del drive muy alta. Revisar ventilación.' }
+                ],
+                danfoss: [
+                    { code: 'W8', name: 'Bajo Voltaje DC', description: 'Voltaje de enlace DC bajo.' },
+                    { code: 'A13', name: 'Sobrecorriente', description: 'Límite de corriente pico excedido.' },
+                    { code: 'A14', name: 'Falla Tierra', description: 'Descarga de fases de salida a tierra.' },
+                    { code: 'A16', name: 'Cortocircuito', description: 'Cortocircuito en motor o cable.' }
+                ],
+                yaskawa: [
+                    { code: 'oC', name: 'Sobrecorriente', description: 'Corriente de salida excedió nivel instantáneo.' },
+                    { code: 'oV', name: 'Sobrevoltaje', description: 'Voltaje bus DC excedió nivel de disparo.' },
+                    { code: 'Uv1', name: 'Bajo Voltaje Bus', description: 'Voltaje bus DC bajo. Revisar fusibles/energía.' },
+                    { code: 'oL1', name: 'Sobrecarga Motor', description: 'Protección de sobrecarga motor disparada (térmico elect).' }
+                ],
+                mitsubishi: [
+                    { code: 'E.OC1', name: 'Sobrecorriente Acel', description: 'Sobrecorriente durante aceleración.' },
+                    { code: 'E.OC2', name: 'Sobrecorriente Const', description: 'Sobrecorriente durante velocidad constante.' },
+                    { code: 'E.OC3', name: 'Sobrecorriente Decel', description: 'Sobrecorriente durante desaceleración.' },
+                    { code: 'E.UVT', name: 'Bajo Voltaje', description: 'Voltaje de suministro del inversor cayó.' }
+                ],
+                eaton: [
+                    { code: 'F1', name: 'Sobrecorriente', description: 'Hardware detectó corriente excesiva.' },
+                    { code: 'F2', name: 'Sobrevoltaje', description: 'Sobrevoltaje en enlace DC.' },
+                    { code: 'F3', name: 'Bajo Voltaje', description: 'Bajo voltaje en enlace DC.' },
+                    { code: 'F5', name: 'Sobretemperatura', description: 'Temperatura del disipador muy alta.' }
+                ]
+            },
+            thermocoupleTable: { type: 'Tipo', positive: 'Positivo (+)', negative: 'Negativo (-)', jacket: 'Funda' },
+            colorCodes: {
+                ansi: {
+                    name: 'ANSI (EEUU)',
+                    note: 'El Rojo es SIEMPRE negativo en ANSI.',
+                    codes: [
+                        { type: 'J', positive: 'Blanco', negative: 'Rojo', jacket: 'Negro' },
+                        { type: 'K', positive: 'Amarillo', negative: 'Rojo', jacket: 'Amarillo' },
+                        { type: 'T', positive: 'Azul', negative: 'Rojo', jacket: 'Azul' },
+                        { type: 'E', positive: 'Morado', negative: 'Rojo', jacket: 'Morado' },
+                        { type: 'N', positive: 'Naranja', negative: 'Rojo', jacket: 'Naranja' },
+                        { type: 'R/S', positive: 'Negro', negative: 'Rojo', jacket: 'Verde' },
+                        { type: 'B', positive: 'Gris', negative: 'Rojo', jacket: 'Gris' }
+                    ]
+                },
+                iec: {
+                    name: 'IEC 60584-3 (Europa/Global)',
+                    note: 'Estándar común en instalaciones nuevas.',
+                    codes: [
+                        { type: 'J', positive: 'Negro', negative: 'Blanco', jacket: 'Negro' },
+                        { type: 'K', positive: 'Verde', negative: 'Blanco', jacket: 'Verde' },
+                        { type: 'T', positive: 'Marrón', negative: 'Blanco', jacket: 'Marrón' },
+                        { type: 'E', positive: 'Violeta', negative: 'Blanco', jacket: 'Violeta' },
+                        { type: 'N', positive: 'Rosa', negative: 'Blanco', jacket: 'Rosa' },
+                        { type: 'R/S', positive: 'Naranja', negative: 'Blanco', jacket: 'Naranja' },
+                        { type: 'B', positive: 'Gris', negative: 'Blanco', jacket: 'Gris' }
+                    ]
+                },
+                din: {
+                    name: 'DIN 43710 (Alemán - Obsoleto)',
+                    note: 'Solo sistemas antiguos.',
+                    codes: [
+                        { type: 'J', positive: 'Rojo', negative: 'Azul', jacket: 'Azul' },
+                        { type: 'K', positive: 'Rojo', negative: 'Verde', jacket: 'Verde' },
+                        { type: 'T', positive: 'Rojo', negative: 'Marrón', jacket: 'Marrón' },
+                        { type: 'E', positive: 'Rojo', negative: 'Negro', jacket: 'Negro' }
+                    ]
+                },
+                jis: {
+                    name: 'JIS C 1610 (Japón - Pre-1995)',
+                    note: 'Reemplazado por colores IEC en 1995.',
+                    codes: [
+                        { type: 'J', positive: 'Rojo', negative: 'Blanco', jacket: 'Amarillo' },
+                        { type: 'K', positive: 'Rojo', negative: 'Blanco', jacket: 'Azul' },
+                        { type: 'T', positive: 'Rojo', negative: 'Blanco', jacket: 'Marrón' },
+                        { type: 'E', positive: 'Rojo', negative: 'Blanco', jacket: 'Violeta' }
+                    ]
+                }
+            },
+            plcDataTypes: {
+                allenBradley: {
+                    name: 'Rockwell / Allen-Bradley (Logix)',
+                    types: [
+                        { type: 'BOOL', desc: 'Booleano 1-bit (0 o 1)' },
+                        { type: 'SINT', desc: 'Entero corto 8-bit (-128 a 127)' },
+                        { type: 'INT', desc: 'Entero 16-bit (-32,768 a 32,767)' },
+                        { type: 'DINT', desc: 'Entero 32-bit (-2.14B a 2.14B)' },
+                        { type: 'LINT', desc: 'Entero 64-bit (Rango enorme)' },
+                        { type: 'REAL', desc: 'Punto flotante 32-bit (IEEE 754)' },
+                        { type: 'LREAL', desc: 'Punto flotante 64-bit (Doble Precisión)' },
+                        { type: 'TIMER', desc: 'Estructura (PRE, ACC, EN, TT, DN)' },
+                        { type: 'COUNTER', desc: 'Estructura (PRE, ACC, CU, CD, DN, OV, UN)' },
+                        { type: 'STRING', desc: 'Estructura ASCII String (LEN, DATA[])' }
+                    ]
+                },
+                siemens: {
+                    name: 'Siemens (TIA Portal / S7)',
+                    types: [
+                        { type: 'Bool', desc: 'Valor binario 1-bit' },
+                        { type: 'Byte', desc: '8-bit sin signo (0 a 255) o hex' },
+                        { type: 'Int', desc: 'Entero con signo 16-bit' },
+                        { type: 'DInt', desc: 'Entero con signo 32-bit' },
+                        { type: 'Word', desc: '16-bit sin signo / máscara de bits' },
+                        { type: 'DWord', desc: '32-bit sin signo / máscara de bits' },
+                        { type: 'Real', desc: 'Punto flotante 32-bit' },
+                        { type: 'LReal', desc: 'Punto flotante 64-bit' },
+                        { type: 'Time', desc: 'Valor de tiempo 32-bit (resolución ms)' },
+                        { type: 'S5Time', desc: 'Tiempo BCD legado de 16-bit' },
+                        { type: 'Char', desc: 'Carácter ASCII 8-bit' }
+                    ]
+                }
+            }
+        },
+        shiftLog: {
+            title: 'Bitácora Inteligente',
+            description: 'Registra eventos informalmente. La IA estructura datos y genera reportes.',
+            inputPlaceholder: 'Ejemplo: "La bomba 2 vibraba. Apreté los pernos."',
+            submitButton: 'Registrar Evento',
+            processing: 'Estructurando...',
+            recentLogs: 'Eventos del Turno (Grupo Actual)',
+            generateReport: 'Generar Reporte',
+            generatingReport: 'Redactando...',
+            reportTitle: 'Reporte de Entrega',
+            noLogs: 'Sin eventos en las últimas 12 horas.',
+            fields: { equipment: 'Equipo', failure: 'Falla', action: 'Acción', criticality: 'Criticidad', status: 'Estado' }
+        },
         formTopic: 'Tema',
         formDifficulty: 'Dificultad',
         formDifficultyBeginner: 'Principiante',
         formDifficultyIntermediate: 'Intermedio',
         formDifficultyAdvanced: 'Avanzado',
-        formVfdBrand: 'Marca de VFD',
-        formVfdModel: 'Modelo de VFD',
-        formPlcBrand: 'Marca de PLC',
-        formPlcSoftware: 'Software de PLC',
-        formPlcLanguage: 'Lenguaje de PLC',
+        formVfdBrand: 'Marca del VFD',
+        formVfdModel: 'Modelo del VFD',
+        formPlcBrand: 'Marca del PLC',
+        formPlcSoftware: 'Software de Configuración',
+        formPlcLanguage: 'Lenguaje de Programación',
         formGeneralOption: 'General',
         formGeneratingButton: 'Generando...',
         formGenerateButton: 'Generar',
-        
-        // Practices
-        practices: {
-            title: 'Generar un Problema de Práctica',
-            description: 'Selecciona un tema y dificultad para crear un escenario de práctica personalizado.',
-        },
-        practice: {
-            title: 'Problema de Práctica',
-            solutionTitle: 'Solución',
-            showSolution: 'Mostrar Solución',
-            hideSolution: 'Ocultar Solución',
-        },
-
-        // Spinners & Alerts
-        spinnerLoading: 'Cargando...',
-        spinnerWait: 'Por favor, espera un momento.',
         errorAlertTitle: 'Ocurrió un Error',
-        error: {
-            unexpected: 'Ocurrió un error inesperado. Por favor, inténtalo de nuevo.',
-        },
-
-        // Commissioning
-        commissioning: {
-            selectTitle: 'Asistente de Puesta en Marcha de VFD',
-            selectDescription: 'Selecciona un modelo de VFD para comenzar una guía interactiva y paso a paso para la puesta en marcha.',
-            brandLabel: 'Seleccionar Marca de VFD',
-            modelLabel: 'Seleccionar Modelo de VFD',
-            applicationLabel: 'Seleccionar Aplicación',
-            appConveyor: 'Transportador Simple',
-            appFan: 'Control de Ventilador / Soplador',
-            appPumpPID: 'Bomba de Presión Constante (PID)',
-            appGeneral: 'Propósito General',
-            startButton: 'Iniciar Puesta en Marcha',
-            initialPrompt: 'Hola, estoy listo para la puesta en marcha de mi VFD para una aplicación de {application}. ¿Cuál es el primer paso?',
-            terminalQuery: 'Tengo una pregunta sobre el diagrama. ¿Cuál es el propósito del terminal "{label}" ({func}) y qué parámetros están asociados a él?',
-            placeholder: 'Haz una pregunta o confirma la finalización...',
-            historyTitle: 'Sesiones',
-            newChat: 'Nueva',
-            diagramNotAvailable: 'Diagrama No Disponible',
-            diagramNotAvailableDesc: 'Aún no se ha implementado un diagrama visual para este modelo.',
-        },
-        
-        // Tools
-        tools: {
-            title: 'Herramientas de Automatización',
-            description: 'Un conjunto de utilidades especializadas para analizar, verificar y optimizar tus sistemas de automatización.',
-            generateButton: 'Analizar',
-            backToTools: 'Volver a Herramientas',
-            faultDiagnosis: {
-                title: 'Diagnóstico de Fallas de VFD',
-                description: 'Analiza un código de falla de VFD con contexto para obtener causas probables y pasos de solución.',
-                vfdBrand: 'Marca de VFD',
-                vfdModel: 'Modelo de VFD',
-                faultCode: 'Código de Falla',
-                faultCodePlaceholder: 'Ej., F0001 o oC',
-                context: 'Contexto Operativo',
-                contextPlaceholder: 'Ej., "La falla ocurre inmediatamente al dar el comando de arranque" o "Sucede aleatoriamente durante la operación"',
-            },
-            scanTime: {
-                title: 'Analizador de Tiempo de Scan de PLC',
-                description: 'Pega código de PLC (cualquier formato de texto) para obtener recomendaciones para optimizar su tiempo de ejecución.',
-                codeLabel: 'Código de PLC',
-                codePlaceholder: 'Pega tu lógica de escalera, texto estructurado, etc. aquí.',
-            },
-            energy: {
-                title: 'Eficiencia Energética de VFD',
-                description: 'Obtén un plan con recomendaciones de parámetros para maximizar el ahorro de energía para una aplicación específica.',
-                appType: 'Tipo de Aplicación',
-                appTypes: {
-                    pump: 'Bomba Centrífuga',
-                    fan: 'Ventilador / Soplador',
-                    conveyor: 'Transportador',
-                    compressor: 'Compresor',
-                    other: 'Otro',
-                },
-                loadProfile: 'Perfil de Carga',
-                loadProfilePlaceholder: 'Ej., "Funciona 24/7 pero la demanda es baja por la noche" o "Velocidad variable basada en sensor de presión"',
-            },
-            codeProver: {
-                title: 'Analizador de Lógica de Seguridad',
-                description: 'Analiza el código de seguridad en busca de patrones comunes, desviaciones de las mejores prácticas (ej. IEC 61131, ISO 13849) y posibles vulnerabilidades lógicas.',
-                rulesLabel: 'Reglas Inmutables',
-                rulesPlaceholder: 'Ejemplo: "Regla 1: La Válvula_Principal y la Válvula_Drenaje NUNCA pueden estar abiertas al mismo tiempo."',
-            },
-            logicValidator: {
-                title: 'Validador de Lógica',
-                description: 'Revisa lógica de PLC (formato de texto) en busca de errores comunes como salidas duplicadas o código muerto.',
-                codeLabel: 'Lógica de PLC (Formato de Texto)',
-                codePlaceholder: 'Ejemplo:\nXIC(Start) XIO(Stop) OTE(Motor)\nXIC(Motor) OTE(Motor_Running_Light)',
-                analyzeButton: 'Validar Lógica',
-                analyzing: 'Validando...',
-                analysisResults: 'Resultados de Validación',
-                noIssues: 'No se encontraron problemas en la lógica.',
-                suggestButton: 'Sugerir Corrección',
-                suggesting: 'Generando corrección...',
-            },
-            migration: {
-                title: 'Asistente de Migración de Código',
-                description: 'Traduce lógica entre diferentes marcas y plataformas de PLC (ej. Rockwell a Siemens).',
-                sourceGroup: 'Plataforma de Origen',
-                targetGroup: 'Plataforma de Destino',
-                convertButton: 'Convertir Código',
-                converting: 'Convirtiendo...',
-                resultTitle: 'Resultado de la Migración',
-                notesTitle: 'Notas y Advertencias de Migración',
-                codePlaceholder: 'Pega el código fuente aquí (ej. Escalera ASCII o Texto Estructurado)...',
-            },
-            network: {
-                title: 'Redes y Protocolos',
-                description: 'Calculadoras y asistentes para comunicación industrial.',
-                calculateButton: 'Calcular',
-                checksum: {
-                    title: 'Calculadora de Checksum y CRC',
-                    description: 'Para protocolos seriales (ASCII) y Modbus RTU.',
-                    frameLabel: 'Trama de Datos',
-                    framePlaceholder: 'Ej: 0103000A0001 o ABC',
-                    inputType: 'Tipo de Entrada',
-                    inputHex: 'Hexadecimal',
-                    inputAscii: 'ASCII',
-                    resultsTitle: 'Resultados de Checksum',
-                    crc16modbus: 'CRC-16 (Modbus)',
-                    crc16ccitt: 'CRC-16 (CCITT/XModem)',
-                    crc32: 'CRC-32 (Ethernet)',
-                    lrc: 'LRC (Modbus ASCII)',
-                    checksum8: 'Checksum (Suma 8-bit)',
-                    checksum16: 'Checksum (Suma 16-bit)',
-                    order_lf: 'Byte Bajo Primero',
-                    order_hf: 'Byte Alto Primero',
-                    decimalValue: 'Decimal',
-                    fullFrame: 'Trama Completa (con CRC)',
-                    copy: 'Copiar',
-                },
-                ascii: {
-                    title: 'Decodificador de Trama Hex',
-                    description: 'Decodifica una trama en hexadecimal para visualizar caracteres ASCII no imprimibles.',
-                    frameLabel: 'Trama Hexadecimal',
-                    framePlaceholder: 'Ej: 02 30 30 31 35 2E 35 30 67 0D 0A',
-                    decodedFrame: 'Trama Decodificada',
-                    analysis: 'Análisis',
-                    sendToCRC: 'Calcular Checksum para esta trama',
-                },
-                hardware: {
-                    title: 'Asistente de Hardware de Red',
-                    description: 'Selecciona protocolos para obtener un reporte de compatibilidad y recomendaciones de hardware.',
-                    protocolsLabel: 'Seleccionar Protocolos a Interconectar',
-                },
-                subnet: {
-                    title: 'Calculadora de Subred',
-                    description: 'Verifica si dos dispositivos pueden comunicarse en la misma red.',
-                    device1: 'IP Dispositivo 1',
-                    device2: 'IP Dispositivo 2',
-                    subnetMask: 'Máscara de Subred',
-                    resultTitle: 'Análisis de Subred',
-                    status: 'Estado',
-                    statusOk: '¡Éxito! Los dispositivos están en la misma subred.',
-                    statusFail: '¡Conflicto de Subred! Los dispositivos no pueden comunicarse directamente.',
-                    netAddress: 'Dirección de Red',
-                    broadcastAddress: 'Dirección de Broadcast',
-                    validRange: 'Rango de Hosts Válidos',
-                },
-            },
-        },
-        
-        // Wiring
-        wiring: {
-            title: 'Generador de Guías de Cableado',
-            description: 'Crea una guía de cableado personalizada basada en tus componentes específicos.',
-            vfdDetails: 'Detalles del VFD',
-            controlDetails: 'Configuración de Control',
-            motorDetails: 'Datos del Motor',
-            controlMethod: 'Método de Control',
-            controlMethod2Wire: 'Control a 2 Hilos',
-            controlMethod3Wire: 'Control a 3 Hilos',
-            configSoftware: 'Software de Configuración',
-            motorHP: 'HP del Motor',
-            motorVoltage: 'Voltaje del Motor',
-            motorFLA: 'FLA del Motor',
-            application: 'Descripción de la Aplicación',
-            applicationPlaceholder: 'Describe cómo se usará el motor (ej. "Transportador con arranque suave")',
-            generatingButton: 'Generando Guía...',
-            generateButton: 'Generar Guía',
-        },
-
-        // Calculators
-        calculator: {
-            title: 'Calculadoras Industriales',
-            description: 'Herramientas esenciales para ingeniería eléctrica y automatización.',
-            ohmsLaw: {
-                tabTitle: 'Ley de Ohm',
-                title: 'Calculadora de Ley de Ohm',
-                description: 'Calcula Voltaje, Corriente, Resistencia o Potencia.',
-                voltage: 'Voltaje (V)',
-                current: 'Corriente (I)',
-                resistance: 'Resistencia (R)',
-                power: 'Potencia (P)',
-                reset: 'Reiniciar',
-            },
-            thermal: {
-                tabTitle: 'Carga Térmica',
-                title: 'Calculadora de Carga Térmica de Gabinete',
-                description: 'Calcula la disipación de calor requerida para un tablero eléctrico.',
-                components: 'Componentes Internos',
-                addComponent: 'Agregar Componente',
-                addedComponents: 'Componentes Agregados',
-                panelDimensions: 'Dimensiones del Gabinete (pulgadas)',
-                height: 'Alto',
-                width: 'Ancho',
-                depth: 'Profundidad',
-                temperatures: 'Temperaturas (°F)',
-                internal: 'Temp. Interna Máx.',
-                external: 'Temp. Ambiente Máx.',
-                calculateButton: 'Calcular Requerimiento de Enfriamiento',
-                resultsTitle: 'Resultados del Análisis Térmico',
-                totalHeat: 'Calor Interno Total',
-                watts: 'Watts',
-                panelArea: 'Área Superficial Efectiva',
-                sqft: 'pies²',
-                tempDifference: 'Delta de Temperatura',
-                coolingCapacity: 'Disipación Pasiva',
-                btu: 'BTU/hr',
-                coolingRequired: 'Enfriamiento Activo Requerido',
-                noCooling: 'No se requiere enfriamiento activo (No necesita ventiladores/aire).',
-            },
-            motorControl: {
-                tabTitle: 'Control de Motores',
-                title: 'Dimensionamiento de Circuito de Motor',
-                description: 'Selecciona breakers, contactores y relevadores de sobrecarga según normas NEC.',
-                motorDetails: 'Especificaciones del Motor',
-                horsepower: 'Caballos de Fuerza (HP)',
-                voltage: 'Voltaje',
-                phase: 'Fase',
-                phaseThree: 'Trifásico',
-                phaseSingle: 'Monofásico',
-                nameplateData: 'Datos de Placa (Opcional)',
-                analyzeNameplate: 'Escanear Placa',
-                analyzing: 'Analizando...',
-                nominalCurrent: 'Corriente Nominal (FLA)',
-                serviceFactor: 'Factor de Servicio',
-                serviceFactorCurrent: 'Amps con Factor de Servicio',
-                calculateButton: 'Dimensionar Componentes',
-                resultsTitle: 'Componentes Recomendados',
-                fla: 'FLA del Motor',
-                overload: 'Ajuste de Sobrecarga',
-                overloadRange: 'Ajuste máx según NEC 430.32',
-                contactor: 'Tamaño de Contactor',
-                breaker: 'Interruptor (MCP)',
-                wire: 'Calibre de Cable (75°C)',
-                disclaimer: 'Cálculos basados en tablas NEC. Verifique siempre con códigos locales y especificaciones de ingeniería.',
-                analysisError: 'No se pudo leer la placa.',
-                removeImage: 'Eliminar Imagen',
-            },
-            plcScaling: {
-                tabTitle: 'Escalamiento PLC',
-                title: 'Calculadora de Escalamiento Analógico PLC',
-                description: 'Calcula parámetros de escalamiento y genera código para entradas/salidas analógicas.',
-                inputRange: 'Rango de Entrada (Raw)',
-                outputRange: 'Rango de Salida (Ingeniería)',
-                options: 'Opciones Lógicas',
-                clamping: 'Limitar (Clamp) Salida',
-                min: 'Mín',
-                max: 'Máx',
-                units: {
-                    custom: 'Personalizado',
-                    raw_4_20ma: '4-20mA (Estándar)',
-                    raw_0_10v: '0-10V (Estándar)',
-                    raw_rockwell_4_20ma: 'Rockwell 4-20mA',
-                    raw_siemens_4_20ma: 'Siemens 4-20mA',
-                    raw_unsigned_12: '12-bit Sin Signo',
-                    raw_unsigned_14: '14-bit Sin Signo',
-                    raw_unsigned_16: '16-bit Sin Signo',
-                    raw_signed_15: '15-bit Con Signo',
-                    raw_rockwell_10v: 'Rockwell 0-10V',
-                    raw_siemens_10v: 'Siemens 0-10V',
-                    eng_percent: 'Porcentaje (%)',
-                    eng_freq_60hz: 'Frecuencia (0-60Hz)',
-                    eng_speed_1800rpm: 'Velocidad (0-1800 RPM)',
-                    eng_torque_300: 'Torque (0-300%)',
-                    eng_psi_150: 'Presión (0-150 PSI)',
-                    eng_celsius_100: 'Temp (0-100 °C)',
-                    eng_fahrenheit_212: 'Temp (32-212 °F)',
-                    eng_gpm_500: 'Flujo (0-500 GPM)',
-                    eng_liters_1000: 'Volumen (0-1000 L)',
-                },
-                resultsTitle: 'Resultados de Escalamiento',
-                formula: 'Ecuación Lineal',
-                codeSample: 'Código Generado',
-                codeLang: {
-                    st: 'Texto Estructurado (ST)',
-                    ld: 'Diagrama Escalera (Lógica)',
-                    fbd: 'Bloques de Función (Plan)',
-                },
-                codeComments: {
-                    declarations: 'Declaración de Variables',
-                    rawValue: 'Entrada desde Tarjeta Analógica',
-                    scaledValue: 'Resultado en Unidades de Ingeniería',
-                    scalingConstants: 'Parámetros de Escalamiento',
-                    tempVar: 'Variable Temporal de Conversión',
-                    logic: 'Lógica de Escalamiento',
-                    convertToReal: 'Convertir Entero a Real para precisión',
-                    applyFormula: 'Aplicar Ecuación Lineal: y = mx + b',
-                    clamp: 'Limitar salida al rango definido',
-                },
-                interactiveTester: 'Probador de Señal Interactivo',
-                rawSignal: 'Señal de Entrada (Raw)',
-                engUnits: 'Unidades de Ingeniería',
-                alarmCalculator: 'Calculadora de Setpoints de Alarma',
-                alarmDesc: 'Calcula los valores raw correspondientes a los setpoints.',
-                alarmHH: 'Muy Alto (HH)',
-                alarmH: 'Alto (H)',
-                alarmL: 'Bajo (L)',
-                alarmLL: 'Muy Bajo (LL)',
-            },
-            voltageDrop: {
-                tabTitle: 'Caída de Voltaje',
-                title: 'Calculadora de Caída de Voltaje',
-                description: 'Calcula la caída de tensión para cableados largos basado en NEC Capítulo 9.',
-                electricalSystem: 'Parámetros del Sistema',
-                voltage: 'Voltaje del Sistema',
-                phase: 'Fase',
-                phaseThree: 'Trifásico',
-                phaseSingle: 'Monofásico',
-                load: 'Parámetros de Carga',
-                current: 'Corriente de Carga (Amps)',
-                conductor: 'Conductor',
-                material: 'Material',
-                copper: 'Cobre',
-                aluminum: 'Aluminio',
-                wireGauge: 'Calibre (AWG)',
-                distance: 'Longitud (Un sentido)',
-                feet: 'Pies',
-                meters: 'Metros',
-                calculateButton: 'Calcular Caída',
-                resultsTitle: 'Resultados del Cálculo',
-                voltageDropV: 'Caída de Voltaje',
-                voltageDropPercent: 'Porcentaje de Caída',
-                voltageAtLoad: 'Voltaje en la Carga',
-                acceptable: 'Aceptable (<3%)',
-                caution: 'Precaución (3-5%)',
-                unacceptable: 'Inaceptable (>5%)',
-                suggestion: 'Calibre Sugerido: {gauge} AWG',
-                formula: 'Fórmula de Cálculo',
-            },
-            dcPowerSupply: {
-                tabTitle: 'Fuente DC',
-                title: 'Dimensionamiento de Fuente 24VDC',
-                description: 'Calcula el amperaje requerido para una fuente de 24VDC basado en las cargas conectadas.',
-                loadList: 'Cargas Conectadas',
-                deviceDescription: 'Descripción del Dispositivo',
-                quantity: 'Cant.',
-                nominalConsumption: 'Nominal (mA)',
-                inrushConsumption: 'Pico/Inrush (mA)',
-                addDevice: 'Agregar Dispositivo',
-                addFromTemplate: 'Agregar desde Plantilla',
-                designParameters: 'Factores de Diseño',
-                safetyFactor: 'Margen de Seguridad (%)',
-                safetyFactorTooltip: 'Capacidad extra para confiabilidad (Estándar: 25%)',
-                futureGrowth: 'Crecimiento Futuro (%)',
-                futureGrowthTooltip: 'Capacidad reservada para adiciones futuras (Estándar: 20%)',
-                calculateButton: 'Calcular Requerimientos',
-                resultsTitle: 'Análisis de Dimensionamiento',
-                consumptionSummary: 'Resumen de Consumo',
-                totalNominal: 'Carga Nominal Total',
-                peakInrush: 'Carga Pico (Inrush)',
-                requiredAmperage: 'Capacidad Requerida (c/ Factores)',
-                recommendationTitle: 'Fuente Recomendada',
-                recommendedSupply: '{amps} Amperes',
-                expertNotesTitle: 'Notas de Ingeniería',
-                expertNote1: 'Una fuente de {recAmps}A proporciona suficiente margen para la carga nominal de {nominalAmps}A, incluyendo {safetyFactor}% de seguridad y {growthFactor}% de crecimiento.',
-                expertNote2: 'La fuente seleccionada debe soportar el pico de arranque de {peakAmps}A. Verifique la capacidad de sobrecarga (típicamente 150% por 5s).',
-                expertNote3: 'Asegúrese de que el cableado sea adecuado para la corriente total de salida de la fuente.',
-            },
-            encoderMotion: {
-                tabTitle: 'Encoder y Movimiento',
-                title: 'Calculadora de Encoder y Movimiento',
-                description: 'Calcula resolución, distancia de viaje y frecuencia de pulsos para control de movimiento.',
-                encoderParams: 'Parámetros del Encoder',
-                ppr: 'PPR del Encoder',
-                pprTooltip: 'Pulsos Por Revolución (Ranuras físicas)',
-                plcMode: 'Modo de Conteo PLC',
-                plcMode1x: '1x (X1)',
-                plcMode4x: '4x (Cuadratura)',
-                plcMode1xTooltip: 'Cuenta flancos de subida de A solamente',
-                plcMode4xTooltip: 'Cuenta flancos de subida y bajada de A y B (Máxima Resolución)',
-                transmissionParams: 'Transmisión Mecánica',
-                mechanism: 'Tipo de Mecanismo',
-                mechanismDirect: 'Directo / Eje Motor',
-                mechanismGearbox: 'Caja de Engranajes / Mesa Giratoria',
-                mechanismLeadscrew: 'Tornillo Sin Fin / Husillo',
-                mechanismPulley: 'Banda y Polea / Transportador',
-                mechanismRack: 'Piñón y Cremallera',
-                gearboxIn: 'Entrada Caja',
-                gearboxOut: 'Salida Caja',
-                leadscrewPitch: 'Paso del Tornillo',
-                mm_rev: 'mm/rev',
-                in_rev: 'pulg/rev',
-                diameter: 'Diámetro',
-                mm: 'mm',
-                in: 'pulg',
-                viabilityAnalysis: 'Análisis de Velocidad y Frecuencia',
-                maxSpeed: 'Velocidad Lineal Objetivo',
-                mm_s: 'mm/s',
-                m_s: 'm/s',
-                rpm: 'RPM',
-                resultsTitle: 'Constantes de Movimiento',
-                systemResolution: 'Resolución del Sistema',
-                resolutionUnit: 'mm / pulso',
-                resolutionUnitAngle: 'grados / pulso',
-                scaleFactor: 'Factor de Escala',
-                scaleFactorUnit: 'pulsos / mm',
-                scaleFactorUnitAngle: 'pulsos / grado',
-                interactiveTester: 'Probador de Posicionamiento',
-                moveToTravel: 'Mover para viajar',
-                needsPulses: 'necesita pulsos',
-                pulseCountIs: 'Conteo de pulsos de',
-                travelledDist: 'viaja',
-                hardwareDiagnosis: 'Viabilidad de Hardware',
-                requiredFrequency: 'Frecuencia Requerida del Encoder',
-                mhz: 'MHz',
-                khz: 'kHz',
-                hz: 'Hz',
-                analysisOk: 'OK. La mayoría de contadores rápidos de PLC soportan esta frecuencia.',
-                analysisCaution: 'Precaución. Verifique el límite de frecuencia de su PLC (típicamente 100kHz-200kHz).',
-                analysisCritical: 'Crítico. Frecuencia muy alta. Requiere módulos HSC especializados o menor resolución.',
-            },
-            sensorSelection: {
-                tabTitle: 'Selección de Sensores',
-                wizardTitle: 'Asistente de Selección de Sensores',
-                wizardDescription: 'Responde unas preguntas para obtener una recomendación de tecnología de sensor y guía de implementación.',
-                processVariable: 'Variable de Proceso',
-                mediumType: 'Estado del Medio',
-                mediumCharacteristics: 'Características del Medio',
-                liquidType: 'Nombre del Líquido',
-                liquidProperties: 'Propiedades del Líquido',
-                solidType: 'Tipo de Sólido',
-                angleRepo: 'Ángulo de Reposo (aprox)',
-                solidProperties: 'Propiedades del Sólido',
-                operatingConditions: 'Condiciones de Operación',
-                tempRange: 'Rango de Temperatura (°C)',
-                pressureRange: 'Rango de Presión (bar)',
-                from: 'De',
-                to: 'A',
-                environmentalConditions: 'Ambiente',
-                location: 'Ubicación de Instalación',
-                installationRegion: 'País/Región de Instalación',
-                installationRegionTooltip: 'Usado para determinar estándares disponibles y marcas comunes.',
-                thermocoupleStandard: 'Estándar de Color de Termopar',
-                thermocoupleStandardTooltip: 'Si ya tiene cableado, seleccione el estándar para coincidir colores.',
-                areaClassification: 'Clasificación de Área',
-                outputRequirements: 'Señal de Salida',
-                projectPriorities: 'Prioridades del Proyecto',
-                priorities: {
-                    lowCost: 'Bajo Costo',
-                    highPrecision: 'Alta Precisión',
-                    maxRobustness: 'Máxima Robustez',
-                },
-                generating: 'Analizando Requerimientos...',
-                generateButton: 'Encontrar Mejor Sensor',
-                vars: {
-                    level: 'Nivel',
-                    flow: 'Flujo',
-                    pressure: 'Presión',
-                    temperature: 'Temperatura',
-                    position: 'Posición / Presencia',
-                },
-                types: {
-                    liquid: 'Líquido',
-                    solid: 'Sólido / Polvo',
-                    gas: 'Gas',
-                },
-                solidTypes: {
-                    powder: 'Polvo Fino',
-                    granule: 'Gránulos',
-                    chunk: 'Trozos Grandes',
-                },
-                props: {
-                    corrosive: 'Corrosivo',
-                    abrasive: 'Abrasivo',
-                    viscous: 'Viscoso / Pegajoso',
-                    foaming: 'Espumoso',
-                    cip: 'Sanitario / CIP',
-                },
-                solidProps: {
-                    suspendedDust: 'Polvo en Suspensión',
-                    abrasive: 'Abrasivo',
-                },
-                locs: {
-                    indoor: 'Interior',
-                    outdoor: 'Exterior',
-                    vibration: 'Alta Vibración',
-                    washdown: 'Lavado a Presión (IP69K)',
-                },
-                areas: {
-                    general_safe: 'Propósito General (Seguro)',
-                    hazardous_gas: 'Gas Explosivo (Zona 0/1/2)',
-                    hazardous_dust: 'Polvo Explosivo (Zona 20/21/22)',
-                },
-                thermocoupleStandards: {
-                    autodetect: 'Auto-detectar / Estándar',
-                    ansi: 'ANSI (USA - Amarillo/Rojo)',
-                    iec: 'IEC (Europa - Verde/Blanco)',
-                },
-                signals: {
-                    '4-20mA': 'Analógica 4-20mA',
-                    '4-20mA_HART': '4-20mA + HART',
-                    '0-10V': 'Analógica 0-10V',
-                    'PNP_NPN': 'Switch (PNP/NPN)',
-                    'Relay': 'Contacto de Relevador',
-                    'IO-Link': 'IO-Link',
-                    'Profinet_EtherNetIP': 'Ethernet (Profinet/IP)',
-                },
-            },
-        },
-        
-        // Results
-        result: {
-            title: 'Resultado del Análisis',
-        },
-        export: {
-            pdf: 'Exportar PDF',
-        },
-
-        // PDF Export
+        spinnerLoading: 'Cargando...',
+        spinnerWait: 'Por favor espera.',
+        result: { title: 'Resultado del Análisis' },
+        export: { pdf: 'Exportar PDF' },
         pdf: {
             sensorReport: {
                 title: 'Reporte de Recomendación de Sensor',
@@ -1483,160 +830,6 @@ export const translations = {
                 installationConsiderations: 'Consideraciones de Instalación',
                 implementationGuide: 'Guía de Implementación',
             }
-        },
-        
-        // Reference
-        reference: {
-            title: 'Referencia Rápida',
-            description: 'Información comúnmente necesaria al alcance de tu mano. Esta es una muestra, no una lista exhaustiva.',
-            vfdTitle: 'Códigos de Falla Comunes de VFD',
-            vfdDesc: 'Una breve lista de algunos de los códigos de falla más comunes para marcas populares de VFD.',
-            plcTitle: 'Tipos de Datos de PLC',
-            plcDesc: 'Una referencia para tipos de datos comunes utilizados en PLCs Allen-Bradley y Siemens.',
-            thermocoupleTitle: 'Códigos de Color de Termopares',
-            thermocoupleDesc: 'Identifica tipos de termopares por el color de sus cables.',
-            
-            brands: {
-                siemens: 'Siemens',
-                allenBradley: 'Allen-Bradley',
-                abb: 'ABB',
-                schneider: 'Schneider Electric',
-                danfoss: 'Danfoss',
-                yaskawa: 'Yaskawa',
-                mitsubishi: 'Mitsubishi Electric',
-                eaton: 'Eaton'
-            },
-            
-            faults: {
-                code: 'Código',
-                name: 'Nombre',
-                description: 'Descripción',
-                siemens: [
-                    { code: 'F0001', name: 'Sobrecorriente', description: 'La corriente del motor excede el límite.' },
-                    { code: 'F0002', name: 'Sobrevoltaje', description: 'Voltaje del bus DC demasiado alto.' },
-                    { code: 'F0003', name: 'Subvoltaje', description: 'Voltaje de suministro demasiado bajo.' },
-                    { code: 'F0011', name: 'Sobretemperatura Motor', description: 'Sobrecarga térmica del motor (I2t).' }
-                ],
-                allenBradley: [
-                    { code: 'F12', name: 'Sobrecorriente Hardware', description: 'Corriente de salida excedió límite de hardware.' },
-                    { code: 'F05', name: 'Sobrevoltaje', description: 'Voltaje del bus DC excedió el máximo.' },
-                    { code: 'F04', name: 'Subvoltaje', description: 'Voltaje del bus DC cayó por debajo del mínimo.' },
-                    { code: 'F13', name: 'Falla a Tierra', description: 'Detectada corriente hacia tierra.' }
-                ],
-                abb: [
-                    { code: '2310', name: 'Sobrecorriente', description: 'Corriente de salida demasiado alta.' },
-                    { code: '3210', name: 'Sobrevoltaje Bus DC', description: 'Límite de voltaje DC excedido.' },
-                    { code: '2330', name: 'Fuga a Tierra', description: 'Falla a tierra detectada en cable o motor.' },
-                    { code: '3130', name: 'Pérdida de Fase', description: 'Voltaje del circuito intermedio oscilando.' }
-                ],
-                schneider: [
-                    { code: 'OCF', name: 'Sobrecorriente', description: 'Sobrecorriente.' },
-                    { code: 'OSF', name: 'Sobrevoltaje Red', description: 'Voltaje de red demasiado alto.' },
-                    { code: 'SCF', name: 'Cortocircuito Motor', description: 'Cortocircuito o tierra en la salida.' },
-                    { code: 'OHF', name: 'Sobrecalentamiento', description: 'Temperatura del variador demasiado alta.' }
-                ],
-                danfoss: [
-                    { code: 'Alarma 14', name: 'Falla a Tierra', description: 'Descarga de fases de salida a tierra.' },
-                    { code: 'Alarma 7', name: 'Sobrevoltaje', description: 'Voltaje del bus DC demasiado alto.' },
-                    { code: 'Alarma 13', name: 'Sobrecorriente', description: 'Límite de corriente pico excedido.' },
-                    { code: 'Alarma 8', name: 'Subvoltaje', description: 'Voltaje del bus DC demasiado bajo.' }
-                ],
-                yaskawa: [
-                    { code: 'oC', name: 'Sobrecorriente', description: 'Corriente de salida excedió nivel de disparo.' },
-                    { code: 'ov', name: 'Sobrevoltaje', description: 'Voltaje bus DC excedió nivel de disparo.' },
-                    { code: 'UV1', name: 'Subvoltaje', description: 'Voltaje bus DC por debajo del nivel.' },
-                    { code: 'oL1', name: 'Sobrecarga Motor', description: 'Protección térmica del motor activada.' }
-                ],
-                mitsubishi: [
-                    { code: 'E.OC1', name: 'Sobrecorriente (Acel)', description: 'Sobrecorriente durante aceleración.' },
-                    { code: 'E.OC2', name: 'Sobrecorriente (Const)', description: 'Sobrecorriente durante velocidad constante.' },
-                    { code: 'E.OV1', name: 'Sobrevoltaje Regen.', description: 'Sobrevoltaje durante aceleración/frenado.' },
-                    { code: 'E.THM', name: 'Sobrecarga Motor', description: 'Disparo de relé térmico del motor.' }
-                ],
-                eaton: [
-                    { code: 'F1', name: 'Sobrecorriente', description: 'Corriente de salida excedió límite.' },
-                    { code: 'F2', name: 'Sobrevoltaje', description: 'Voltaje de Bus DC demasiado alto.' },
-                    { code: 'F3', name: 'Falla a Tierra', description: 'Falla a tierra detectada.' },
-                    { code: 'F5', name: 'Sobretemperatura', description: 'Temperatura del disipador muy alta.' }
-                ]
-            },
-            
-            colorCodes: {
-                ansi: {
-                    name: 'ANSI (EE.UU.)',
-                    note: 'American National Standards Institute',
-                    codes: [
-                        { type: 'Tipo K', positive: 'Amarillo', negative: 'Rojo', jacket: 'Amarillo' },
-                        { type: 'Tipo J', positive: 'Blanco', negative: 'Rojo', jacket: 'Negro' },
-                        { type: 'Tipo T', positive: 'Azul', negative: 'Rojo', jacket: 'Azul' },
-                        { type: 'Tipo E', positive: 'Morado', negative: 'Rojo', jacket: 'Morado' }
-                    ]
-                },
-                iec: {
-                    name: 'IEC (Internacional)',
-                    note: 'International Electrotechnical Commission',
-                    codes: [
-                        { type: 'Tipo K', positive: 'Verde', negative: 'Blanco', jacket: 'Verde' },
-                        { type: 'Tipo J', positive: 'Negro', negative: 'Blanco', jacket: 'Negro' },
-                        { type: 'Tipo T', positive: 'Marrón', negative: 'Blanco', jacket: 'Marrón' },
-                        { type: 'Tipo E', positive: 'Morado', negative: 'Blanco', jacket: 'Morado' }
-                    ]
-                },
-                din: {
-                    name: 'DIN (Alemania - Antiguo)',
-                    note: 'Deutsches Institut für Normung',
-                    codes: [
-                        { type: 'Tipo K', positive: 'Rojo', negative: 'Verde', jacket: 'Verde' },
-                        { type: 'Tipo J', positive: 'Rojo', negative: 'Azul', jacket: 'Azul' },
-                        { type: 'Tipo T', positive: 'Rojo', negative: 'Marrón', jacket: 'Marrón' },
-                        { type: 'Tipo E', positive: 'Rojo', negative: 'Negro', jacket: 'Negro' }
-                    ]
-                },
-                jis: {
-                    name: 'JIS (Japón)',
-                    note: 'Japanese Industrial Standards',
-                    codes: [
-                        { type: 'Tipo K', positive: 'Rojo', negative: 'Blanco', jacket: 'Azul' },
-                        { type: 'Tipo J', positive: 'Rojo', negative: 'Blanco', jacket: 'Amarillo' },
-                        { type: 'Tipo T', positive: 'Rojo', negative: 'Blanco', jacket: 'Marrón' },
-                        { type: 'Tipo E', positive: 'Rojo', negative: 'Blanco', jacket: 'Violeta' }
-                    ]
-                }
-            },
-            
-            plcDataTypes: {
-                allenBradley: {
-                    name: 'Allen-Bradley (Logix)',
-                    types: [
-                        { type: 'BOOL', desc: '1 bit (0 o 1)' },
-                        { type: 'SINT', desc: 'Entero con signo de 8 bits (-128 a 127)' },
-                        { type: 'INT', desc: 'Entero con signo de 16 bits (-32,768 a 32,767)' },
-                        { type: 'DINT', desc: 'Entero con signo de 32 bits' },
-                        { type: 'REAL', desc: 'Punto flotante de 32 bits' },
-                        { type: 'LINT', desc: 'Entero con signo de 64 bits' },
-                        { type: 'STRING', desc: 'Cadena ASCII (LEN + Arreglo de Datos)' }
-                    ]
-                },
-                siemens: {
-                    name: 'Siemens (S7)',
-                    types: [
-                        { type: 'Bool', desc: '1 bit' },
-                        { type: 'Byte', desc: '8 bits sin signo' },
-                        { type: 'Word', desc: '16 bits sin signo' },
-                        { type: 'DWord', desc: '32 bits sin signo' },
-                        { type: 'Int', desc: '16 bits con signo' },
-                        { type: 'DInt', desc: '32 bits con signo' },
-                        { type: 'Real', desc: 'Punto flotante de 32 bits' }
-                    ]
-                }
-            },
-            
-            thermocoupleTable: {
-                type: 'Tipo',
-                positive: 'Positivo (+)',
-                negative: 'Negativo (-)',
-                jacket: 'Forro'
-            }
-        },
-    },
+        }
+    }
 };

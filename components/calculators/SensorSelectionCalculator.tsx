@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useTranslation } from '../../hooks/useTranslation';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -29,7 +30,7 @@ const initialFormData = {
 };
 
 const Checkbox: React.FC<{ label: string, checked: boolean, onChange: (checked: boolean) => void }> = ({ label, checked, onChange }) => (
-    <label className="flex items-center space-x-2 p-2 bg-gray-50 dark:bg-gray-700/50 rounded-md cursor-pointer">
+    <label className="flex items-center space-x-2 p-2 bg-gray-50 dark:bg-gray-700/50 rounded-md cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
         <input type="checkbox" checked={checked} onChange={e => onChange(e.target.checked)} className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" />
         <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{label}</span>
     </label>
@@ -48,7 +49,7 @@ const PrioritySlider: React.FC<{ label: string, value: number, onChange: (value:
             step="10"
             value={value}
             onChange={e => onChange(parseInt(e.target.value, 10))}
-            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
+            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700 accent-indigo-600"
         />
     </div>
 );
@@ -100,60 +101,79 @@ export const SensorSelectionCalculator: React.FC = () => {
             .map(([key]) => t(`calculator.sensorSelection.${translationKey}.${key}`))
             .join(', ') || 'None';
 
+        // Construct a richer detailed prompt string to aid the AI
         let details = `
-- Variable de Proceso: ${t(`calculator.sensorSelection.vars.${formData.processVariable}`)}
-- Tipo de Medio: ${t(`calculator.sensorSelection.types.${formData.mediumType}`)}
+--- PROCESS DATA ---
+- Measured Variable: ${t(`calculator.sensorSelection.vars.${formData.processVariable}`)}
+- Medium Type: ${t(`calculator.sensorSelection.types.${formData.mediumType}`)}
 ${formData.mediumType === 'liquid' ? `
-- Tipo de Líquido: ${formData.liquidType}
-- Propiedades del Líquido: ${getCheckedItems(formData.liquidProperties, 'props')}
+- Specific Liquid: ${formData.liquidType}
+- Liquid Properties: ${getCheckedItems(formData.liquidProperties, 'props')}
 ` : `
-- Tipo de Sólido: ${t(`calculator.sensorSelection.solidTypes.${formData.solidType}`)}
-- Propiedades del Sólido: ${getCheckedItems(formData.solidProperties, 'solidProps')}
-- Ángulo de Reposo: ${formData.angleRepo || 'No especificado'}
+- Solid Type: ${t(`calculator.sensorSelection.solidTypes.${formData.solidType}`)}
+- Solid Characteristics: ${getCheckedItems(formData.solidProperties, 'solidProps')}
+- Angle of Repose: ${formData.angleRepo || 'N/A'}
 `}
-- Temperatura de Operación: ${formData.tempMin} a ${formData.tempMax} °C
-- Presión de Operación: ${formData.pressureMin} a ${formData.pressureMax} bar
-- Ubicación: ${getCheckedItems(formData.location, 'locs')}
-- País/Región de Instalación: ${formData.installationRegion || 'No especificado'}
-- Clasificación de Área: ${t(`calculator.sensorSelection.areas.${formData.areaClassification}`)}
-`;
-        if (formData.processVariable === 'temperature' && formData.thermocoupleStandard !== 'autodetect') {
-            details += `- Estándar de Termopar Específico: ${t(`calculator.sensorSelection.thermocoupleStandards.${formData.thermocoupleStandard}`)}\n`;
-        }
+- Temperature Range: ${formData.tempMin} to ${formData.tempMax} °C
+- Pressure Range: ${formData.pressureMin} to ${formData.pressureMax} bar
 
-        details += `
-- Tipos de Señal Requeridos: ${getCheckedItems(formData.signalTypes, 'signals')}
-- Prioridades del Proyecto: Costo (${formData.priorityCost}%), Precisión (${formData.priorityPrecision}%), Robustez (${formData.priorityRobustness}%)
-    `.trim();
+--- INSTALLATION ENVIRONMENT ---
+- Environment: ${getCheckedItems(formData.location, 'locs')}
+- Region: ${formData.installationRegion || 'N/A'}
+- Hazardous Area Class: ${t(`calculator.sensorSelection.areas.${formData.areaClassification}`)}
+
+--- INTEGRATION REQUIREMENTS ---
+- Required Outputs: ${getCheckedItems(formData.signalTypes, 'signals')}
+${formData.processVariable === 'temperature' && formData.thermocoupleStandard !== 'autodetect' ? `- Preferred T/C Standard: ${t(`calculator.sensorSelection.thermocoupleStandards.${formData.thermocoupleStandard}`)}\n` : ''}
+
+--- BUSINESS PRIORITIES ---
+- Importance of Cost: ${formData.priorityCost}%
+- Importance of Precision: ${formData.priorityPrecision}%
+- Importance of Robustness: ${formData.priorityRobustness}%
+`.trim();
 
         try {
             const recommendation = await generateSensorRecommendation({
                 language,
                 details,
             });
-            setResult(recommendation);
+            
+            // Check if response is valid JSON before setting
+            try {
+                JSON.parse(recommendation);
+                setResult(recommendation);
+            } catch (jsonErr) {
+                // Try to extract JSON if it's wrapped in markdown blocks
+                const match = recommendation.match(/```json\s*([\s\S]*?)\s*```/);
+                if (match && match[1]) {
+                    setResult(match[1]);
+                } else {
+                    throw new Error("AI response was not valid JSON.");
+                }
+            }
         } catch (err) {
+            console.error(err);
             setError(err instanceof Error ? err.message : t('error.unexpected'));
         } finally {
             setIsLoading(false);
         }
     };
     
-    const commonInputClasses = "w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-150 ease-in-out bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-200 text-sm";
+    const commonInputClasses = "w-full p-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-150 ease-in-out bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-200 text-sm shadow-sm";
     
     return (
-         <div className="bg-white dark:bg-gray-800 p-6 sm:p-8 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 space-y-8">
-            <div>
+         <div className="bg-white dark:bg-gray-800 p-6 sm:p-8 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 space-y-8 animate-fade-in">
+            <div className="border-b border-gray-200 dark:border-gray-700 pb-6">
                 <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-200">{t('calculator.sensorSelection.wizardTitle')}</h2>
                 <p className="mt-2 text-gray-500 dark:text-gray-400">{t('calculator.sensorSelection.wizardDescription')}</p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-8">
                 {/* Step 1: Process & Medium */}
-                <fieldset>
+                <fieldset className="animate-fade-in-up">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
-                            <label className="block text-sm font-medium mb-1">{t('calculator.sensorSelection.processVariable')}</label>
+                            <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">{t('calculator.sensorSelection.processVariable')}</label>
                             <select value={formData.processVariable} onChange={e => handleFormChange('processVariable', e.target.value)} className={commonInputClasses}>
                                 {Object.keys(t('calculator.sensorSelection.vars')).map(key => (
                                     <option key={key} value={key}>{t(`calculator.sensorSelection.vars.${key}`)}</option>
@@ -161,7 +181,7 @@ ${formData.mediumType === 'liquid' ? `
                             </select>
                         </div>
                         <div>
-                            <label className="block text-sm font-medium mb-1">{t('calculator.sensorSelection.mediumType')}</label>
+                            <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">{t('calculator.sensorSelection.mediumType')}</label>
                             <select value={formData.mediumType} onChange={e => handleFormChange('mediumType', e.target.value)} className={commonInputClasses}>
                                 <option value="liquid">{t('calculator.sensorSelection.types.liquid')}</option>
                                 <option value="solid">{t('calculator.sensorSelection.types.solid')}</option>
@@ -171,16 +191,16 @@ ${formData.mediumType === 'liquid' ? `
                 </fieldset>
                 
                 {/* Step 2: Medium Characteristics (Conditional) */}
-                <fieldset>
-                    <legend className="text-lg font-semibold mb-2">{t('calculator.sensorSelection.mediumCharacteristics')}</legend>
+                <fieldset className="p-4 bg-gray-50 dark:bg-gray-900/50 rounded-xl border border-gray-100 dark:border-gray-700 animate-fade-in-up" style={{animationDelay: '0.1s'}}>
+                    <legend className="text-sm font-semibold uppercase tracking-wider text-gray-500 mb-4">{t('calculator.sensorSelection.mediumCharacteristics')}</legend>
                     {formData.mediumType === 'liquid' ? (
                         <div className="space-y-4">
                              <div>
                                 <label className="block text-sm font-medium mb-1">{t('calculator.sensorSelection.liquidType')}</label>
-                                <input type="text" value={formData.liquidType} onChange={e => handleFormChange('liquidType', e.target.value)} className={commonInputClasses} />
+                                <input type="text" value={formData.liquidType} onChange={e => handleFormChange('liquidType', e.target.value)} className={commonInputClasses} placeholder="e.g. Water, Oil, Milk" />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium mb-1">{t('calculator.sensorSelection.liquidProperties')}</label>
+                                <label className="block text-sm font-medium mb-2">{t('calculator.sensorSelection.liquidProperties')}</label>
                                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
                                     {Object.keys(formData.liquidProperties).map(key => (
                                         <Checkbox key={key} label={t(`calculator.sensorSelection.props.${key}`)} checked={formData.liquidProperties[key as keyof typeof formData.liquidProperties]} onChange={val => handleCheckboxGroupChange('liquidProperties', key, val)} />
@@ -201,11 +221,11 @@ ${formData.mediumType === 'liquid' ? `
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium mb-1">{t('calculator.sensorSelection.angleRepo')}</label>
-                                    <input type="text" value={formData.angleRepo} onChange={e => handleFormChange('angleRepo', e.target.value)} className={commonInputClasses} />
+                                    <input type="text" value={formData.angleRepo} onChange={e => handleFormChange('angleRepo', e.target.value)} className={commonInputClasses} placeholder="approx. degrees" />
                                 </div>
                             </div>
                              <div>
-                                <label className="block text-sm font-medium mb-1">{t('calculator.sensorSelection.solidProperties')}</label>
+                                <label className="block text-sm font-medium mb-2">{t('calculator.sensorSelection.solidProperties')}</label>
                                 <div className="grid grid-cols-2 gap-2">
                                      {Object.keys(formData.solidProperties).map(key => (
                                         <Checkbox key={key} label={t(`calculator.sensorSelection.solidProps.${key}`)} checked={formData.solidProperties[key as keyof typeof formData.solidProperties]} onChange={val => handleCheckboxGroupChange('solidProperties', key, val)} />
@@ -217,15 +237,15 @@ ${formData.mediumType === 'liquid' ? `
                 </fieldset>
 
                  {/* Step 3: Conditions */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <fieldset>
-                        <legend className="text-lg font-semibold mb-2">{t('calculator.sensorSelection.operatingConditions')}</legend>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fade-in-up" style={{animationDelay: '0.2s'}}>
+                    <fieldset className="p-4 border border-gray-200 dark:border-gray-700 rounded-xl">
+                        <legend className="text-sm font-semibold uppercase tracking-wider text-gray-500 mb-2 px-1">{t('calculator.sensorSelection.operatingConditions')}</legend>
                         <div className="space-y-4">
                             <div>
                                 <label className="block text-sm font-medium mb-1">{t('calculator.sensorSelection.tempRange')}</label>
                                 <div className="flex items-center gap-2">
                                     <input type="number" placeholder={t('calculator.sensorSelection.from')} value={formData.tempMin} onChange={e => handleFormChange('tempMin', e.target.value)} className={commonInputClasses} />
-                                    <span>{t('calculator.sensorSelection.to')}</span>
+                                    <span className="text-gray-400 font-bold">→</span>
                                     <input type="number" placeholder={t('calculator.sensorSelection.to')} value={formData.tempMax} onChange={e => handleFormChange('tempMax', e.target.value)} className={commonInputClasses} />
                                 </div>
                             </div>
@@ -233,33 +253,42 @@ ${formData.mediumType === 'liquid' ? `
                                 <label className="block text-sm font-medium mb-1">{t('calculator.sensorSelection.pressureRange')}</label>
                                 <div className="flex items-center gap-2">
                                     <input type="number" placeholder={t('calculator.sensorSelection.from')} value={formData.pressureMin} onChange={e => handleFormChange('pressureMin', e.target.value)} className={commonInputClasses} />
-                                    <span>{t('calculator.sensorSelection.to')}</span>
+                                    <span className="text-gray-400 font-bold">→</span>
                                     <input type="number" placeholder={t('calculator.sensorSelection.to')} value={formData.pressureMax} onChange={e => handleFormChange('pressureMax', e.target.value)} className={commonInputClasses} />
                                 </div>
                             </div>
                         </div>
                     </fieldset>
-                     <fieldset>
-                        <legend className="text-lg font-semibold mb-2">{t('calculator.sensorSelection.environmentalConditions')}</legend>
+                     <fieldset className="p-4 border border-gray-200 dark:border-gray-700 rounded-xl">
+                        <legend className="text-sm font-semibold uppercase tracking-wider text-gray-500 mb-2 px-1">{t('calculator.sensorSelection.environmentalConditions')}</legend>
                         <div className="space-y-4">
                              <div>
-                                <label className="block text-sm font-medium mb-1">{t('calculator.sensorSelection.location')}</label>
+                                <label className="block text-sm font-medium mb-2">{t('calculator.sensorSelection.location')}</label>
                                  <div className="grid grid-cols-2 gap-2">
                                      {Object.keys(formData.location).map(key => (
                                         <Checkbox key={key} label={t(`calculator.sensorSelection.locs.${key}`)} checked={formData.location[key as keyof typeof formData.location]} onChange={val => handleCheckboxGroupChange('location', key, val)} />
                                     ))}
                                  </div>
                             </div>
-                             <div>
-                                <label className="block text-sm font-medium mb-1 flex items-center">
-                                    {t('calculator.sensorSelection.installationRegion')}
-                                    <Tooltip text={t('calculator.sensorSelection.installationRegionTooltip')} />
-                                </label>
-                                <input type="text" value={formData.installationRegion} onChange={e => handleFormChange('installationRegion', e.target.value)} className={commonInputClasses} />
+                             <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium mb-1 flex items-center">
+                                        {t('calculator.sensorSelection.installationRegion')}
+                                    </label>
+                                    <input type="text" value={formData.installationRegion} onChange={e => handleFormChange('installationRegion', e.target.value)} className={commonInputClasses} />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium mb-1">{t('calculator.sensorSelection.areaClassification')}</label>
+                                    <select value={formData.areaClassification} onChange={e => handleFormChange('areaClassification', e.target.value)} className={commonInputClasses}>
+                                        {Object.keys(t('calculator.sensorSelection.areas')).map(key => (
+                                            <option key={key} value={key}>{t(`calculator.sensorSelection.areas.${key}`)}</option>
+                                        ))}
+                                    </select>
+                                </div>
                             </div>
                             {formData.processVariable === 'temperature' && (
                                 <div className="animate-fade-in">
-                                    <label className="block text-sm font-medium mb-1 flex items-center">
+                                    <label className="block text-sm font-medium mb-1 flex items-center gap-1">
                                         {t('calculator.sensorSelection.thermocoupleStandard')}
                                         <Tooltip text={t('calculator.sensorSelection.thermocoupleStandardTooltip')} />
                                     </label>
@@ -270,31 +299,23 @@ ${formData.mediumType === 'liquid' ? `
                                     </select>
                                 </div>
                             )}
-                             <div>
-                                <label className="block text-sm font-medium mb-1">{t('calculator.sensorSelection.areaClassification')}</label>
-                                <select value={formData.areaClassification} onChange={e => handleFormChange('areaClassification', e.target.value)} className={commonInputClasses}>
-                                    {Object.keys(t('calculator.sensorSelection.areas')).map(key => (
-                                        <option key={key} value={key}>{t(`calculator.sensorSelection.areas.${key}`)}</option>
-                                    ))}
-                                </select>
-                            </div>
                         </div>
                     </fieldset>
                 </div>
 
                 {/* Step 4: Outputs & Priorities */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <fieldset>
-                         <legend className="text-lg font-semibold mb-2">{t('calculator.sensorSelection.outputRequirements')}</legend>
-                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fade-in-up" style={{animationDelay: '0.3s'}}>
+                    <fieldset className="p-4 bg-gray-50 dark:bg-gray-900/50 rounded-xl border border-gray-100 dark:border-gray-700">
+                         <legend className="text-sm font-semibold uppercase tracking-wider text-gray-500 mb-2">{t('calculator.sensorSelection.outputRequirements')}</legend>
+                         <div className="grid grid-cols-2 sm:grid-cols-2 gap-2">
                              {Object.keys(formData.signalTypes).map(key => (
                                 <Checkbox key={key} label={t(`calculator.sensorSelection.signals.${key}`)} checked={formData.signalTypes[key as keyof typeof formData.signalTypes]} onChange={val => handleCheckboxGroupChange('signalTypes', key, val)} />
                             ))}
                          </div>
                     </fieldset>
-                    <fieldset>
-                        <legend className="text-lg font-semibold mb-2">{t('calculator.sensorSelection.projectPriorities')}</legend>
-                        <div className="space-y-3">
+                    <fieldset className="p-4 bg-gray-50 dark:bg-gray-900/50 rounded-xl border border-gray-100 dark:border-gray-700">
+                        <legend className="text-sm font-semibold uppercase tracking-wider text-gray-500 mb-2">{t('calculator.sensorSelection.projectPriorities')}</legend>
+                        <div className="space-y-4 pt-2">
                            <PrioritySlider label={t('calculator.sensorSelection.priorities.lowCost')} value={formData.priorityCost} onChange={val => handleFormChange('priorityCost', val)} />
                            <PrioritySlider label={t('calculator.sensorSelection.priorities.highPrecision')} value={formData.priorityPrecision} onChange={val => handleFormChange('priorityPrecision', val)} />
                            <PrioritySlider label={t('calculator.sensorSelection.priorities.maxRobustness')} value={formData.priorityRobustness} onChange={val => handleFormChange('priorityRobustness', val)} />
@@ -302,9 +323,30 @@ ${formData.mediumType === 'liquid' ? `
                     </fieldset>
                 </div>
 
-                <button type="submit" disabled={isLoading} className="w-full mt-6 bg-indigo-600 text-white font-semibold py-3 rounded-lg shadow-md hover:bg-indigo-700 transition-colors disabled:bg-indigo-400 disabled:cursor-not-allowed flex items-center justify-center">
-                    {isLoading ? t('calculator.sensorSelection.generating') : t('calculator.sensorSelection.generateButton')}
-                </button>
+                <div className="pt-4 animate-fade-in-up" style={{animationDelay: '0.4s'}}>
+                    <button 
+                        type="submit" 
+                        disabled={isLoading} 
+                        className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-black text-lg rounded-xl shadow-lg shadow-indigo-500/30 transition-all transform hover:-translate-y-0.5 disabled:bg-indigo-400 disabled:cursor-not-allowed disabled:shadow-none flex items-center justify-center gap-3"
+                    >
+                        {isLoading ? (
+                            <>
+                                <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                {t('calculator.sensorSelection.generating')}
+                            </>
+                        ) : (
+                            <>
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                                </svg>
+                                {t('calculator.sensorSelection.generateButton')}
+                            </>
+                        )}
+                    </button>
+                </div>
             </form>
 
             {isLoading && <LoadingSpinner message={t('calculator.sensorSelection.generating')} />}

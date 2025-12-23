@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useTranslation } from '../hooks/useTranslation';
 import { BrandLogo } from '../components/BrandLogo';
@@ -54,26 +55,33 @@ const FaultTable: React.FC<{ faults: Fault[] }> = ({ faults }) => {
 
 const ColorCell: React.FC<{ colorName: string }> = ({ colorName }) => {
     const colorMap: { [key: string]: { bg: string, text: string, border?: string } } = {
+        // English
         'Yellow': { bg: 'bg-yellow-400', text: 'text-black' },
         'Red': { bg: 'bg-red-500', text: 'text-white' },
         'White': { bg: 'bg-white', text: 'text-black', border: 'border border-gray-300' },
         'Blue': { bg: 'bg-blue-600', text: 'text-white' },
         'Purple': { bg: 'bg-purple-600', text: 'text-white' },
+        'Violet': { bg: 'bg-purple-500', text: 'text-white' },
         'Orange': { bg: 'bg-orange-500', text: 'text-white' },
         'Brown': { bg: 'bg-yellow-800', text: 'text-white' },
         'Black': { bg: 'bg-black', text: 'text-white' },
-        'Green': { bg: 'bg-green-500', text: 'text-white' },
+        'Green': { bg: 'bg-green-600', text: 'text-white' },
         'Pink': { bg: 'bg-pink-400', text: 'text-white' },
+        'Gray': { bg: 'bg-gray-500', text: 'text-white' },
+        
+        // Spanish
         'Amarillo': { bg: 'bg-yellow-400', text: 'text-black' },
         'Rojo': { bg: 'bg-red-500', text: 'text-white' },
         'Blanco': { bg: 'bg-white', text: 'text-black', border: 'border border-gray-300' },
         'Azul': { bg: 'bg-blue-600', text: 'text-white' },
         'Morado': { bg: 'bg-purple-600', text: 'text-white' },
+        'Violeta': { bg: 'bg-purple-500', text: 'text-white' },
         'Naranja': { bg: 'bg-orange-500', text: 'text-white' },
         'Marrón': { bg: 'bg-yellow-800', text: 'text-white' },
         'Negro': { bg: 'bg-black', text: 'text-white' },
-        'Verde': { bg: 'bg-green-500', text: 'text-white' },
+        'Verde': { bg: 'bg-green-600', text: 'text-white' },
         'Rosa': { bg: 'bg-pink-400', text: 'text-white' },
+        'Gris': { bg: 'bg-gray-500', text: 'text-white' },
     };
 
     const style = colorMap[colorName] || { bg: 'bg-gray-200', text: 'text-black' };

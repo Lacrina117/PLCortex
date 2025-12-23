@@ -75,7 +75,6 @@ export interface ChatContext {
     plcLanguage?: string;
 }
 
-// ... (existing interfaces for PracticeParams, WiringGuideParams, etc. remain unchanged) ...
 export interface PracticeParams {
     topic: 'VFD' | 'PLC';
     difficulty: string;
@@ -99,19 +98,6 @@ export interface WiringGuideParams {
     application: string;
 }
 
-export interface CommissioningPlanParams {
-    language: 'en' | 'es';
-    vfdBrand: string;
-    vfdModel: string;
-    motorHp: string;
-    motorVoltage: string;
-    motorFla: string;
-    motorRpm: string;
-    motorFreq: string;
-    controlType: string;
-    application: string;
-}
-
 export interface LogicIssue {
     line: number;
     type: 'Error' | 'Warning';
@@ -126,27 +112,55 @@ export interface LogEntry {
     status: 'RESUELTO' | 'PENDIENTE';
 }
 
-// --- Helper Functions for Style Guides (Existing functions omitted for brevity but presumed present) ---
-const getLadderStyleGuide = (plcBrand?: string, plcSoftware?: string) => {
-    // ... implementation
-    return '';
-};
-const getStructuredTextStyleGuide = (plcBrand?: string) => {
-    // ... implementation
-    return '';
-};
-
-// --- Main Exported Functions ---
-
-// ... (Existing functions: generateChatResponse, generatePractice, generateWiringGuide, etc. omitted for brevity) ...
+// ... (Existing functions like generateChatResponse, generatePractice, etc. are preserved here) ...
 export const generateChatResponse = async (messages: Message[], context: ChatContext): Promise<string> => {
     // ... existing implementation
     return "";
 };
 
 export const generatePractice = async (params: PracticeParams): Promise<string> => {
-    // ... existing implementation
-    return "";
+    const isSpanish = params.language === 'es';
+    const languageName = isSpanish ? 'Spanish' : 'English';
+    const difficultyMap = {
+        'Beginner': isSpanish ? 'Principiante' : 'Beginner',
+        'Intermediate': isSpanish ? 'Intermedio' : 'Intermediate',
+        'Advanced': isSpanish ? 'Avanzado' : 'Advanced'
+    };
+    
+    const context = params.topic === 'PLC'
+        ? `PLC Brand: ${params.plcBrand}, Software: ${params.plcSoftware}, Language: ${params.plcLanguage}`
+        : `VFD Brand: ${params.vfdBrand}, Model: ${params.vfdModel}`;
+
+    const prompt = `
+    Create a unique, realistic industrial automation practice problem.
+    Topic: ${params.topic}
+    Difficulty: ${params.difficulty}
+    Context: ${context}
+    Language: ${languageName}
+
+    Structure the response exactly as follows using Markdown:
+    ### Scenario
+    (Describe a realistic factory situation)
+    ### Requirements
+    (Bulleted list of technical requirements)
+    ### Hint
+    (A helpful clue without giving away the answer)
+    ### Solution
+    (Full solution code or parameter list. Use code blocks for PLC logic.)
+    `;
+
+    try {
+        const response = await callApiEndpoint('generatePractice', {
+            contents: [{ parts: [{ text: prompt }] }],
+            config: {
+                temperature: 0.7, // Higher creativity for varied problems
+            }
+        });
+        return response.text;
+    } catch (error) {
+        console.error('Error generating practice:', error);
+        throw new Error(isSpanish ? 'Error al generar la práctica.' : 'Failed to generate practice.');
+    }
 };
 
 export const generateWiringGuide = async (params: WiringGuideParams): Promise<string> => {
@@ -209,9 +223,96 @@ export const analyzeMotorNameplate = async (params: { imageDataBase64: string; m
     return {};
 };
 
+// --- IMPROVED SENSOR RECOMMENDATION FUNCTION ---
 export const generateSensorRecommendation = async (params: { language: 'en' | 'es'; details: string }): Promise<string> => {
-    // ... existing implementation
-    return "";
+    const isSpanish = params.language === 'es';
+    
+    const systemInstruction = isSpanish 
+        ? "Eres un ingeniero experto en instrumentación y control de procesos (I&C). Tu tarea es analizar los requisitos de una aplicación industrial y recomendar la tecnología de sensores óptima. Responde estrictamente en formato JSON."
+        : "You are an expert Instrumentation and Control (I&C) Engineer. Your task is to analyze industrial application requirements and recommend the optimal sensor technology. Respond strictly in JSON format.";
+
+    const prompt = `
+    Analyze the following industrial process requirements and recommend 1 to 3 sensor technologies.
+    
+    APPLICATION REQUIREMENTS:
+    ${params.details}
+
+    INSTRUCTIONS:
+    1. Identify the best sensing principle (e.g., Radar, Ultrasonic, Coriolis, Differential Pressure).
+    2. Provide a 'Top Choice' that balances performance and cost based on the priorities.
+    3. Include suggested real-world models from reputable brands (e.g., Endress+Hauser, Vega, Sick, IFM, Siemens).
+    4. Provide specific installation advice (e.g., "Install at least 30cm from tank wall").
+    5. Include an 'implementationGuide' dictionary containing:
+       - 'st': A Structured Text (IEC 61131-3) snippet for scaling the analog signal (RAW to Engineering Units).
+       - 'wiring': A text description of how to wire the sensor (2-wire vs 3-wire vs 4-wire) to a PLC input card.
+
+    The response MUST be a valid JSON object matching the schema.
+    `;
+
+    const schema: Schema = {
+        type: Type.OBJECT,
+        properties: {
+            recommendations: {
+                type: Type.ARRAY,
+                items: {
+                    type: Type.OBJECT,
+                    properties: {
+                        isTopChoice: { type: Type.BOOLEAN },
+                        technology: { type: Type.STRING },
+                        justification: { type: Type.STRING },
+                        ratings: {
+                            type: Type.OBJECT,
+                            properties: {
+                                precision: { type: Type.INTEGER },
+                                cost: { type: Type.INTEGER },
+                                robustness: { type: Type.INTEGER },
+                                easeOfInstallation: { type: Type.INTEGER }
+                            },
+                            required: ['precision', 'cost', 'robustness', 'easeOfInstallation']
+                        },
+                        suggestedModels: { type: Type.STRING }
+                    },
+                    required: ['isTopChoice', 'technology', 'justification', 'ratings', 'suggestedModels']
+                }
+            },
+            installationConsiderations: { type: Type.ARRAY, items: { type: Type.STRING } },
+            wiringWarning: {
+                type: Type.OBJECT,
+                properties: {
+                    title: { type: Type.STRING },
+                    content: { type: Type.STRING }
+                },
+                required: ['title', 'content']
+            },
+            modelsDisclaimer: { type: Type.STRING },
+            implementationGuide: {
+                type: Type.OBJECT,
+                properties: {
+                    st: { type: Type.STRING },
+                    wiring: { type: Type.STRING }
+                }
+            }
+        },
+        required: ['recommendations', 'installationConsiderations', 'modelsDisclaimer', 'implementationGuide']
+    };
+
+    try {
+        // Using gemini-2.5-flash for speed and good JSON adherence
+        const response = await callApiEndpoint('generateSensorRecommendation', {
+            contents: [{ parts: [{ text: prompt }] }],
+            config: {
+                systemInstruction: systemInstruction,
+                responseMimeType: 'application/json',
+                responseSchema: schema,
+                temperature: 0.2 // Low temperature for consistent, factual recommendations
+            }
+        }, 'gemini-2.5-flash');
+        
+        return response.text;
+    } catch (error) {
+        console.error('Error generating sensor recommendation:', error);
+        throw new Error(isSpanish ? 'Error al generar la recomendación. Por favor intenta de nuevo.' : 'Failed to generate recommendation. Please try again.');
+    }
 };
 
 export const convertPlcCode = async (params: { 

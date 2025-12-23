@@ -1,26 +1,26 @@
+
 import React, { useState, useEffect } from 'react';
 import { generateChatResponse } from '../services/geminiService';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useTranslation } from '../hooks/useTranslation';
 import { vfdBrands, vfdModelsByBrand, plcBrands, plcSoftwareByBrand, plcVersionsBySoftware } from '../constants/automationData';
 import { ChatView, ChatContext } from './ChatView';
+import { BrandLogo } from '../components/BrandLogo';
 
-const WelcomePlaceholder: React.FC<{ onNewChat: () => void }> = ({ onNewChat }) => {
+const WelcomePlaceholder: React.FC<{ onNewChat?: () => void, context: ChatContext }> = ({ onNewChat, context }) => {
     const { t } = useTranslation();
-    
+    const brandName = context.plcBrand !== 'General' ? context.plcBrand : (context.vfdBrand !== 'General' ? context.vfdBrand : 'General');
+    const topicName = context.topic;
+
     return (
-        <div className="flex flex-col items-center justify-center h-full text-center p-4">
-             <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 text-gray-400 dark:text-gray-500 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-            </svg>
-            <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-200">{t('chat.welcomeTitle')}</h2>
-            <p className="mt-2 text-gray-500 dark:text-gray-400 max-w-md">{t('chat.welcomeMessage')}</p>
-            <button 
-                onClick={onNewChat}
-                className="mt-6 px-6 py-2 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 transition-colors"
-            >
-                {t('chat.startNewChat')}
-            </button>
+        <div className="flex flex-col items-center justify-center h-full text-center p-6 animate-fade-in">
+             <div className="w-20 h-20 bg-gray-100 dark:bg-gray-700 rounded-2xl flex items-center justify-center mb-6 shadow-lg transform hover:scale-105 transition-transform duration-300">
+                <BrandLogo brand={brandName} topic={topicName} className="h-12 w-12" />
+             </div>
+            <h2 className="text-3xl font-extrabold text-gray-900 dark:text-white mb-3">{t('chat.welcomeTitle')}</h2>
+            <p className="text-lg text-gray-600 dark:text-gray-300 max-w-lg leading-relaxed">
+                {t('chat.welcomeMessage', { brand: brandName === 'General' ? '' : brandName, topic: topicName })}
+            </p>
         </div>
     );
 };
@@ -62,46 +62,68 @@ const ContextSelectionComponent: React.FC<{ context: ChatContext; setContext: (c
         });
     };
 
-    const commonSelectClasses = "w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-150 ease-in-out bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-200 text-sm";
-    const disabledSelectClasses = "disabled:bg-gray-200 dark:disabled:bg-gray-700/50 disabled:cursor-not-allowed disabled:opacity-60";
+    const commonSelectClasses = "w-full p-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-150 ease-in-out bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-200 text-sm shadow-sm";
+    const disabledSelectClasses = "disabled:bg-gray-100 dark:disabled:bg-gray-900/50 disabled:cursor-not-allowed disabled:opacity-70 disabled:border-transparent";
     
     return (
-        <div className="space-y-3">
+        <div className="space-y-4">
              <div className="flex justify-between items-center mb-2">
-                <h3 className="text-md font-bold">{t('chat.contextTitle')}</h3>
-                <span className={`px-2 py-0.5 text-xs rounded-full ${isLocked ? 'bg-red-200 text-red-800 dark:bg-red-900/50 dark:text-red-300' : 'bg-green-200 text-green-800 dark:bg-green-900/50 dark:text-green-300'}`}>
+                <h3 className="text-sm font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">{t('chat.contextTitle')}</h3>
+                <span className={`px-2 py-0.5 text-[10px] font-bold uppercase rounded-full ${isLocked ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'}`}>
                     {isLocked ? t('chat.contextLocked') : t('chat.contextEditable')}
                 </span>
             </div>
-            <select value={context.topic} onChange={e => handleContextChange({ topic: e.target.value as 'PLC' | 'VFD' })} disabled={isLocked} className={`${commonSelectClasses} ${isLocked && disabledSelectClasses}`}>
-                <option value="PLC">PLC</option>
-                <option value="VFD">VFD</option>
-            </select>
-            {context.topic === 'PLC' ? (
-                <>
-                    <select value={context.plcBrand} onChange={e => handlePlcBrandChange(e.target.value)} disabled={isLocked} className={`${commonSelectClasses} ${isLocked && disabledSelectClasses}`}>
-                        {plcBrands.map(b => <option key={b} value={b}>{b}</option>)}
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                <div>
+                    <label className="block text-xs font-semibold text-gray-500 mb-1">Topic</label>
+                    <select value={context.topic} onChange={e => handleContextChange({ topic: e.target.value as 'PLC' | 'VFD' })} disabled={isLocked} className={`${commonSelectClasses} ${isLocked && disabledSelectClasses}`}>
+                        <option value="PLC">PLC</option>
+                        <option value="VFD">VFD</option>
                     </select>
-                     <select value={context.plcSoftware} onChange={e => handlePlcSoftwareChange(e.target.value)} disabled={isLocked || context.plcBrand === 'General'} className={`${commonSelectClasses} ${(isLocked || context.plcBrand === 'General') && disabledSelectClasses}`}>
-                        <option value="General">{t('formGeneralOption')}</option>
-                        {(plcSoftwareByBrand[context.plcBrand || ''] || []).map(s => <option key={s} value={s}>{s}</option>)}
-                    </select>
-                     <select value={context.plcVersion} onChange={e => handleContextChange({ plcVersion: e.target.value })} disabled={isLocked || context.plcSoftware === 'General'} className={`${commonSelectClasses} ${(isLocked || context.plcSoftware === 'General') && disabledSelectClasses}`}>
-                        <option value="General">{t('formGeneralOption')}</option>
-                        {(plcVersionsBySoftware[context.plcSoftware || ''] || []).map(v => <option key={v} value={v}>{v}</option>)}
-                    </select>
-                </>
-            ) : (
-                 <>
-                    <select value={context.vfdBrand} onChange={e => handleVfdBrandChange(e.target.value)} disabled={isLocked} className={`${commonSelectClasses} ${isLocked && disabledSelectClasses}`}>
-                        {vfdBrands.map(b => <option key={b} value={b}>{b}</option>)}
-                    </select>
-                    <select value={context.vfdModel} onChange={e => handleContextChange({ vfdModel: e.target.value })} disabled={isLocked || context.vfdBrand === 'General'} className={`${commonSelectClasses} ${(isLocked || context.vfdBrand === 'General') && disabledSelectClasses}`}>
-                        <option value="General">{t('formGeneralOption')}</option>
-                        {(vfdModelsByBrand[context.vfdBrand || ''] || []).map(m => <option key={m} value={m}>{m}</option>)}
-                    </select>
-                </>
-            )}
+                </div>
+
+                {context.topic === 'PLC' ? (
+                    <>
+                        <div>
+                            <label className="block text-xs font-semibold text-gray-500 mb-1">{t('formPlcBrand')}</label>
+                            <select value={context.plcBrand} onChange={e => handlePlcBrandChange(e.target.value)} disabled={isLocked} className={`${commonSelectClasses} ${isLocked && disabledSelectClasses}`}>
+                                {plcBrands.map(b => <option key={b} value={b}>{b}</option>)}
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-xs font-semibold text-gray-500 mb-1">{t('formPlcSoftware')}</label>
+                            <select value={context.plcSoftware} onChange={e => handlePlcSoftwareChange(e.target.value)} disabled={isLocked || context.plcBrand === 'General'} className={`${commonSelectClasses} ${(isLocked || context.plcBrand === 'General') && disabledSelectClasses}`}>
+                                <option value="General">{t('formGeneralOption')}</option>
+                                {(plcSoftwareByBrand[context.plcBrand || ''] || []).map(s => <option key={s} value={s}>{s}</option>)}
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-xs font-semibold text-gray-500 mb-1">Version</label>
+                            <select value={context.plcVersion} onChange={e => handleContextChange({ plcVersion: e.target.value })} disabled={isLocked || context.plcSoftware === 'General'} className={`${commonSelectClasses} ${(isLocked || context.plcSoftware === 'General') && disabledSelectClasses}`}>
+                                <option value="General">{t('formGeneralOption')}</option>
+                                {(plcVersionsBySoftware[context.plcSoftware || ''] || []).map(v => <option key={v} value={v}>{v}</option>)}
+                            </select>
+                        </div>
+                    </>
+                ) : (
+                     <>
+                        <div>
+                            <label className="block text-xs font-semibold text-gray-500 mb-1">{t('formVfdBrand')}</label>
+                            <select value={context.vfdBrand} onChange={e => handleVfdBrandChange(e.target.value)} disabled={isLocked} className={`${commonSelectClasses} ${isLocked && disabledSelectClasses}`}>
+                                {vfdBrands.map(b => <option key={b} value={b}>{b}</option>)}
+                            </select>
+                        </div>
+                        <div className="md:col-span-2">
+                            <label className="block text-xs font-semibold text-gray-500 mb-1">{t('formVfdModel')}</label>
+                            <select value={context.vfdModel} onChange={e => handleContextChange({ vfdModel: e.target.value })} disabled={isLocked || context.vfdBrand === 'General'} className={`${commonSelectClasses} ${(isLocked || context.vfdBrand === 'General') && disabledSelectClasses}`}>
+                                <option value="General">{t('formGeneralOption')}</option>
+                                {(vfdModelsByBrand[context.vfdBrand || ''] || []).map(m => <option key={m} value={m}>{m}</option>)}
+                            </select>
+                        </div>
+                    </>
+                )}
+            </div>
         </div>
     );
 };
