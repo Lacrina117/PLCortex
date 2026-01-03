@@ -2,6 +2,7 @@
 import React from 'react';
 import { useTranslation } from '../hooks/useTranslation';
 import { useLanguage, Language } from '../contexts/LanguageContext';
+import { Logo } from '../components/Logo';
 
 interface LandingViewProps {
   onEnter: () => void;
@@ -44,12 +45,9 @@ export const LandingView: React.FC<LandingViewProps> = ({ onEnter }) => {
         <div className="container mx-auto px-6 py-4 flex justify-between items-center">
              <div className="flex items-center gap-3">
                  <div className="relative">
-                    <div className="absolute inset-0 bg-indigo-500 blur-sm opacity-50 rounded-full"></div>
-                    <svg xmlns="http://www.w3.org/2000/svg" className="relative h-8 w-8 text-white" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd" />
-                    </svg>
+                    <Logo size="md" />
                  </div>
-                 <span className="text-xl font-bold tracking-tight text-white">PLCortex</span>
+                 <span className="text-xl font-extrabold tracking-tight text-white uppercase italic">PLCortex</span>
              </div>
              <div className="flex items-center">
                 <LanguageSelector />
@@ -61,7 +59,11 @@ export const LandingView: React.FC<LandingViewProps> = ({ onEnter }) => {
         {/* Hero Section */}
         <div className="flex flex-col items-center text-center max-w-4xl mx-auto">
             
-            <h1 className="text-5xl md:text-7xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-white via-indigo-200 to-indigo-400 tracking-tight mb-6 animate-fade-in-up">
+            <div className="mb-8 animate-fade-in">
+                <Logo size="xl" className="mx-auto" />
+            </div>
+
+            <h1 className="text-5xl md:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-indigo-200 to-indigo-400 tracking-tight mb-6 animate-fade-in-up">
                 {t('landing.heroTitle')}
             </h1>
             
@@ -71,13 +73,13 @@ export const LandingView: React.FC<LandingViewProps> = ({ onEnter }) => {
             
             <button
                 onClick={onEnter}
-                className="group relative px-8 py-4 bg-white text-indigo-900 font-bold text-lg rounded-full shadow-[0_0_20px_rgba(255,255,255,0.3)] hover:shadow-[0_0_30px_rgba(255,255,255,0.5)] hover:scale-105 transition-all duration-300 animate-fade-in-up"
+                className="group relative px-10 py-4 bg-white text-indigo-900 font-black text-xl rounded-full shadow-[0_0_25px_rgba(255,255,255,0.2)] hover:shadow-[0_0_40px_rgba(99,102,241,0.5)] hover:scale-105 transition-all duration-300 animate-fade-in-up"
                 style={{ animationDelay: '0.2s' }}
             >
                 <span className="absolute inset-0 rounded-full bg-gradient-to-r from-indigo-500 to-cyan-500 opacity-0 group-hover:opacity-10 transition-opacity"></span>
                 {t('landing.heroCta')}
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 inline-block ml-2 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 inline-block ml-2 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                 </svg>
             </button>
         </div>

@@ -69,6 +69,7 @@ export const ToolsView: React.FC = () => {
     const [activeTool, setActiveTool] = useState<Tool>('fault');
     const [activeNetworkTab, setActiveNetworkTab] = useState<NetworkTool>('crc');
     const [result, setResult] = useState<string | { text: string; groundingMetadata?: any } | null>(null);
+    const [fixResult, setFixResult] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [showCommissioning, setShowCommissioning] = useState(false);
@@ -104,6 +105,7 @@ export const ToolsView: React.FC = () => {
 
     const resetForm = () => {
         setResult(null);
+        setFixResult(null);
         setError(null);
         setLogicIssues([]);
         setCrcResult(null);
@@ -151,7 +153,7 @@ export const ToolsView: React.FC = () => {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (activeTool !== 'network' || activeNetworkTab !== 'crc') setIsLoading(true);
-        setResult(null); setError(null); setLogicIssues([]);
+        setResult(null); setFixResult(null); setError(null); setLogicIssues([]);
         
         try {
             switch (activeTool) {
@@ -455,20 +457,35 @@ export const ToolsView: React.FC = () => {
 
                 {/* Results Area */}
                 {error && <div className="px-6 pb-6"><ErrorAlert message={error} /></div>}
-                {(result || (logicIssues.length > 0 && activeTool === 'validator')) && (
+                {(result || (logicIssues.length > 0 && activeTool === 'validator') || fixResult) && (
                     <div className="border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/30 px-6 py-8">
                         {activeTool === 'validator' && logicIssues.length > 0 ? (
-                            <div className="space-y-4">
-                                <h3 className="font-bold text-lg text-red-600 dark:text-red-400">{t('tools.logicValidator.analysisResults')}</h3>
-                                {logicIssues.map((issue, i) => (
-                                    <div key={i} className="flex gap-3 p-3 bg-white dark:bg-gray-800 rounded-lg border-l-4 border-red-500 shadow-sm">
-                                        <span className="font-mono text-xs font-bold text-gray-500 pt-1">Ln {issue.line}</span>
-                                        <p className="text-sm text-gray-700 dark:text-gray-300">{issue.message}</p>
+                            <div className="space-y-6">
+                                <div>
+                                    <h3 className="font-bold text-lg text-red-600 dark:text-red-400 mb-4">{t('tools.logicValidator.analysisResults')}</h3>
+                                    <div className="space-y-3">
+                                        {logicIssues.map((issue, i) => (
+                                            <div key={i} className="flex gap-3 p-3 bg-white dark:bg-gray-800 rounded-lg border-l-4 border-red-500 shadow-sm">
+                                                <span className="font-mono text-xs font-bold text-gray-500 pt-1">Ln {issue.line}</span>
+                                                <p className="text-sm text-gray-700 dark:text-gray-300">{issue.message}</p>
+                                            </div>
+                                        ))}
                                     </div>
-                                ))}
-                                <button onClick={async () => { setIsLoading(true); try { setResult(await suggestPlcLogicFix({ language, code: processedCode, issues: logicIssues })); } catch (e) { setError("Failed to suggest fix."); } finally { setIsLoading(false); } }} className="text-sm font-semibold text-indigo-600 hover:underline mt-2">
-                                    {t('tools.logicValidator.suggestButton')}
-                                </button>
+                                    <button 
+                                        onClick={async () => { setIsLoading(true); try { setFixResult(await suggestPlcLogicFix({ language, code: processedCode, issues: logicIssues })); } catch (e) { setError("Failed to suggest fix."); } finally { setIsLoading(false); } }} 
+                                        className="mt-4 px-4 py-2 bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300 rounded-lg font-semibold text-sm hover:bg-indigo-200 dark:hover:bg-indigo-900/70 transition-colors flex items-center gap-2"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clipRule="evenodd" /></svg>
+                                        {t('tools.logicValidator.suggestButton')}
+                                    </button>
+                                </div>
+                                
+                                {fixResult && (
+                                    <div className="border-t border-gray-200 dark:border-gray-700 pt-6 animate-fade-in-up">
+                                        <h3 className="font-bold text-lg text-green-600 dark:text-green-400 mb-4">Corrected Logic</h3>
+                                        <ResultDisplay result={fixResult} />
+                                    </div>
+                                )}
                             </div>
                         ) : result ? (
                             <ResultDisplay result={result} />

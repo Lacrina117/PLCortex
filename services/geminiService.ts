@@ -27,9 +27,14 @@ const callApiEndpoint = async (task: string, params: any, modelOverride?: string
     
     if (useDirectClientCall && ai) {
         try {
-            let request: GenerateContentRequest = { model };
-            if (params.contents) request.contents = params.contents;
-            else throw new Error('Request params must include contents.');
+            if (!params.contents) {
+                throw new Error('Request params must include contents.');
+            }
+
+            let request: GenerateContentRequest = { 
+                model,
+                contents: params.contents
+            };
             
             if (params.config) request.config = params.config;
             
@@ -112,31 +117,92 @@ export interface LogEntry {
     status: 'RESUELTO' | 'PENDIENTE';
 }
 
-// ... (Existing functions like generateChatResponse, generatePractice, etc. are preserved here) ...
 export const generateChatResponse = async (messages: Message[], context: ChatContext): Promise<string> => {
-    // ... existing implementation
-    return "";
+    // STRICT SECURITY & LOGIC VALIDATION INSTRUCTION
+    // Augmented with specific syntax rules to prevent common LLM hallucinations in ST
+    let systemInstruction = `You are PLCortex, an expert Industrial Automation Engineer. 
+    Language: ${context.language === 'es' ? 'Spanish' : 'English'}.
+    Context: Topic=${context.topic}, PLC=${context.plcBrand}/${context.plcSoftware}, VFD=${context.vfdBrand}/${context.vfdModel}.
+    
+    *** CRITICAL CODE GENERATION RULES (IEC 61131-3) ***
+    When generating Structured Text (ST), you MUST strictly adhere to these rules. The user demands 100% compilation success.
+    
+    1. ASSIGNMENT OPERATOR: Use ':=' for assignment. NEVER use '=' for assignment.
+       - Correct: MyVar := 10;
+       - WRONG: MyVar = 10;
+    
+    2. EQUALITY CHECK: Use '=' for comparison. NEVER use '==' for comparison.
+       - Correct: IF MyVar = 10 THEN
+       - WRONG: IF MyVar == 10 THEN
+    
+    3. TERMINATION: Every statement must end with a semicolon ';'.
+    
+    4. BLOCKS: Ensure every 'IF' has an 'END_IF', every 'CASE' has an 'END_CASE', every 'FOR' has an 'END_FOR'.
+    
+    5. DECLARATION: You must mentally declare every variable used. If it's a temp variable, declare it in a comment block above.
+    
+    6. SAFETY: No infinite loops (WHILE TRUE). No division by zero.
+    
+    *** EXECUTION PROCESS ***
+    Before outputting code, you must "Compile" it in your thought process. 
+    If you detect a syntax error (like using = instead of :=), FIX IT immediately before outputting.
+    
+    Provide concise, technical answers. Use Markdown for code blocks.`;
+
+    const contents = messages.map(msg => ({
+        role: msg.role,
+        parts: msg.parts
+    }));
+
+    try {
+        const response = await callApiEndpoint('chat', {
+            contents,
+            config: {
+                systemInstruction,
+                // ENABLE HIGH THINKING BUDGET FOR PERFECT LOGIC
+                thinkingConfig: { thinkingBudget: 16000 }, 
+                temperature: 0.7, 
+            }
+        }, 'gemini-3-pro-preview'); // Explicitly use Pro model which supports thinking
+        return response.text;
+    } catch (error) {
+        console.error('Chat generation error:', error);
+        throw new Error('Failed to generate response.');
+    }
 };
 
 export const generatePractice = async (params: PracticeParams): Promise<string> => {
     const isSpanish = params.language === 'es';
     const languageName = isSpanish ? 'Spanish' : 'English';
-    const difficultyMap = {
-        'Beginner': isSpanish ? 'Principiante' : 'Beginner',
-        'Intermediate': isSpanish ? 'Intermedio' : 'Intermediate',
-        'Advanced': isSpanish ? 'Avanzado' : 'Advanced'
-    };
     
     const context = params.topic === 'PLC'
         ? `PLC Brand: ${params.plcBrand}, Software: ${params.plcSoftware}, Language: ${params.plcLanguage}`
         : `VFD Brand: ${params.vfdBrand}, Model: ${params.vfdModel}`;
 
+    // Chain-of-Verification Prompt for Practice Problems with Explicit Linting Rules
     const prompt = `
     Create a unique, realistic industrial automation practice problem.
     Topic: ${params.topic}
     Difficulty: ${params.difficulty}
     Context: ${context}
     Language: ${languageName}
+
+    *** STRICT CODE GENERATION REQUIREMENTS ***
+    If generating Structured Text (ST):
+    1. Use ':=' for assignment. (e.g., Tag := 1;)
+    2. Use '=' for equality comparison. (e.g., IF Tag = 1 THEN)
+    3. Use ';' at the end of every line.
+    4. Ensure all variables are defined in the solution or implied as standard tags.
+    5. No '==' operators allowed in ST.
+
+    *** THOUGHT PROCESS ***
+    1. PLAN: Design the scenario.
+    2. DRAFT CODE: Write the solution code.
+    3. COMPILER SIMULATION: Review the code line-by-line looking for:
+       - Missing semicolons
+       - Incorrect assignment operators (= vs :=)
+       - Unclosed IF/CASE statements
+    4. FINALIZE: Output only the corrected, error-free code.
 
     Structure the response exactly as follows using Markdown:
     ### Scenario
@@ -146,16 +212,18 @@ export const generatePractice = async (params: PracticeParams): Promise<string> 
     ### Hint
     (A helpful clue without giving away the answer)
     ### Solution
-    (Full solution code or parameter list. Use code blocks for PLC logic.)
+    (Full, SYNTAX-CHECKED solution code. Ensure it uses standard IEC 61131-3 syntax precisely.)
     `;
 
     try {
         const response = await callApiEndpoint('generatePractice', {
             contents: [{ parts: [{ text: prompt }] }],
             config: {
-                temperature: 0.7, // Higher creativity for varied problems
+                // ENABLE HIGH THINKING BUDGET FOR PERFECT LOGIC
+                thinkingConfig: { thinkingBudget: 16000 },
+                temperature: 0.7, 
             }
-        });
+        }, 'gemini-3-pro-preview'); // Explicitly use Pro model
         return response.text;
     } catch (error) {
         console.error('Error generating practice:', error);
@@ -164,63 +232,294 @@ export const generatePractice = async (params: PracticeParams): Promise<string> 
 };
 
 export const generateWiringGuide = async (params: WiringGuideParams): Promise<string> => {
-    // ... existing implementation
-    return "";
+    const isSpanish = params.language === 'es';
+    const prompt = `
+    Generate a detailed wiring guide and connection diagram description.
+    Device: ${params.vfdBrand} ${params.vfdModel}
+    Motor: ${params.motorHp}HP, ${params.motorVoltage}V, ${params.motorFla}A
+    Control: ${params.controlMethod} via ${params.plcSoftware}
+    Application: ${params.application}
+    Language: ${isSpanish ? 'Spanish' : 'English'}
+
+    Include:
+    1. Power wiring (L1/L2/L3 to U/V/W).
+    2. Control wiring pinouts (specific to this VFD model).
+    3. Parameter settings required for this control method.
+    `;
+
+    try {
+        const response = await callApiEndpoint('generateWiring', {
+            contents: [{ parts: [{ text: prompt }] }]
+        });
+        return response.text;
+    } catch (error) {
+        throw new Error('Failed to generate wiring guide.');
+    }
 };
 
 export const generateCommissioningChatResponse = async (messages: Message[], language: 'en' | 'es', brand: string, model: string, application: string): Promise<string> => {
-    // ... existing implementation
-    return "";
+    const systemInstruction = `You are an expert Commissioning Engineer for Variable Frequency Drives (VFDs).
+    Device: ${brand} ${model}
+    Application: ${application}
+    Language: ${language === 'es' ? 'Spanish' : 'English'}
+    
+    Your goal is to guide the user step-by-step through commissioning.
+    
+    IMPORTANT:
+    If the user asks about a specific terminal or function, you MUST verify if it exists in the provided JSON terminal data.
+    If you mention specific terminals to check/wire, append a JSON object at the very end of your response listing them for highlighting.
+    Format:
+    [Your text response here...]
+    { "diagram_terminals": ["ID1", "ID2"] }
+    `;
+
+    const contents = messages.map(msg => ({
+        role: msg.role,
+        parts: msg.parts
+    }));
+
+    try {
+        const response = await callApiEndpoint('commissioningChat', {
+            contents,
+            config: { systemInstruction }
+        });
+        return response.text;
+    } catch (error) {
+        throw new Error('Failed to generate response.');
+    }
 };
 
 export const analyzeFaultCode = async (params: { language: 'en' | 'es'; vfdBrand: string; vfdModel: string; faultCode: string; context: string; imageBase64?: string; mimeType?: string }): Promise<string> => {
-    // ... existing implementation
-    return "";
+    const isSpanish = params.language === 'es';
+    
+    let prompt = `
+    Analyze the following VFD Fault.
+    Brand: ${params.vfdBrand}
+    Model: ${params.vfdModel}
+    Fault Code: ${params.faultCode}
+    User Context: ${params.context}
+    Language: ${isSpanish ? 'Spanish' : 'English'}
+
+    Provide:
+    1. The official name and meaning of the fault.
+    2. 3-4 distinct potential root causes (electrical, mechanical, or parameter).
+    3. Step-by-step troubleshooting actions.
+    `;
+
+    const parts: any[] = [{ text: prompt }];
+    if (params.imageBase64) {
+        parts.push({
+            inlineData: {
+                mimeType: params.mimeType || 'image/jpeg',
+                data: params.imageBase64
+            }
+        });
+    }
+
+    try {
+        const response = await callApiEndpoint('analyzeFaultCode', {
+            contents: [{ parts }],
+        });
+        return response.text;
+    } catch (error) {
+        throw new Error('Failed to analyze fault.');
+    }
 };
 
 export const analyzeScanTime = async (params: { language: 'en' | 'es'; code: string }): Promise<string> => {
-    // ... existing implementation
-    return "";
+    const prompt = `
+    Analyze the following PLC code for scan time impact.
+    Language: ${params.language === 'es' ? 'Spanish' : 'English'}
+    
+    Code:
+    ${params.code}
+
+    Identify heavy loops, floating point math, string operations, or blocking calls that increase cycle time. Estimate efficiency.
+    `;
+    try {
+        const response = await callApiEndpoint('analyzeScanTime', { contents: [{ parts: [{ text: prompt }] }] });
+        return response.text;
+    } catch (error) { throw new Error('Failed to analyze scan time.'); }
 };
 
 export const generateEnergyEfficiencyPlan = async (params: { language: 'en' | 'es'; applicationType: string; loadProfile: string }): Promise<string> => {
-    // ... existing implementation
-    return "";
+    const prompt = `
+    Create a VFD Energy Efficiency Plan.
+    Application: ${params.applicationType}
+    Load Profile: ${params.loadProfile}
+    Language: ${params.language === 'es' ? 'Spanish' : 'English'}
+    
+    Recommend parameters (Flux Optimization, Sleep Mode, PID), sizing check, and ROI estimation logic.
+    `;
+    try {
+        const response = await callApiEndpoint('generateEnergy', { contents: [{ parts: [{ text: prompt }] }] });
+        return response.text;
+    } catch (error) { throw new Error('Failed to generate energy plan.'); }
 };
 
 export const verifyCriticalLogic = async (params: { language: 'en' | 'es'; code: string; rules: string }): Promise<string> => {
-    // ... existing implementation
-    return "";
+    const prompt = `
+    Verify if the PLC logic strictly follows these Safety Rules.
+    Rules: ${params.rules}
+    Code:
+    ${params.code}
+    
+    Language: ${params.language === 'es' ? 'Spanish' : 'English'}
+    Start response with ✅ (Compliant) or ❌ (Violated). Explain why.
+    `;
+    try {
+        const response = await callApiEndpoint('verifyLogic', { contents: [{ parts: [{ text: prompt }] }] });
+        return response.text;
+    } catch (error) { throw new Error('Failed to verify logic.'); }
 };
 
+// --- STRICT LOGIC VALIDATOR WITH AUSTERE THINKING ---
 export const validatePlcLogic = async (params: { language: 'en' | 'es'; code: string }): Promise<string> => {
-    // ... existing implementation
-    return "";
+    const prompt = `
+    You are an AUSTERE and PEDANTIC Senior PLC Code Auditor (IEC 61131-3 Expert).
+    Perform a STRICT SAFETY AUDIT on the provided PLC code. Do NOT overlook minor errors.
+    
+    CHECK FOR:
+    1. Syntax errors specific to the likely platform (SCL, ST). BE PRECISE (e.g., := vs =).
+    2. Infinite loops (WHILE loops without exit conditions).
+    3. Race conditions / Double Coil usage (Multiple assignments to same variable).
+    4. Uninitialized variables used in logic.
+    5. Division by zero risks.
+    6. Array index out of bounds risks.
+    
+    Use your Thinking process to simulate the code execution line-by-line before answering.
+    
+    Return ONLY a JSON array of objects.
+    Schema: [{ "line": number, "type": "Error" | "Warning", "message": "concise description" }]
+
+    If the code is 100% perfect and safe, return an empty array [].
+
+    Code to Analyze:
+    ${params.code}
+    `;
+
+    try {
+        const response = await callApiEndpoint('validateLogic', {
+            contents: [{ parts: [{ text: prompt }] }],
+            config: { 
+                responseMimeType: 'application/json',
+                // Enable MAX thinking for rigorous validation
+                thinkingConfig: { thinkingBudget: 16000 }
+            }
+        }, 'gemini-3-pro-preview');
+        return response.text;
+    } catch (error) {
+        console.error("Logic validation failed:", error);
+        throw new Error("Failed to validate logic.");
+    }
 };
 
+// --- STRICT LOGIC FIX SUGGESTION WITH THINKING ---
 export const suggestPlcLogicFix = async (params: { language: 'en' | 'es'; code: string; issues: LogicIssue[] }): Promise<string> => {
-    // ... existing implementation
-    return "";
+    const prompt = `
+    The following PLC code has issues identified by an austere auditor. 
+    You must refactor it to be PRODUCTION READY, SAFE, and SYNTACTICALLY PERFECT.
+    
+    Issues Identified:
+    ${JSON.stringify(params.issues)}
+
+    Original Code:
+    ${params.code}
+
+    INSTRUCTIONS:
+    1. Fix all identified syntax and logic errors.
+    2. Add comments explaining the safety fix.
+    3. Ensure the code is compliant with IEC 61131-3 (Use := for assignment, ; at end of lines).
+    
+    Provide ONLY the corrected code block (Markdown) followed by a brief explanation in ${params.language === 'es' ? 'Spanish' : 'English'}.
+    `;
+
+    try {
+        const response = await callApiEndpoint('fixLogic', {
+            contents: [{ parts: [{ text: prompt }] }],
+            config: {
+                // Enable thinking for better fix generation
+                thinkingConfig: { thinkingBudget: 16000 }
+            }
+        }, 'gemini-3-pro-preview');
+        return response.text;
+    } catch (error) {
+        throw new Error("Failed to suggest fix.");
+    }
 };
 
 export const analyzeAsciiFrame = async (params: { language: 'en' | 'es'; frame: string }): Promise<string> => {
-    // ... existing implementation
-    return "";
+    const prompt = `
+    Decode this ASCII/Serial frame used in industrial automation (e.g. barcode reader, scale, printer).
+    Frame: ${params.frame}
+    Language: ${params.language === 'es' ? 'Spanish' : 'English'}
+    Break down: STX/ETX, Payload, Checksum (if present).
+    `;
+    try {
+        const response = await callApiEndpoint('analyzeAscii', { contents: [{ parts: [{ text: prompt }] }] });
+        return response.text;
+    } catch (error) { throw new Error('Failed to analyze ASCII.'); }
 };
 
 export const getNetworkHardwarePlan = async (params: { language: 'en' | 'es'; protocols: string[] }): Promise<string> => {
-    // ... existing implementation
-    return "";
+    const prompt = `
+    Design a network bridge/gateway solution to connect these protocols: ${params.protocols.join(', ')}.
+    Language: ${params.language === 'es' ? 'Spanish' : 'English'}
+    Suggest specific hardware (ProSoft, Anybus, Moxa, Red Lion) and topology.
+    `;
+    try {
+        const response = await callApiEndpoint('networkPlan', { contents: [{ parts: [{ text: prompt }] }] });
+        return response.text;
+    } catch (error) { throw new Error('Failed to plan network.'); }
 };
 
+// --- IMPLEMENTED LADDER TO TEXT ---
 export const translateLadderToText = async (params: { language: 'en' | 'es'; code: string }): Promise<string> => {
-    // ... existing implementation
-    return "";
+    const prompt = `
+    Convert the following ASCII Ladder Logic or text-based Ladder representation into IEC 61131-3 Structured Text (ST).
+    Ensure variable names are preserved.
+    
+    Input Ladder:
+    ${params.code}
+    
+    Return ONLY the Structured Text code.
+    `;
+    try {
+        const response = await callApiEndpoint('ladderToText', {
+            contents: [{ parts: [{ text: prompt }] }]
+        });
+        return response.text;
+    } catch (error) {
+        return params.code; // Fallback to original if fails
+    }
 };
 
 export const analyzeMotorNameplate = async (params: { imageDataBase64: string; mimeType: string }): Promise<{ nominalCurrent?: string; serviceFactor?: string }> => {
-    // ... existing implementation
-    return {};
+    const prompt = `
+    Analyze this image of an electric motor nameplate.
+    Extract:
+    1. Nominal Current (FLA, Amps).
+    2. Service Factor (SF).
+    
+    Return JSON: { "nominalCurrent": "number", "serviceFactor": "number" }.
+    If not found, return null values.
+    `;
+    
+    try {
+        const response = await callApiEndpoint('analyzePlate', {
+            contents: [{
+                parts: [
+                    { text: prompt },
+                    { inlineData: { mimeType: params.mimeType, data: params.imageDataBase64 } }
+                ]
+            }],
+            config: { responseMimeType: 'application/json' }
+        }, 'gemini-2.5-flash'); // Use flash for vision speed
+        return JSON.parse(response.text);
+    } catch (error) {
+        console.error('Nameplate analysis failed:', error);
+        throw new Error('Failed to analyze nameplate.');
+    }
 };
 
 // --- IMPROVED SENSOR RECOMMENDATION FUNCTION ---
@@ -323,8 +622,26 @@ export const convertPlcCode = async (params: {
     targetPlatform: string;
     code: string;
 }): Promise<string> => {
-    // ... existing implementation
-    return "";
+    const prompt = `
+    Migrate the following PLC code.
+    From: ${params.sourceBrand} (${params.sourcePlatform})
+    To: ${params.targetBrand} (${params.targetPlatform})
+    Language: ${params.language === 'es' ? 'Spanish' : 'English'}
+    
+    Original Code:
+    ${params.code}
+    
+    Provide the migrated code in a code block, followed by a list of key changes and potential compatibility issues.
+    `;
+    
+    try {
+        const response = await callApiEndpoint('migrateCode', {
+            contents: [{ parts: [{ text: prompt }] }]
+        });
+        return response.text;
+    } catch (error) {
+        throw new Error('Failed to migrate code.');
+    }
 };
 
 // --- NEW SHIFT LOG FUNCTIONS ---

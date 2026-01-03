@@ -5,6 +5,7 @@ import { ThemeToggle } from './ThemeToggle';
 import { Language, useLanguage } from '../contexts/LanguageContext';
 import { View } from '../App';
 import { getUserGroup } from '../services/authService';
+import { Logo } from './Logo';
 
 interface HeaderProps {
     currentView: View;
@@ -51,7 +52,6 @@ export const Header: React.FC<HeaderProps> = ({ currentView, setView, userDescri
     const { t } = useTranslation();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     
-    // Check if user belongs to an enterprise group
     const userGroup = getUserGroup();
     const isEnterprise = userGroup !== 'Individual';
 
@@ -107,7 +107,6 @@ export const Header: React.FC<HeaderProps> = ({ currentView, setView, userDescri
 
     const navItems: { key: View, label: string, description: string }[] = [
         { key: 'solutions', label: t('header.solutions'), description: t('header_descriptions.solutions') },
-        // Only include Shift Log if user is in an enterprise group
         ...(isEnterprise ? [{ key: 'shiftLog' as View, label: t('header.shiftLog'), description: t('header_descriptions.shiftLog') }] : []),
         { key: 'practices', label: t('header.practices'), description: t('header_descriptions.practices') },
         { key: 'tools', label: t('header.tools'), description: t('header_descriptions.tools') },
@@ -139,13 +138,11 @@ export const Header: React.FC<HeaderProps> = ({ currentView, setView, userDescri
             <div className="container mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex items-center justify-between h-16">
                     <div className="flex items-center">
-                        <button onClick={() => setView('dashboard')} className="flex-shrink-0 flex items-center gap-2 group focus:outline-none">
-                             <div className="relative flex items-center justify-center w-8 h-8 bg-indigo-600 rounded-lg shadow-lg shadow-indigo-500/40 group-hover:scale-105 transition-transform duration-300">
-                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd" />
-                                 </svg>
+                        <button onClick={() => setView('dashboard')} className="flex-shrink-0 flex items-center gap-3 group focus:outline-none">
+                             <div className="relative flex items-center justify-center w-9 h-9 bg-indigo-600 rounded-xl shadow-lg shadow-indigo-500/40 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
+                                 <Logo size="sm" />
                              </div>
-                             <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-400">PLCortex</span>
+                             <span className="text-xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-400 tracking-tight">PLCortex</span>
                         </button>
                     </div>
                     <div className="hidden md:flex md:items-center md:space-x-4">
