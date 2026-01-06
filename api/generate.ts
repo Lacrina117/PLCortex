@@ -1,17 +1,10 @@
 
-// FIX: Corrected import from '@google/genai'. `GenerateContentRequest` is deprecated and was replaced with `GenerateContentParameters` which is the correct type. Since this file intelligently switches between API calls, this type is aliased to `GenerateContentRequest` to maintain consistency with the existing code structure.
 import { GoogleGenAI, GenerateContentParameters as GenerateContentRequest } from "@google/genai";
 
-// This function is executed on the server (Vercel Edge Function)
-// The API_KEY is securely accessed from environment variables set in Vercel
-if (!process.env.API_KEY) {
-    throw new Error("API_KEY environment variable not set in Vercel project settings.");
-}
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-
-export const config = {
-  runtime: 'edge',
-};
+// Cambiamos a Node.js runtime por defecto para soportar mayor duración de ejecución
+// Edge functions tienen limites estrictos en el plan gratuito.
+export const maxDuration = 60; // Permitir hasta 60 segundos
+export const dynamic = 'force-dynamic';
 
 export default async function handler(req: Request) {
   if (req.method !== 'POST') {
@@ -19,19 +12,23 @@ export default async function handler(req: Request) {
   }
 
   try {
+    const apiKey = process.env.API_KEY;
+    if (!apiKey) {
+        throw new Error("API_KEY environment variable not set on server.");
+    }
+    const ai = new GoogleGenAI({ apiKey });
+
     const { task, params, model } = await req.json();
 
     if (!task || !params) {
         return new Response(JSON.stringify({ error: 'Missing task or params' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
     }
 
-    // Default to gemini-3-pro-preview if no model is specified, but allow override (e.g. for gemini-2.5-flash)
-    const selectedModel = model || 'gemini-3-pro-preview';
+    // Default to gemini-2.5-flash for speed and reliability in Serverless environment
+    const selectedModel = model || 'gemini-2.5-flash';
 
     let request: GenerateContentRequest = { model: selectedModel, contents: '' };
 
-    // All current tasks use the same structure: a contents object and an optional config.
-    // The client-side service will be responsible for creating the final contents.
     if (params.contents) {
         request.contents = params.contents;
     } else {

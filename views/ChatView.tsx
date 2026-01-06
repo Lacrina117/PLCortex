@@ -6,7 +6,6 @@ import { MarkdownRenderer } from '../components/MarkdownRenderer';
 import { BrandLogo } from '../components/BrandLogo';
 import { Message } from '../services/geminiService';
 
-// Generic interfaces to be used by parent components
 export interface ChatContext {
     topic: 'VFD' | 'PLC';
     language: 'en' | 'es';
@@ -71,8 +70,6 @@ const CopyButton: React.FC<{ text: string }> = ({ text }) => {
 
 const SuggestedPrompts: React.FC<{ context: ChatContext, onSelect: (prompt: string) => void }> = ({ context, onSelect }) => {
     const { t } = useTranslation();
-    
-    // Determine suggestions based on context
     const suggestions = useMemo(() => {
         const list = [];
         if (context.topic === 'PLC') {
@@ -106,7 +103,7 @@ const SuggestedPrompts: React.FC<{ context: ChatContext, onSelect: (prompt: stri
 interface ChatViewProps<T extends ChatContext> {
     storageKey: string;
     WelcomePlaceholderComponent: React.FC<{ onNewChat?: (prompt?: string) => void, context: T }>;
-    generateResponse: (messages: Message[], context: T) => Promise<string>;
+    generateResponse: (messages: Message[], context: T) => AsyncGenerator<string, void, unknown>;
     renderContextDisplay: (context: T) => string;
     ContextSelectionComponent: React.FC<{ context: T; setContext: (context: T) => void; isLocked: boolean }>;
     initialContext: T;
@@ -166,23 +163,18 @@ export const ChatView = <T extends ChatContext>({
     useEffect(() => {
         const textarea = textareaRef.current;
         if (textarea) {
-            textarea.style.height = 'auto'; // Reset height to get the new scrollHeight
-            textarea.style.height = `${Math.min(textarea.scrollHeight, 192)}px`; // Max height equivalent to max-h-48
+            textarea.style.height = 'auto'; 
+            textarea.style.height = `${Math.min(textarea.scrollHeight, 192)}px`;
         }
     }, [currentInput]);
 
-    const activeConversation = useMemo(() => {
-        return conversations.find(c => c.id === activeConvId);
-    }, [conversations, activeConvId]);
+    const activeConversation = useMemo(() => conversations.find(c => c.id === activeConvId), [conversations, activeConvId]);
 
-    const isContextLocked = useMemo(() => {
-        return activeConversation ? activeConversation.messages.length > 0 : false;
-    }, [activeConversation]);
+    const isContextLocked = useMemo(() => !!(activeConversation && activeConversation.messages.length > 0), [activeConversation]);
     
     useEffect(() => {
         if (activeConversation) {
             setContext(activeConversation.context);
-            // Keep context editor closed by default, user can open it if needed.
             setIsContextEditorOpen(false);
         }
     }, [activeConversation]);
@@ -190,9 +182,7 @@ export const ChatView = <T extends ChatContext>({
     const handleContextChange = (newContext: T) => {
         setContext(newContext);
         if (activeConvId) {
-            setConversations(prev => prev.map(c => 
-                c.id === activeConvId ? { ...c, context: newContext } : c
-            ));
+            setConversations(prev => prev.map(c => c.id === activeConvId ? { ...c, context: newContext } : c));
         }
     };
 
@@ -202,16 +192,14 @@ export const ChatView = <T extends ChatContext>({
             id: newId,
             title: t(newChatTitleKey),
             messages: [],
-            context: { ...initialContext, ...context, language }, // Carry over configured context
+            context: { ...initialContext, ...context, language },
             createdAt: Date.now(),
         };
         setConversations(prev => [newConv, ...prev.sort((a,b) => b.createdAt - a.createdAt)]);
         setActiveConvId(newId);
         setIsHistoryOpen(false);
         
-        if (prompt) {
-            handleSendMessage(prompt, newId);
-        }
+        if (prompt) handleSendMessage(prompt, newId);
     };
 
     const handleDeleteChat = (e: React.MouseEvent, id: string) => {
@@ -246,47 +234,63 @@ export const ChatView = <T extends ChatContext>({
         }
 
         const userMessage: Message = { role: 'user', parts: [{ text: prompt }], timestamp: Date.now() };
-        const updatedMessages = [...conversationForThisMessage.messages, userMessage];
         const isFirstMessage = conversationForThisMessage.messages.length === 0;
-        const newTitle = isFirstMessage
-            ? prompt.substring(0, 40) + (prompt.length > 40 ? '...' : '')
-            : conversationForThisMessage.title;
+        const newTitle = isFirstMessage ? prompt.substring(0, 40) + (prompt.length > 40 ? '...' : '') : conversationForThisMessage.title;
 
+        // Initialize user message
         if (isNewConversation) {
-            setConversations(prev => [{ ...conversationForThisMessage!, messages: updatedMessages, title: newTitle }, ...prev]);
+            setConversations(prev => [{ ...conversationForThisMessage!, messages: [userMessage], title: newTitle }, ...prev]);
             setActiveConvId(conversationId);
         } else {
-            setConversations(prev => prev.map(c =>
-                c.id === conversationId
-                    ? { ...c, messages: updatedMessages, title: newTitle }
-                    : c
-            ));
+            setConversations(prev => prev.map(c => c.id === conversationId ? { ...c, messages: [...c.messages, userMessage], title: newTitle } : c));
         }
 
         if (!customPrompt) setCurrentInput('');
         setIsLoading(true);
 
         try {
-            const responseText = await generateResponse(updatedMessages, conversationForThisMessage.context);
-            const modelMessage: Message = { role: 'model', parts: [{ text: responseText }], timestamp: Date.now() };
-            setConversations(prev => {
-                const finalMessages = [...updatedMessages, modelMessage];
-                return prev.map(c =>
-                    c.id === conversationId
-                        ? { ...c, messages: finalMessages }
-                        : c
-                );
-            });
+            // Placeholder for AI response
+            const placeholderAiMessage: Message = { role: 'model', parts: [{ text: '' }], timestamp: Date.now() };
+            
+            // Add placeholder
+            setConversations(prev => prev.map(c => {
+                if (c.id === conversationId) {
+                    return { ...c, messages: [...c.messages, placeholderAiMessage] };
+                }
+                return c;
+            }));
+
+            // Consume stream
+            const stream = generateResponse([...conversationForThisMessage.messages, userMessage], conversationForThisMessage.context);
+            let fullText = '';
+
+            for await (const chunk of stream) {
+                fullText += chunk;
+                setConversations(prev => prev.map(c => {
+                    if (c.id === conversationId) {
+                        const newMessages = [...c.messages];
+                        newMessages[newMessages.length - 1] = { ...newMessages[newMessages.length - 1], parts: [{ text: fullText }] };
+                        return { ...c, messages: newMessages };
+                    }
+                    return c;
+                }));
+            }
+
         } catch (err) {
-            const errorMessage: Message = { role: 'model', parts: [{ text: `Error: ${err instanceof Error ? err.message : 'Unknown error'}` }], timestamp: Date.now() };
-            setConversations(prev => {
-                const finalMessages = [...updatedMessages, errorMessage];
-                return prev.map(c =>
-                    c.id === conversationId
-                        ? { ...c, messages: finalMessages }
-                        : c
-                );
-            });
+            const errorMessage = `Error: ${err instanceof Error ? err.message : 'Unknown error'}`;
+            setConversations(prev => prev.map(c => {
+                if (c.id === conversationId) {
+                    // Replace empty placeholder or append error
+                    const msgs = [...c.messages];
+                    if (msgs[msgs.length-1].role === 'model' && msgs[msgs.length-1].parts[0].text === '') {
+                        msgs[msgs.length-1].parts[0].text = errorMessage;
+                    } else {
+                        msgs.push({ role: 'model', parts: [{ text: errorMessage }], timestamp: Date.now() });
+                    }
+                    return { ...c, messages: msgs };
+                }
+                return c;
+            }));
         } finally {
             setIsLoading(false);
         }
@@ -325,7 +329,6 @@ export const ChatView = <T extends ChatContext>({
         {/* Main Chat Area */}
         <div className="flex-1 flex flex-col bg-white dark:bg-gray-800 min-w-0">
             <header className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 grid grid-cols-[auto_1fr_auto] items-center gap-4 flex-shrink-0 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md sticky top-0 z-10">
-                {/* Left Group (Column 1) */}
                 <div className="flex items-center gap-2">
                     <button onClick={() => setIsHistoryOpen(!isHistoryOpen)} className="md:hidden p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700"><svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg></button>
                     {activeConversation && (
@@ -335,12 +338,10 @@ export const ChatView = <T extends ChatContext>({
                     )}
                 </div>
                 
-                {/* Center Group (Column 2) */}
                 <div className="min-w-0 text-center">
                     <h2 className="text-base font-bold truncate text-gray-800 dark:text-white">{activeConversation ? activeConversation.title : t(headerTitleKey)}</h2>
                 </div>
 
-                {/* Right Group (Column 3) */}
                 <div className="flex items-center justify-end gap-2">
                     <button
                         onClick={() => setIsContextEditorOpen(prev => !prev)}
@@ -385,7 +386,7 @@ export const ChatView = <T extends ChatContext>({
                                 </div>
                             </div>
                         ))}
-                        {isLoading && (
+                        {isLoading && activeConversation.messages[activeConversation.messages.length - 1]?.role === 'user' && (
                              <div className="flex items-start gap-4 justify-start animate-fade-in">
                                 <AiAvatar />
                                 <div className="p-4 rounded-2xl bg-gray-100 dark:bg-gray-700/80 rounded-bl-none border border-gray-200 dark:border-gray-600 flex items-center gap-3">
@@ -422,10 +423,7 @@ export const ChatView = <T extends ChatContext>({
                         className="flex-shrink-0 p-2.5 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 disabled:bg-gray-300 dark:disabled:bg-gray-600 disabled:cursor-not-allowed transition-all shadow-md mb-0.5 mr-0.5 group"
                     >
                         {isLoading ? (
-                            <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
+                            <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
                         ) : (
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" viewBox="0 0 20 20" fill="currentColor">
                                 <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.428A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
