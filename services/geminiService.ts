@@ -194,12 +194,48 @@ export async function* generateChatResponse(messages: Message[], context: ChatCo
 
 // --- EXISTING FUNCTIONS FOR TOOLS (Non-Streaming) ---
 
+const getSolutionReqs = (topic: 'VFD' | 'PLC', plcLanguage?: string) => {
+    if (topic === 'PLC' && (plcLanguage?.includes('Ladder') || plcLanguage?.includes('LD'))) {
+        return `
+    **STRICT REQUIREMENT: PROVIDE BOTH ASCII DIAGRAM AND MNEMONICS**
+
+    **Part 1: ASCII Ladder Diagram (MANDATORY)**
+    - DRAW IT WIDE AND CLEAN. Do not cramp symbols.
+    - **Use at least 5-10 dashes** \`-----\` between components.
+    - **ALIGNMENT:** The vertical rails \`|\` must be aligned. The branch lines must drop down cleanly.
+    - **TAG PLACEMENT:** Put the TAG NAME (e.g., Local:1:I.Data.0) *ABOVE* the symbol.
+    - **LABEL PLACEMENT:** Put the FUNCTION NAME (e.g., Start) *BELOW* the symbol in parentheses.
+    
+    *Correct 3-Wire Control Template (Use this visual style):*
+    \`\`\`text
+         Start_Tag           Stop_Tag            OL_Tag               Motor_Coil_Tag
+         Local:I:0.0         Local:I:0.1         Local:I:0.2          Local:O:0.0
+    -------[ ]------------------[ ]------------------[ ]--------------------( )-------
+       |   (Start)        |     (Stop)               (OL)               (Motor)
+       |                  |
+       | Motor_Latch_Tag  |
+       | Local:O:0.0      |
+       -------[ ]----------
+           (Latch)
+    \`\`\`
+    *Note: Ensure the Latch (seal-in) is parallel ONLY to the Start button for a standard 3-wire circuit, unless the problem specifies a different logic.*
+
+    **Part 2: Mnemonics (Instruction List)**
+    - Provide the exact instruction list code matching the diagram (e.g. BST, XIC, NXB, XIC, BND, XIC, XIC, OTE).
+    - Use standard Allen-Bradley or IEC mnemonic codes.
+        `;
+    }
+    return "(Full, SYNTAX-CHECKED solution code. Ensure it uses standard IEC 61131-3 syntax precisely.)";
+};
+
 export const generatePractice = async (params: PracticeParams): Promise<string> => {
     const isSpanish = params.language === 'es';
     const languageName = isSpanish ? 'Spanish' : 'English';
     const context = params.topic === 'PLC'
         ? `PLC Brand: ${params.plcBrand}, Software: ${params.plcSoftware}, Language: ${params.plcLanguage}`
         : `VFD Brand: ${params.vfdBrand}, Model: ${params.vfdModel}`;
+
+    const solutionReqs = getSolutionReqs(params.topic, params.plcLanguage);
 
     const prompt = `
     Create a unique, realistic industrial automation practice problem.
@@ -216,17 +252,51 @@ export const generatePractice = async (params: PracticeParams): Promise<string> 
     ### Hint
     (A helpful clue without giving away the answer)
     ### Solution
-    (Full, SYNTAX-CHECKED solution code. Ensure it uses standard IEC 61131-3 syntax precisely.)
+    ${solutionReqs}
     `;
 
     try {
         const response = await callApiEndpoint('generatePractice', {
             contents: [{ parts: [{ text: prompt }] }],
-            config: { temperature: 0.7 }
+            config: { 
+                temperature: 0.3, // Reduced temperature for stricter ASCII adherence
+                maxOutputTokens: 8192
+            }
         }, 'gemini-3-flash-preview');
         return response.text;
     } catch (error) {
         throw new Error(isSpanish ? 'Error al generar la práctica.' : 'Failed to generate practice.');
+    }
+};
+
+export const generatePracticeSolution = async (params: { language: 'en' | 'es', topic: 'PLC' | 'VFD', practiceText: string, plcLanguage?: string }): Promise<string> => {
+    const isSpanish = params.language === 'es';
+    const solutionReqs = getSolutionReqs(params.topic, params.plcLanguage);
+    
+    const prompt = `
+    I have an industrial automation practice problem. Please generate ONLY the solution section for it.
+    Language: ${isSpanish ? 'Spanish' : 'English'}
+    
+    Problem:
+    ${params.practiceText}
+
+    Requirements for Solution:
+    ${solutionReqs}
+    
+    Start directly with the solution content. Do not add headers like '### Solution'.
+    `;
+
+    try {
+        const response = await callApiEndpoint('generatePracticeSolution', {
+            contents: [{ parts: [{ text: prompt }] }],
+            config: { 
+                temperature: 0.2, // Very low temperature for precise ASCII drawing
+                maxOutputTokens: 8192
+            }
+        }, 'gemini-3-flash-preview');
+        return response.text;
+    } catch (error) {
+        throw new Error(isSpanish ? 'Error al generar la solución.' : 'Failed to generate solution.');
     }
 };
 
