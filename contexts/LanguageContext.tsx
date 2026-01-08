@@ -1,3 +1,4 @@
+
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
 
 export type Language = 'es' | 'en';
@@ -18,9 +19,9 @@ const getInitialLanguage = (): Language => {
     } catch (error) {
         console.error('Error reading language from localStorage:', error);
     }
-    // Default to browser language if available, otherwise 'en'
+    // Default to 'es' (Spanish) unless browser is specifically English
     const browserLang = navigator.language.split('-')[0];
-    return browserLang === 'es' ? 'es' : 'en';
+    return browserLang === 'en' ? 'en' : 'es';
 };
 
 export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }) => {

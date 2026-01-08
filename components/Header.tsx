@@ -40,6 +40,7 @@ const LanguageSelector: React.FC<LanguageSelectorProps> = ({ isMobile = false })
                     key={opt.key}
                     onClick={() => setLanguage(opt.key)}
                     className={`${buttonBaseClasses} ${language === opt.key ? activeClasses : inactiveClasses}`}
+                    title={opt.label}
                 >
                     {opt.flag}
                 </button>
@@ -158,11 +159,10 @@ export const Header: React.FC<HeaderProps> = ({ currentView, setView, userDescri
                         </nav>
                         <div className="w-px h-6 bg-gray-300 dark:bg-gray-700 mx-2"></div>
                         <div className="flex items-center gap-3">
+                            <LanguageSelector />
                             <ThemeToggle />
-                            {userDescription && onLogout ? (
+                            {userDescription && onLogout && (
                                 <UserMenu description={userDescription} onLogout={onLogout} />
-                            ) : (
-                                <LanguageSelector />
                             )}
                         </div>
                     </div>
@@ -211,17 +211,16 @@ export const Header: React.FC<HeaderProps> = ({ currentView, setView, userDescri
                         ))}
                     </nav>
                     <div className="mt-6 pt-6 border-t border-gray-100 dark:border-gray-800">
-                        {userDescription && onLogout ? (
+                        <div className="flex justify-center mb-4">
+                           <LanguageSelector isMobile={true}/>
+                        </div>
+                        {userDescription && onLogout && (
                              <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4">
                                 <p className="text-xs text-gray-500 dark:text-gray-400 uppercase font-semibold mb-1">{t('header.signedInAs')}</p>
                                 <p className="font-bold text-gray-900 dark:text-white">{userDescription}</p>
                                 <button onClick={onLogout} className="mt-3 w-full px-4 py-2 rounded-lg font-medium text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
                                     {t('header.logout')}
                                 </button>
-                            </div>
-                        ) : (
-                            <div className="flex justify-center">
-                               <LanguageSelector isMobile={true}/>
                             </div>
                         )}
                     </div>
